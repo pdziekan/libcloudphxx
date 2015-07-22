@@ -15,7 +15,7 @@ int main(int ac, char** av)
 
   for (int at = 0; at < n["t"]; ++at) // TODO: mark what time does it actually mean!
   {
-    for (auto &plt : std::set<std::string>({"rl", "rr", "nc", "nr", "ef", "na"}))
+    for (auto &plt : std::set<std::string>({"rl", "rr", "nc", "nr", "ef", "na", "th", "rv"}))
     {
       Gnuplot gp;
       init(gp, h5 + ".plot/" + plt + "/" + zeropad(at * n["outfreq"]) + ".svg", 1, 1, n); 
@@ -129,6 +129,20 @@ int main(int ac, char** av)
 	gp << "set cbrange [" << 0 << ":" << 150 << "]\n";
 	gp << "set title 'aerosol concentration [mg^{-1}]'\n";
 	tmp /= 1e6;
+	plot(gp, tmp);
+      }
+      else if (plt == "th")
+      {
+	// cloud particle concentration
+	auto tmp = h5load(h5, "th", at * n["outfreq"]);
+	gp << "set title 'potential temperature [K]'\n";
+	plot(gp, tmp);
+      }
+      else if (plt == "rv")
+      {
+	// cloud particle concentration
+	auto tmp = h5load(h5, "rv", at * n["outfreq"]);
+	gp << "set title 'water vapour mixing ratio'\n";
 	plot(gp, tmp);
       }
       else assert(false);
