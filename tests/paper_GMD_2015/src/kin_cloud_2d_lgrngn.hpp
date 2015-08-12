@@ -40,6 +40,7 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
    
     // recording total precipitation volume through the lower boundary
     f_prec << this->timestep << " "  << prec_vol << "\n";
+    f_prec.flush();
    
     // recording requested statistical moments
     {
@@ -134,7 +135,7 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
       params.cloudph_opts_init.x1 = (this->mem->grid_size[0] - .5) * params.dx;
       params.cloudph_opts_init.z1 = (this->mem->grid_size[1] - .5) * params.dz;
 
-      params.cloudph_opts_init.src_z1 = params.dz; // aerosol added only in the lowest cells
+      params.cloudph_opts_init.src_z1 = 30. * params.dz; // aerosol added in 15 lowest cells (300m)
 
       prtcls.reset(libcloudphxx::lgrngn::factory<real_t>(
         (libcloudphxx::lgrngn::backend_t)params.backend, 

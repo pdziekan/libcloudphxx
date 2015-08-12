@@ -70,6 +70,7 @@ class kin_cloud_2d_common : public
       {  
         th_eq(j) = this->mem->sum(this->state(ix::th), this->i, rng_t(j, j), false)  /  (this->mem->grid_size[0] - 1);
         rv_eq(j) = this->mem->sum(this->state(ix::rv), this->i, rng_t(j, j), false)  /  (this->mem->grid_size[0] - 1);
+        printf("%lf\n", rv_eq(j));
       }
     }
 
