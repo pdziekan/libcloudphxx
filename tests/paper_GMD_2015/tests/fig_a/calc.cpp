@@ -33,7 +33,7 @@ int main(int ac, char** av)
   }
 
   string opts_common = 
-    "--outfreq=1200 --nt=4800 --spinup=2400 --nx=76 --nz=76 --relax_th_rv=true --src_t0=20000 --src_t1=96000";
+    "--outfreq=1200 --nt=9600 --spinup=7200 --nx=76 --nz=76 --relax_th_rv=true --src_t0=20000 --src_t1=96000";
   set<string> opts_micro({
 //    "--micro=blk_1m --outdir=out_blk_1m",
 //    "--micro=blk_2m --outdir=out_blk_2m",
@@ -44,7 +44,7 @@ int main(int ac, char** av)
         + bins_wet_str + // aerosol spectrum (wet)
       "\""
       " --out_dry=\""
-//        "0:1|0,3;"       // total dry mass and number
+        "0:1|0,3;"       // total dry mass and number
         + bins_dry_str + // aerosol spectrum (dry)
       "\""
   });
