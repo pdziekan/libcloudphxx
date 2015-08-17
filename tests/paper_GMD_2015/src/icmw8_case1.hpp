@@ -50,12 +50,12 @@ namespace icmw8_case1
     sdev_rd1 = real_t(1.4),
     sdev_rd2 = real_t(1.6);
   const quantity<power_typeof_helper<si::length, static_rational<-3>>::type, real_t>
-    n1_stp = real_t(60e6) / si::cubic_metres,
-    n2_stp = real_t(40e6) / si::cubic_metres;
+    n1_stp = real_t(60e6 * 10) / si::cubic_metres,
+    n2_stp = real_t(40e6 * 10) / si::cubic_metres;
 
   const quantity<power_typeof_helper<si::length, static_rational<-3>>::type, real_t>
-    n1_stp_src = real_t(60e6 / 2000. / 30.) / si::cubic_metres, 
-    n2_stp_src = real_t(40e6 / 2000. / 30.) / si::cubic_metres;  // when applied in 15 lowest cells, give a source of 100/cm^2/s
+    n1_stp_src = real_t(60e6 * 10 / 2000. / 30.) / si::cubic_metres, 
+    n2_stp_src = real_t(40e6 * 10 / 2000. / 30.) / si::cubic_metres;  // when applied in 15 lowest cells, give a source of 100/cm^2/s
 
   //aerosol chemical composition parameters (needed for activation)
   // for lgrngn:
