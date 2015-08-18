@@ -93,7 +93,7 @@ int main(int ac, char** av)
 	// cloud particle concentration
 	auto tmp = 1e-6 * h5load(h5, "rw_rng000_mom0", at * n["outfreq"]);
 	gp << "set title 'cloud droplet spec. conc. [mg^{-1}]'\n";
-	gp << "set cbrange [0:150]\n";
+//	gp << "set cbrange [0:150]\n";
 	plot(gp, tmp);
       }
       else if (plt == "nr")
@@ -126,7 +126,7 @@ int main(int ac, char** av)
 	  str << "rw_rng" << std::setw(3) << std::setfill('0') << i + 2  << "_mom0";
 	  tmp = tmp + h5load(h5, str.str(), at * n["outfreq"]);
 	}
-	gp << "set cbrange [" << 0 << ":" << 150 << "]\n";
+//	gp << "set cbrange [" << 0 << ":" << 150 << "]\n";
 	gp << "set title 'aerosol concentration [mg^{-1}]'\n";
 	tmp /= 1e6;
 	plot(gp, tmp);
