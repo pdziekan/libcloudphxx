@@ -27,9 +27,13 @@
 #include "particles_diag.ipp"
 
 // details
+#include "particles_impl_dist_analysis.ipp"
 #include "particles_impl_init_dry.ipp"
+#include "particles_impl_init_n.ipp"
 #include "particles_impl_init_wet.ipp"
 #include "particles_impl_init_xyz.ipp"
+#include "particles_impl_init_ijk.ipp"
+#include "particles_impl_init_count_num.ipp"
 #include "particles_impl_init_e2l.ipp"
 #include "particles_impl_init_grid.ipp"
 #include "particles_impl_init_sync.ipp"
