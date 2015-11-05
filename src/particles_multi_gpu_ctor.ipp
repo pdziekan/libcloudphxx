@@ -13,43 +13,42 @@ namespace libcloudphxx
   {
     // constructor
     template <typename real_t>
-    particles_t<real_t, multi_CUDA>::particles_t(const opts_init_t<real_t> &_opts_init, const int &_n_x_bfr, const bool &_dist_mem) :
-      glob_opts_init(_opts_init),
-      n_cell_tot(
-        detail::m1(glob_opts_init.nx) *
-        detail::m1(glob_opts_init.ny) *
-        detail::m1(glob_opts_init.nz)
-      )
+    particles_t<real_t, multi_CUDA>::particles_t(const opts_init_t<real_t> &opts_init) :
+      pdistmem(new distmem(opts_init))
     {
+      // make opts_init point to global opts init
+      this->opts_init = &pdistmem->opts_init;
+
+      // opts init for this process (for MPI)
+      opts_init_t<real_t> lcl_opts_init = pdistmem->lcl_opts_init();
+
       int dev_count;
-      // TODO: move these sanity checks to sanity_checks?
       
-      if(glob_opts_init.src_switch) throw std::runtime_error("multi_CUDA is not yet compatible with source. Use other backend or turn off opts_init.src_switch.");
-      if(glob_opts_init.chem_switch) throw std::runtime_error("multi_CUDA is not yet compatible with chemistry. Use other backend or turn off opts_init.chem_switch.");
+      if(lcl_opts_init.src_switch) throw std::runtime_error("multi_CUDA is not yet compatible with source. Use other backend or turn off opts_init.src_switch.");
+      if(lcl_opts_init.chem_switch) throw std::runtime_error("multi_CUDA is not yet compatible with chemistry. Use other backend or turn off opts_init.chem_switch.");
 
       // multi_CUDA works only for 2D and 3D
-      if(glob_opts_init.nz == 0)
+      if(lcl_opts_init.nz == 0)
         throw std::runtime_error("multi_CUDA backend works only for 2D and 3D simulations.");
 
-      if (!(glob_opts_init.x1 > glob_opts_init.x0 && glob_opts_init.x1 <= glob_opts_init.nx * glob_opts_init.dx))
+      if (!(lcl_opts_init.x1 > lcl_opts_init.x0 && lcl_opts_init.x1 <= lcl_opts_init.nx * lcl_opts_init.dx))
         throw std::runtime_error("!(x1 > x0 & x1 <= min(1,nx)*dx)");
 
       // get number of available devices
       gpuErrchk(cudaGetDeviceCount(&dev_count)); 
       
       // set number of devices to use
-      if(glob_opts_init.dev_count > 0)
+      if(lcl_opts_init.dev_count > 0)
       {
-        if(dev_count < glob_opts_init.dev_count)
+        if(dev_count < lcl_opts_init.dev_count)
           throw std::runtime_error("number of available GPUs smaller than number of GPUs defined in opts_init");
         else 
-          dev_count = glob_opts_init.dev_count;
+          dev_count = lcl_opts_init.dev_count;
       }
       // copy dev_count to opts_init for threads to use
-      glob_opts_init.dev_count = dev_count;
+      lcl_opts_init.dev_count = dev_count;
    
       // check if all GPUs support UVA
-      // TODO: other checks?, see CUDA samples 0_simple/simpleP2P
       for (int i = 0; i < dev_count; ++i)
       {
         // Get device properties
@@ -68,8 +67,8 @@ namespace libcloudphxx
         {
           gpuErrchk(cudaSetDevice(dev_id));
           // IDs of devices to the left/right, periodic boundary in x
-          const int lft_dev = dev_id > 0 ? dev_id - 1 : glob_opts_init.dev_count - 1,
-                    rgt_dev = dev_id < glob_opts_init.dev_count-1 ? dev_id + 1 : 0;
+          const int lft_dev = dev_id > 0 ? dev_id - 1 : lcl_opts_init.dev_count - 1,
+                    rgt_dev = dev_id < lcl_opts_init.dev_count-1 ? dev_id + 1 : 0;
 
           // if available, allow direct memory access; otherwise copy through host memory will be done
           int can_access_peer;
@@ -84,27 +83,12 @@ namespace libcloudphxx
       
       // resize the pointer vector
       particles.reserve(dev_count);
-      // resize the output buffer
-      real_n_cell_tot.resize(n_cell_tot);
-
-      // make opts_init point to global opts init
-      this->opts_init = &glob_opts_init;
 
       // assign device to each thread and create particles_t in each
-      int n_x_bfr = 0;
       for(int dev_id = 0; dev_id < dev_count; ++dev_id)
       {
         gpuErrchk(cudaSetDevice(dev_id));
-        opts_init_t<real_t> opts_init_tmp(glob_opts_init);
-
-        // adjust opts_init for each device
-        if(dev_count > 1)
-          n_x_bfr = detail::distmem_opts(opts_init_tmp, dev_id, dev_count); 
-
-        // add cells from other processes (MPI)
-        n_x_bfr += _n_x_bfr;
-
-        particles.push_back(new particles_t<real_t, CUDA>(opts_init_tmp, n_x_bfr, true)); // impl stores a copy of opts_init
+        particles.push_back(new particles_t<real_t, CUDA>(lcl_opts_init, dev_id, dev_count, pdistmem->n_x_bfr()));
       }
     }
 
@@ -119,7 +103,7 @@ namespace libcloudphxx
       const arrinfo_t<real_t> courant_3
     )
     {
-      #pragma omp parallel num_threads(glob_opts_init.dev_count)
+      #pragma omp parallel num_threads(pdistmem->opts_init.dev_count)
       {
         const int dev_id = omp_get_thread_num();
         gpuErrchk(cudaSetDevice(dev_id));

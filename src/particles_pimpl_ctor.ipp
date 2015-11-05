@@ -388,10 +388,11 @@ namespace libcloudphxx
 
     // ctor
     template <typename real_t, backend_t device>
-    particles_t<real_t, device>::particles_t(const opts_init_t<real_t> &opts_init, const int &n_x_bfr, const bool &dist_mem):
-      pimpl(new impl(opts_init, n_x_bfr, dist_mem))
+    particles_t<real_t, device>::particles_t(const opts_init_t<real_t> &opts_init, const int &rank, const int &size, const int &n_x_bfr):
+      pdistmem(new distmem(opts_init, rank, size, n_x_bfr)),
+      pimpl(new impl(pdistmem->lcl_opts(), pdistmem->n_x_bfr(), pdistmem->dist_mem()))
     {
-      this->opts_init = &pimpl->opts_init;
+      this->opts_init = &pdistmem->opts_init;
       pimpl->sanity_checks();
     }
 
