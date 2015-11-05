@@ -17,8 +17,8 @@ int main(int ac, char** av)
   Gnuplot gp;
 
   int off = 2; // TODO!!!
-  float ymin = .4 * .01, ymax = .9 * 10000;
-  const int at = 9000;
+  float ymin = .4 * .01, ymax = .9 * 100000;
+  const int at = 1;
 
   gp << "set term svg dynamic enhanced fsize 15 size 900, 1500 \n";
   gp << "set output '" << svg << "'\n";
