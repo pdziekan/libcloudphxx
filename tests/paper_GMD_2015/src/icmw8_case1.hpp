@@ -42,20 +42,28 @@ namespace icmw8_case1
   const quantity<si::time, real_t>
     dt = real_t(1) * si::seconds;
 
-  //aerosol bimodal lognormal dist. 
+  //aerosol bimodal lognormal dist.; W. Grabowski et al. / Atmospheric Research 99 (2011) table 5 polluted, conc divided by 2
   const quantity<si::length, real_t>
-    mean_rd1 = real_t(.04e-6 / 2) * si::metres,
-    mean_rd2 = real_t(.15e-6 / 2) * si::metres;
+    mean_rd1 = real_t(.029e-6) * si::metres,
+    mean_rd2 = real_t(.071e-6) * si::metres;
   const quantity<si::dimensionless, real_t>
-    sdev_rd1 = real_t(1.4),
-    sdev_rd2 = real_t(1.6);
+    sdev_rd1 = real_t(1.36),
+    sdev_rd2 = real_t(1.57);
   const quantity<power_typeof_helper<si::length, static_rational<-3>>::type, real_t>
-    n1_stp = real_t(60e6) / si::cubic_metres,
-    n2_stp = real_t(40e6) / si::cubic_metres;
+    n1_stp = real_t(160e6 / 2.) / si::cubic_metres,
+    n2_stp = real_t(380e6 / 2.) / si::cubic_metres;
+
+  //aerosol lognormal dist. for GCCN from Jorgen Jensen
+  const quantity<si::length, real_t>
+    mean_rd3 = real_t(.596e-6) * si::metres;
+  const quantity<si::dimensionless, real_t>
+    sdev_rd3 = real_t(1.75);
+  const quantity<power_typeof_helper<si::length, static_rational<-3>>::type, real_t>
+    n3_stp = real_t(0.144e6) / si::cubic_metres;
 
   //aerosol chemical composition parameters (needed for activation)
   // for lgrngn:
-  const quantity<si::dimensionless, real_t> kappa = .61; // CCN-derived value from Table 1 in Petters and Kreidenweis 2007
+  const quantity<si::dimensionless, real_t> kappa = 1.28; // CCN-derived value from Table 1 in Petters and Kreidenweis 2007 for NaCl
   // for blk_2m:
   const quantity<si::dimensionless, real_t> chem_b = .55; //ammonium sulphate //chem_b = 1.33; // sodium chloride
 
@@ -175,6 +183,7 @@ namespace icmw8_case1
       return T((
           lognormal::n_e(mean_rd1, sdev_rd1, n1_stp, quantity<si::dimensionless, real_t>(lnrd)) +
           lognormal::n_e(mean_rd2, sdev_rd2, n2_stp, quantity<si::dimensionless, real_t>(lnrd)) 
+          + lognormal::n(mean_rd3, sdev_rd3, n3_stp, quantity<si::length, real_t>(exp(lnrd) * si::meters)) * si::metres
         ) * si::cubic_metres
       );
     }
