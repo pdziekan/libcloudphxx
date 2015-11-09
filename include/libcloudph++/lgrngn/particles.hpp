@@ -238,9 +238,6 @@ namespace libcloudphxx
     {
       // additional members
       boost::ptr_vector<particles_t<real_t, CUDA> > particles; // pointer to particles_t on each GPU
-      opts_init_t<real_t> glob_opts_init; // global copy of opts_init (threads store their own in impl), 
-      const int n_cell_tot;               // total number of cells
-      std::vector<real_t> real_n_cell_tot; // vector of the size of the total number of cells to store output
 
       // initialisation 
       void init(

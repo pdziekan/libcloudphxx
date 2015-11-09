@@ -15,7 +15,6 @@
 #include "detail/kernel_utils.hpp"
 #include "detail/wang_collision_enhancement.hpp"
 #include "detail/kernel_onishi_nograv.hpp"
-#include "detail/distmem.hpp"
 
 //kernel definitions
 #include "detail/kernel_definitions/hall_efficiencies.hpp"
@@ -59,6 +58,8 @@
 
 #include "particles_impl_moms.ipp"
 #include "particles_impl_mass_dens.ipp"
+
+#include "particles_distmem.ipp"
 
 #include "particles_impl_fill_outbuf.ipp"
 
