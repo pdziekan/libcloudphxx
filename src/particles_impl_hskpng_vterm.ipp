@@ -100,6 +100,8 @@ namespace libcloudphxx
       > pi_t;
       typedef thrust::zip_iterator<thrust::tuple<pi_t, pi_t, pi_t, pi_t> > zip_it_t;
 
+      if(opts_init.terminal_velocity == vt_t::undefined) throw std::runtime_error("terminal velocity calculation required, but opts_init.terminal_velocity was not specified");
+
       thrust::transform(
         rw2.begin(), rw2.end(),                                 // input - 1st arg
 	zip_it_t(thrust::make_tuple(
