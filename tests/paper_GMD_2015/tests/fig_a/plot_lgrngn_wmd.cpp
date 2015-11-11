@@ -18,13 +18,14 @@ int main(int ac, char** av)
 
   int off = 2; // TODO!!!
   float ymin = .4 * .01, ymax = .9 * 100000;
-  const int at = 0;
+  const int at = 2;
 
   gp << "set term svg dynamic enhanced fsize 15 size 900, 1500 \n";
   gp << "set output '" << svg << "'\n";
-  gp << "set logscale x\n";
+  gp << "set logscale xy\n";
   gp << "set xrange [.002:100]\n";
 //  gp << "set yrange [" << ymin << ":" << ymax << "]\n";
+  gp << "set format y \"%3.0em\"\n";
   gp << "set ylabel 'wet mass density [kg / unit of ln(r)]'\n"; // TODO: add textual description (PDF?)
   gp << "set grid\n";
   gp << "set nokey\n";
