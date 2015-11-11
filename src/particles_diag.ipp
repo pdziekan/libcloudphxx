@@ -38,6 +38,19 @@ namespace libcloudphxx
       };
 
       template <typename real_t>
+      struct precip_rate
+      {
+        BOOST_GPU_ENABLED
+        real_t operator()(const real_t &vt, const real_t &rw2)
+        {
+#if !defined(__NVCC__)
+          using std::pow;
+#endif
+          return pow(rw2, real_t(3./2)) * vt;
+        }
+      };
+
+      template <typename real_t>
       struct RH_minus_Sc
       {
         BOOST_GPU_ENABLED
@@ -165,6 +178,33 @@ namespace libcloudphxx
     void particles_t<real_t, device>::diag_wet_mass_dens(const real_t &rad, const real_t &sig0)
     {
       pimpl->mass_dens_estim(pimpl->rw2.begin(), rad, sig0, 1./2.);
+    }
+
+    // compute 0th moment of rw^3 * vt
+    template <typename real_t, backend_t device>
+    void particles_t<real_t, device>::diag_precip_rate()
+    {
+      // updating terminal velocities
+      pimpl->hskpng_vterm_all();
+
+      // temporary vector to store vt
+      thrust::host_vector<real_t> tmp_vt(pimpl->n_part);
+      thrust::copy(pimpl->vt.begin(), pimpl->vt.end(), tmp_vt.begin());
+      
+      thrust::transform(
+        pimpl->vt.begin(),
+        pimpl->vt.end(),
+        pimpl->rw2.begin(),
+        pimpl->vt.begin(),
+        detail::precip_rate<real_t>()
+      );
+
+      pimpl->moms_calc(pimpl->vt.begin(), 0);
+ 
+      // copy back stored vterm
+      thrust::copy(tmp_vt.begin(), tmp_vt.end(), pimpl->vt.begin());
+      // release the memory
+      tmp_vt.erase(tmp_vt.begin(), tmp_vt.end());
     }
 
     // computes mean chemical properties for the selected particles
