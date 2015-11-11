@@ -12,26 +12,22 @@ int main(int ac, char** av)
   std::string
     dir = string(av[1]) + "/tests/fig_a/",
     h5  = dir + "out_lgrngn",
-    svg = dir + "out_lgrngn_spec.svg";
+    svg = dir + "out_lgrngn_wmd.svg";
 
   Gnuplot gp;
 
   int off = 2; // TODO!!!
-  float ymin = .4 * .0001, ymax = .9 * 100000;
+  float ymin = .4 * .01, ymax = .9 * 100000;
   const int at = 0;
 
   gp << "set term svg dynamic enhanced fsize 15 size 900, 1500 \n";
   gp << "set output '" << svg << "'\n";
-  gp << "set logscale xy\n";
+  gp << "set logscale x\n";
   gp << "set xrange [.002:100]\n";
-  gp << "set yrange [" << ymin << ":" << ymax << "]\n";
-  gp << "set ylabel '[mg^{-1} μm^{-1}]'\n"; // TODO: add textual description (PDF?)
+//  gp << "set yrange [" << ymin << ":" << ymax << "]\n";
+  gp << "set ylabel 'wet mass density [kg / unit of ln(r)]'\n"; // TODO: add textual description (PDF?)
   gp << "set grid\n";
   gp << "set nokey\n";
-
-  // FSSP range
-  gp << "set arrow from .5," << ymin << " to .5," << ymax << " nohead\n";
-  gp << "set arrow from 25," << ymin << " to 25," << ymax << " nohead\n";
 
   gp << "set xlabel offset 0,1.5 'particle radius [μm]'\n";
   gp << "set key samplen 1.2\n";
@@ -62,22 +58,9 @@ int main(int ac, char** av)
       vector<quantity<si::length>> left_edges_rw = bins_wet();
       int nsw = left_edges_rw.size() - 1;
 
-      for (int i = 0; i < nsd; ++i)
-      {
-	const string name = "rd_rng" + zeropad(i) + "_mom0";
-	blitz::Array<float, 2> tmp_d(1e-6 * h5load(h5, name, at));
-
-	focus_d[left_edges_rd[i] / 1e-6 / si::metres] = sum(tmp_d(
-	  blitz::Range(x-1, x+1),
-	  blitz::Range(y-1, y+1)
-	)) 
-	/ 9  // mean over 9 gridpoints
-	/ ((left_edges_rd[i+1] - left_edges_rd[i]) / 1e-6 / si::metres); // per micrometre
-      }
-
       for (int i = 0; i < nsw; ++i)
       {
-	const string name = "rw_rng" + zeropad(i + off) + "_mom0";
+	const string name = "wet_mass_dens_rng" + zeropad(i + off);
 	blitz::Array<float, 2> tmp_w(1e-6 * h5load(h5, name, at));
 
 	focus_w[left_edges_rw[i] / 1e-6 / si::metres] = sum(tmp_w(
@@ -90,10 +73,8 @@ int main(int ac, char** av)
 
       notice_macro("setting-up plot parameters");
       gp << "plot"
-	 << "'-' with histeps title 'wet radius' lw 3 lc rgb 'blue'," 
-	 << "'-' with histeps title 'dry radius' lw 1 lc rgb 'red' " << endl;
+	 << "'-' with l title 'wet radius' lw 1 lc rgb 'red' " << endl;
       gp.send(focus_w);
-      gp.send(focus_d);
 
       lbl -= 2;
     }

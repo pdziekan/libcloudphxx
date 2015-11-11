@@ -63,6 +63,12 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
           prtcls->diag_wet_mom(mom);
           this->record_aux(aux_name("rw", rng_num, mom), prtcls->outbuf());
         }
+
+        // wet mass density
+        prtcls->diag_all();
+        prtcls->diag_wet_mass_dens( (rng.first / si::metres + rng.second / si::metres) / 2., 0.61); // sig0 = 0.61, like Shime et al. (2009)
+        this->record_aux(aux_name("wet_mass_dens", rng_num), prtcls->outbuf());
+
         rng_num++;
       }
     }
@@ -85,6 +91,16 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
   { 
     std::ostringstream tmp;
     tmp << pfx << "_rng" << std::setw(3) << std::setfill('0') << rng << "_mom" << mom;
+    return tmp.str();
+  }
+
+  std::string aux_name(
+    const std::string pfx, 
+    const int rng
+  )
+  { 
+    std::ostringstream tmp;
+    tmp << pfx << "_rng" << std::setw(3) << std::setfill('0') << rng;
     return tmp.str();
   }
 
