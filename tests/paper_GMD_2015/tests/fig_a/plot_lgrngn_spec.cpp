@@ -9,20 +9,22 @@ int main(int ac, char** av)
 {
   if (ac != 2) error_macro("expecting 1 argument: CMAKE_BINARY_DIR")
 
+  const int at = 9000;
+
   std::string
     dir = string(av[1]) + "/tests/fig_a/",
-    h5  = dir + "out_lgrngn",
-    svg = dir + "out_lgrngn_spec.svg";
+    h5  = dir + "out_lgrngn";
+  std::ostringstream svg;
+  svg << dir << "out_lgrngn_spec_t" << at << ".svg";
 
   Gnuplot gp;
 
   int off_w = 2; // TODO!!!
   int off_d = 1; // TODO!!!
   float ymin = .4 * .0001, ymax = .9 * 100000;
-  const int at = 15000;
 
   gp << "set term svg dynamic enhanced fsize 15 size 900, 1500 \n";
-  gp << "set output '" << svg << "'\n";
+  gp << "set output '" << svg.str() << "'\n";
   gp << "set logscale xy\n";
   gp << "set xrange [.002:100]\n";
   gp << "set yrange [" << ymin << ":" << ymax << "]\n";
