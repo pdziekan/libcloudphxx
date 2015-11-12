@@ -15,7 +15,7 @@ int main(int ac, char** av)
 
   for (int at = 0; at < n["t"]; ++at) // TODO: mark what time does it actually mean!
   {
-    for (auto &plt : std::set<std::string>({"rl", "rr", "nc", "nr", "ef", "na", "pr"}))
+    for (auto &plt : std::set<std::string>({"rl", "rr", "nc", "nr", "ef", "na", "pr", "th", "rv"}))
     {
       Gnuplot gp;
       init(gp, h5 + ".plot/" + plt + "/" + zeropad(at * n["outfreq"]) + ".svg", 1, 1, n); 
@@ -129,10 +129,26 @@ int main(int ac, char** av)
       {
 	// precipitation rate
 	auto tmp = h5load(h5, "precip_rate", at * n["outfreq"]) * 4./3 * 3.14;
-	gp << "set logscale cb\n";
 	gp << "set title 'precipitation rate [?]'\n";
+	gp << "set logscale cb\n";
+        gp << "set cbrange [1e-15:]\n";
+        gp << "set format cb \"%3.0em\"\n";
 	plot(gp, tmp);
 	gp << "unset logscale cb\n";
+      }
+      else if (plt == "th")
+      {
+	// precipitation rate
+	auto tmp = h5load(h5, "th", at * n["outfreq"]);
+	gp << "set title 'th [K]'\n";
+	plot(gp, tmp);
+      }
+      else if (plt == "rv")
+      {
+	// precipitation rate
+	auto tmp = h5load(h5, "rv", at * n["outfreq"]);
+	gp << "set title 'rv [g/kg]'\n";
+	plot(gp, tmp);
       }
       else assert(false);
     } // var loop
