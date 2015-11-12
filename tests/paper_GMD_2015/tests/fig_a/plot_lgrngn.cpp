@@ -15,7 +15,7 @@ int main(int ac, char** av)
 
   for (int at = 0; at < n["t"]; ++at) // TODO: mark what time does it actually mean!
   {
-    for (auto &plt : std::set<std::string>({"rl", "rr", "nc", "nr", "ef", "na", "pr", "th", "rv"}))
+    for (auto &plt : std::set<std::string>({"rl", "rr", "nc", "nr", "ef", "na", "pr", "th", "rv", "sd", "ng"}))
     {
       Gnuplot gp;
       init(gp, h5 + ".plot/" + plt + "/" + zeropad(at * n["outfreq"]) + ".svg", 1, 1, n); 
@@ -148,6 +148,29 @@ int main(int ac, char** av)
 	// precipitation rate
 	auto tmp = h5load(h5, "rv", at * n["outfreq"]);
 	gp << "set title 'rv [g/kg]'\n";
+	plot(gp, tmp);
+      }
+      else if (plt == "sd")
+      {
+	// no of super-droplets
+	auto tmp = h5load(h5, "sd_conc", at * n["outfreq"]);
+	gp << "set title 'sd number'\n";
+	plot(gp, tmp);
+      }
+      else if (plt == "ng")
+      {
+	// conc of GCCN (dry radius > 1um)
+	blitz::Array<float, 2> tmp(h5load(h5, "rd_rng030_mom0", at * n["outfreq"]));
+	vector<quantity<si::length>> left_edges = bins_dry();
+	for (int i = 30; i < left_edges.size()-1; ++i)
+	{
+	  if (left_edges[i] < 1e-6 * si::metres) continue;
+	  ostringstream str;
+	  str << "rd_rng" << std::setw(3) << std::setfill('0') << i  << "_mom0";
+	  tmp = tmp + h5load(h5, str.str(), at * n["outfreq"]);
+	}
+	gp << "set title 'GCCN concentration (rd>1um) [mg^{-1}]'\n";
+	tmp /= 1e6;
 	plot(gp, tmp);
       }
       else assert(false);
