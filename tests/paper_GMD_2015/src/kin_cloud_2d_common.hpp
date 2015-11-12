@@ -28,11 +28,11 @@ class kin_cloud_2d_common : public
 
   void hook_ante_loop(int nt) 
   {
-    if (get_rain() == false) 
-    {
+//    if (get_rain() == false) 
+//    {
       // spinup and relaxation do not make sense without autoconversion  (TODO: issue a warning?)
-      spinup = relax_th_rv = 0;      
-    }
+//      spinup = relax_th_rv = 0;      
+//    }
     if (spinup > 0) set_rain(false);
 
     parent_t::hook_ante_loop(nt); 

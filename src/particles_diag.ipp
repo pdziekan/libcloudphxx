@@ -199,7 +199,7 @@ namespace libcloudphxx
         detail::precip_rate<real_t>()
       );
 
-      pimpl->moms_calc(pimpl->vt.begin(), 0);
+      pimpl->moms_calc(pimpl->vt.begin(), 1.);
  
       // copy back stored vterm
       thrust::copy(tmp_vt.begin(), tmp_vt.end(), pimpl->vt.begin());

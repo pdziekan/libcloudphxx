@@ -18,7 +18,7 @@ int main(int ac, char** av)
 
   int off = 2; // TODO!!!
   float ymin = .4 * .01, ymax = .9 * 100000;
-  const int at = 1200;
+  const int at = 15000;
 
   gp << "set term svg dynamic enhanced fsize 15 size 900, 1500 \n";
   gp << "set output '" << svg << "'\n";

@@ -32,6 +32,7 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
     assert(this->rank == 0);
 
     // recording precipitation rate per grid cel
+    prtcls->diag_all();
     prtcls->diag_precip_rate();
     this->record_aux("precip_rate", prtcls->outbuf());
 
@@ -110,7 +111,7 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
 
   protected:
 
-  bool get_rain() { return params.cloudph_opts.coal && params.cloudph_opts.sedi; }
+  bool get_rain() { return true;/*params.cloudph_opts.coal && params.cloudph_opts.sedi; */}
   void set_rain(bool val) 
   { 
     //params.cloudph_opts.coal = params.cloudph_opts.sedi = val; 
