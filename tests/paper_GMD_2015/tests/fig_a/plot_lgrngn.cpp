@@ -15,7 +15,7 @@ int main(int ac, char** av)
 
   for (int at = 0; at < n["t"]; ++at) // TODO: mark what time does it actually mean!
   {
-    for (auto &plt : std::set<std::string>({"rl", "rr", "nc", "nr", "ef", "na", "pr", "th", "rv", "sd", "ng"}))
+    for (auto &plt : std::set<std::string>({"rl", "rr", "nc", "nr", "ef", "na", "pr", "th", "rv", "sd", "ng", "efd"}))
     {
       Gnuplot gp;
       init(gp, h5 + ".plot/" + plt + "/" + zeropad(at * n["outfreq"]) + ".svg", 1, 1, n); 
@@ -109,6 +109,13 @@ int main(int ac, char** av)
 	gp << "set title 'cloud droplet effective radius [μm]'\n"; 
 	plot(gp, r_eff);
       }
+      else if (plt == "efd")
+      {
+	// effective radius
+	auto r_eff = h5load(h5, "rd_rng000_mom3", at * n["outfreq"]) / h5load(h5, "rd_rng000_mom2", at * n["outfreq"]) * 1e6;
+	gp << "set title 'cloud droplet effective dry radius [μm]'\n"; 
+	plot(gp, r_eff);
+      }
       else if (plt == "na")
       {
 	// aerosol concentration
@@ -160,9 +167,9 @@ int main(int ac, char** av)
       else if (plt == "ng")
       {
 	// conc of GCCN (dry radius > 1um)
-	blitz::Array<float, 2> tmp(h5load(h5, "rd_rng030_mom0", at * n["outfreq"]));
+	blitz::Array<float, 2> tmp(h5load(h5, "rd_rng031_mom0", at * n["outfreq"]));
 	vector<quantity<si::length>> left_edges = bins_dry();
-	for (int i = 30; i < left_edges.size()-1; ++i)
+	for (int i = 31; i < left_edges.size()-1; ++i)
 	{
 	  if (left_edges[i] < 1e-6 * si::metres) continue;
 	  ostringstream str;

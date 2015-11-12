@@ -54,8 +54,6 @@ int main(int ac, char** av)
       std::map<float, float> focus_w;
 
       //info on the number and location of histogram edges
-      vector<quantity<si::length>> left_edges_rd = bins_dry();
-      int nsd = left_edges_rd.size() - 1;
       vector<quantity<si::length>> left_edges_rw = bins_wet();
       int nsw = left_edges_rw.size() - 1;
 

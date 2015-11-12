@@ -16,7 +16,8 @@ int main(int ac, char** av)
 
   Gnuplot gp;
 
-  int off = 2; // TODO!!!
+  int off_w = 2; // TODO!!!
+  int off_d = 1; // TODO!!!
   float ymin = .4 * .0001, ymax = .9 * 100000;
   const int at = 15000;
 
@@ -65,7 +66,7 @@ int main(int ac, char** av)
 
       for (int i = 0; i < nsd; ++i)
       {
-	const string name = "rd_rng" + zeropad(i) + "_mom0";
+	const string name = "rd_rng" + zeropad(i + off_d) + "_mom0";
 	blitz::Array<float, 2> tmp_d(1e-6 * h5load(h5, name, at));
 
 	focus_d[left_edges_rd[i] / 1e-6 / si::metres] = sum(tmp_d(
@@ -78,7 +79,7 @@ int main(int ac, char** av)
 
       for (int i = 0; i < nsw; ++i)
       {
-	const string name = "rw_rng" + zeropad(i + off) + "_mom0";
+	const string name = "rw_rng" + zeropad(i + off_w) + "_mom0";
 	blitz::Array<float, 2> tmp_w(1e-6 * h5load(h5, name, at));
 
 	focus_w[left_edges_rw[i] / 1e-6 / si::metres] = sum(tmp_w(
