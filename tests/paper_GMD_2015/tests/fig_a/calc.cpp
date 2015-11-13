@@ -33,7 +33,7 @@ int main(int ac, char** av)
   }
 
   string opts_common = 
-    "--outfreq=1500 --nt=15000 --spinup=7500 --nx=76 --nz=76 --relax_th_rv=false";
+    "--outfreq=150 --nt=15000 --spinup=7500 --nx=76 --nz=76 --relax_th_rv=false";
   set<string> opts_micro({
 //    "--micro=blk_1m --outdir=out_blk_1m",
 //    "--micro=blk_2m --outdir=out_blk_2m",
