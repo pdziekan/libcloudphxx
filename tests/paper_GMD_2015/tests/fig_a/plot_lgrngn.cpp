@@ -113,7 +113,7 @@ int main(int ac, char** av)
       {
 	// effective radius
 	auto r_eff = h5load(h5, "rd_rng000_mom3", at * n["outfreq"]) / h5load(h5, "rd_rng000_mom2", at * n["outfreq"]) * 1e6;
-	gp << "set title 'cloud droplet effective dry radius [μm]'\n"; 
+	gp << "set title '(all droplets) effective dry radius [μm]'\n"; 
 	plot(gp, r_eff);
       }
       else if (plt == "na")
