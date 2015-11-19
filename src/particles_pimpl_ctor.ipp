@@ -36,14 +36,12 @@ namespace libcloudphxx
       bool init_called, should_now_run_async, selected_before_counting;
 
       // member fields
-      const opts_init_t<real_t> opts_init; // a copy
+      opts_init_t<real_t> opts_init; // a copy
       const int n_dims;
       const int n_cell; 
-
       thrust_size_t n_part,            // total number of SDs
                     n_part_old,        // total number of SDs before source
                     n_part_to_init;    // number of SDs to be initialized by source
-
       detail::rng<real_t, device> rng;
 
       // pointer to collision kernel
@@ -185,11 +183,11 @@ namespace libcloudphxx
       int m1(int n) { return n == 0 ? 1 : n; }
 
       // ctor 
-      impl(const opts_init_t<real_t> &opts_init) : 
+      impl(const opts_init_t<real_t> &_opts_init) : 
         init_called(false),
         should_now_run_async(false),
         selected_before_counting(false),
-	opts_init(opts_init),
+	opts_init(_opts_init),
 	n_dims( // 0, 1, 2 or 3
           opts_init.nx/m1(opts_init.nx) + 
           opts_init.ny/m1(opts_init.ny) + 
@@ -235,6 +233,9 @@ namespace libcloudphxx
         }
         if (opts_init.sedi_switch)
           if(opts_init.terminal_velocity == vt_t::undefined) throw std::runtime_error("please specify opts_init.terminal_velocity or turn off opts_init.sedi_switch");
+
+        // if src_switch is off, set max number of SDs to initial number
+        if(!opts_init.src_switch) opts_init.n_sd_max = opts_init.sd_conc * m1(opts_init.nx) *  m1(opts_init.ny) * m1(opts_init.nz);
 
         // note: there could be less tmp data spaces if _cell vectors
         //       would point to _part vector data... but using.end() would not possible
@@ -333,6 +334,10 @@ namespace libcloudphxx
 	const typename thrust_device::vector<real_t>::iterator &vec_bgn,
         const real_t power
       );
+      void moms_calc_cond(
+	const typename thrust_device::vector<real_t>::iterator &vec_bgn,
+        const real_t power
+      );
 
       void mass_dens_estim(
 	const typename thrust_device::vector<real_t>::iterator &vec_bgn,
@@ -353,6 +358,7 @@ namespace libcloudphxx
 
       void cond_dm3_helper();
       void cond(const real_t &dt, const real_t &RH_max);
+      void update_th_rv(thrust_device::vector<real_t> &);
 
       void coal(const real_t &dt);
 
