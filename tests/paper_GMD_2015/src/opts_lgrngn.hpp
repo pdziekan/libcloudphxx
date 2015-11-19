@@ -117,10 +117,10 @@ void setopts_micro(
   rt_params.cloudph_opts_init.supstp_src = vm["supstp_src"].as<int>();
 
   // coalescence kernel choice
-  rt_params.cloudph_opts_init.kernel = libcloudphxx::lgrngn::kernel_t::onishi_hall_davis_no_waals;
+  rt_params.cloudph_opts_init.kernel = libcloudphxx::lgrngn::kernel_t::hall_davis_no_waals;
   rt_params.cloudph_opts_init.terminal_velocity = libcloudphxx::lgrngn::vt_t::beard;
-  rt_params.cloudph_opts_init.kernel_parameters.push_back(400.);
-  rt_params.cloudph_opts_init.kernel_parameters.push_back(20000.);
+//  rt_params.cloudph_opts_init.kernel_parameters.push_back(400.);
+//  rt_params.cloudph_opts_init.kernel_parameters.push_back(20000.);
 
   // parsing --out_dry and --out_wet options values
   // the format is: "rmin:rmax|0,1,2;rmin:rmax|3;..."
