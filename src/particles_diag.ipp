@@ -37,6 +37,7 @@ namespace libcloudphxx
         }
       };
 
+      // calculate first specific moment (i.e. per kg) of vt*rw^3
       template <typename real_t>
       struct precip_rate
       {
