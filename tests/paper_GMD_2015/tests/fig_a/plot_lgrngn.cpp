@@ -98,9 +98,7 @@ int main(int ac, char** av)
 	// rain particle concentration
 	auto tmp = 1e-6 * h5load(h5, "rw_rng001_mom0", at * n["outfreq"]);
 	gp << "set title 'rain drop spec. conc. [mg^{-1}]'\n";
-	gp << "set logscale cb\n";
 	plot(gp, tmp);
-	gp << "unset logscale cb\n";
       }
       else if (plt == "ef")
       {
