@@ -132,8 +132,8 @@ int main(int ac, char** av)
       }
       else if (plt == "pr")
       {
-	// precipitation rate
-	auto tmp = h5load(h5, "precip_rate", at * n["outfreq"]) * 4./3 * 3.14;
+	// precipitation rate                                     to get volume     dv       to mm
+	auto tmp = h5load(h5, "precip_rate", at * n["outfreq"]) * 4./3 * 3.14 /   (20*20)   * 1000;
 	gp << "set title 'precipitation rate [?]'\n";
 	gp << "set logscale cb\n";
         gp << "set cbrange [1e-15:]\n";
