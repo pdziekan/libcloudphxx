@@ -37,7 +37,6 @@ namespace libcloudphxx
         }
       };
 
-      // calculate first specific moment (i.e. per kg) of vt*rw^3
       template <typename real_t>
       struct precip_rate
       {
@@ -181,7 +180,7 @@ namespace libcloudphxx
       pimpl->mass_dens_estim(pimpl->rw2.begin(), rad, sig0, 1./2.);
     }
 
-    // compute 0th moment of rw^3 * vt
+    // compute 1st (non-specific) moment of rw^3 * vt
     template <typename real_t, backend_t device>
     void particles_t<real_t, device>::diag_precip_rate()
     {
@@ -200,7 +199,7 @@ namespace libcloudphxx
         detail::precip_rate<real_t>()
       );
 
-      pimpl->moms_calc(pimpl->vt.begin(), 1.);
+      pimpl->moms_calc_cond(pimpl->vt.begin(), 1.);
  
       // copy back stored vterm
       thrust::copy(tmp_vt.begin(), tmp_vt.end(), pimpl->vt.begin());
