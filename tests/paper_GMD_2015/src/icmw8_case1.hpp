@@ -50,8 +50,8 @@ namespace icmw8_case1
     sdev_rd1 = real_t(1.36),
     sdev_rd2 = real_t(1.57);
   const quantity<power_typeof_helper<si::length, static_rational<-3>>::type, real_t>
-    n1_stp = real_t(160e6 / 2.) / si::cubic_metres,
-    n2_stp = real_t(380e6 / 2.) / si::cubic_metres;
+    n1_stp = real_t(0.3 * 160e6) / si::cubic_metres,
+    n2_stp = real_t(0.3 * 380e6) / si::cubic_metres;
 
   //aerosol lognormal dist. for GCCN from Jorgen Jensen
   const quantity<si::length, real_t>
