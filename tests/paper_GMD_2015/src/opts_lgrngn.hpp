@@ -63,7 +63,6 @@ void setopts_micro(
   rt_params.async = vm["async"].as<bool>();
 
   rt_params.cloudph_opts_init.sd_conc = vm["sd_conc"].as<unsigned long long>();
-  rt_params.cloudph_opts_init.src_sd_conc = vm["src_sd_conc"].as<unsigned long long>();
   rt_params.cloudph_opts_init.n_sd_max = vm["sd_conc"].as<unsigned long long>() * nx * nz * 20;
   rt_params.cloudph_opts_init.nx = nx;
   rt_params.cloudph_opts_init.nz = nz;
@@ -101,7 +100,8 @@ void setopts_micro(
 
   // coalescence kernel choice
   rt_params.cloudph_opts_init.kernel = libcloudphxx::lgrngn::kernel_t::hall_davis_no_waals;
-  rt_params.cloudph_opts_init.terminal_velocity = libcloudphxx::lgrngn::vt_t::beard;
+  rt_params.cloudph_opts_init.terminal_velocity = libcloudphxx::lgrngn::vt_t::khvorostyanov_nonspherical;
+//  rt_params.cloudph_opts_init.terminal_velocity = libcloudphxx::lgrngn::vt_t::beard;
 //  rt_params.cloudph_opts_init.kernel_parameters.push_back(400.);
 //  rt_params.cloudph_opts_init.kernel_parameters.push_back(20000.);
 
