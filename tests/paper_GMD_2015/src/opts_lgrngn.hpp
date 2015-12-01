@@ -35,7 +35,6 @@ void setopts_micro(
     ("backend", po::value<std::string>()->required() , "one of: CUDA, OpenMP, serial")
     ("async", po::value<bool>()->default_value(true), "use CPU for advection while GPU does micro (ignored if backend != CUDA)")
     ("sd_conc", po::value<unsigned long long>()->required() , "super-droplet number per grid cell (unsigned long long)")
-    ("src_sd_conc", po::value<unsigned long long>()->required() , "super-droplet number per grid cell added in source (unsigned long long)")
     // processes
     ("adve", po::value<bool>()->default_value(rt_params.cloudph_opts.adve) , "particle advection     (1=on, 0=off)")
     ("sedi", po::value<bool>()->default_value(rt_params.cloudph_opts.sedi) , "particle sedimentation (1=on, 0=off)")
@@ -48,7 +47,6 @@ void setopts_micro(
     ("sstp_cond", po::value<int>()->default_value(rt_params.cloudph_opts_init.sstp_cond), "no. of substeps for condensation")
     ("sstp_coal", po::value<int>()->default_value(rt_params.cloudph_opts_init.sstp_coal), "no. of substeps for coalescence")
     ("sstp_chem", po::value<int>()->default_value(rt_params.cloudph_opts_init.sstp_chem), "no. of substeps for chemistry")
-    ("supstp_src", po::value<int>()->default_value(rt_params.cloudph_opts_init.supstp_src), "no of timesteps per which src is ran")
     // 
     ("out_dry", po::value<std::string>()->default_value("0:1|0"),       "dry radius ranges and moment numbers (r1:r2|n1,n2...;...)")
     ("out_wet", po::value<std::string>()->default_value(".5e-6:25e-6|0,1,2,3;25e-6:1|0,3,6"),  "wet radius ranges and moment numbers (r1:r2|n1,n2...;...)")
@@ -77,14 +75,6 @@ void setopts_micro(
     setup::kappa // key
   );
 
-  boost::assign::ptr_map_insert<
-    setup::log_dry_radii_src<thrust_real_t> // value type
-  >(
-    rt_params.cloudph_opts_init.src_dry_distros // map
-  )(
-    setup::kappa // key
-  );
-
   // output variables
   rt_params.outvars = {
     // <TODO>: make it common among all three micro?
@@ -99,12 +89,6 @@ void setopts_micro(
   rt_params.cloudph_opts.cond = vm["cond"].as<bool>();
   rt_params.cloudph_opts.coal = vm["coal"].as<bool>();
 
-
-  rt_params.cloudph_opts_init.coal_switch = 1;
-  rt_params.cloudph_opts_init.chem_switch = 0;
-  rt_params.cloudph_opts_init.src_switch = 1;
-  rt_params.cloudph_opts_init.sedi_switch = 1;
-
   //rt_params.cloudph_opts.rcyc = vm["rcyc"].as<bool>();
   rt_params.cloudph_opts.chem_dsl = vm["chem_dsl"].as<bool>();
   rt_params.cloudph_opts.chem_dsc = vm["chem_dsc"].as<bool>();
@@ -114,7 +98,6 @@ void setopts_micro(
   rt_params.cloudph_opts_init.sstp_cond = vm["sstp_cond"].as<int>();
   rt_params.cloudph_opts_init.sstp_coal = vm["sstp_coal"].as<int>();
   rt_params.cloudph_opts_init.sstp_chem = vm["sstp_chem"].as<int>();
-  rt_params.cloudph_opts_init.supstp_src = vm["supstp_src"].as<int>();
 
   // coalescence kernel choice
   rt_params.cloudph_opts_init.kernel = libcloudphxx::lgrngn::kernel_t::hall_davis_no_waals;

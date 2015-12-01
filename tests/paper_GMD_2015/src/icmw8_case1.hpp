@@ -197,7 +197,6 @@ namespace icmw8_case1
     { return new log_dry_radii( *this ); }
   };
 
-
   // lognormal aerosol distribution of the source (per time unit)
   template <typename T>
   struct log_dry_radii_src : public libcloudphxx::common::unary_function<T>
