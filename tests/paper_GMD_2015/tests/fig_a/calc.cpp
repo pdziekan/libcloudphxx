@@ -44,7 +44,7 @@ int main(int ac, char** av)
         + bins_wet_str + // aerosol spectrum (wet)
       "\""
       " --out_dry=\""
-        "1e-9:1|2,3;" // effective dry radius
+        "1e-9:1|1,2,3;" // effective dry radius
         + bins_dry_str + // aerosol spectrum (dry)
       "\""
   });
