@@ -40,7 +40,7 @@ int main(int ac, char** av)
     "--micro=lgrngn --outdir=out_lgrngn --backend=CUDA --sd_conc=512 --sstp_cond=10 --sstp_coal=1 --sedi=true"  
       " --out_wet=\""
         ".5e-6:25e-6|0,1,2,3;" // FSSP
-        "25e-6:1|0,3;"         // "rain"
+        "25e-6:1|0,1,3;"         // "rain"
         + bins_wet_str + // aerosol spectrum (wet)
       "\""
       " --out_dry=\""
