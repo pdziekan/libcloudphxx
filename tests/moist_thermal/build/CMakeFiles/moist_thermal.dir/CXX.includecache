@@ -1,0 +1,16 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/pdziekan/praca/libcloudphxx/tests/moist_thermal/moist_thermal.cpp
+libmpdata++/solvers/boussinesq.hpp
+-
+libmpdata++/concurr/threads.hpp
+-
+libmpdata++/output/gnuplot.hpp
+-
+

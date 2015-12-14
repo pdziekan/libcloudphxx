@@ -1,0 +1,19 @@
+Start testing: Dec 14 17:39 CET
+----------------------------------------------------------
+1/1 Testing: moist_thermal
+1/1 Test: moist_thermal
+Command: "/home/pdziekan/praca/libcloudphxx/tests/moist_thermal/build/moist_thermal"
+Directory: /home/pdziekan/praca/libcloudphxx/tests/moist_thermal/build
+"moist_thermal" start time: Dec 14 17:39 CET
+Output:
+----------------------------------------------------------
+ wall time: 2.62238s user time: 8.27s system time: 0.08s
+<end of output>
+Test time =   2.64 sec
+----------------------------------------------------------
+Test Passed.
+"moist_thermal" end time: Dec 14 17:39 CET
+"moist_thermal" time elapsed: 00:00:02
+----------------------------------------------------------
+
+End testing: Dec 14 17:39 CET
