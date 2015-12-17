@@ -6,9 +6,10 @@
  *
  */
 
-#include <libmpdata++/solvers/boussinesq.hpp>
-#include <libmpdata++/concurr/threads.hpp>
-#include <libmpdata++/output/gnuplot.hpp>
+#include <libmpdata++/concurr/boost_thread.hpp>
+#include "lgrngn_solver.hpp"
+#include "setup.hpp"
+
 using namespace libmpdataxx;
 
 int main() 
@@ -16,13 +17,14 @@ int main()
   // compile-time parameters
   struct ct_params_t : ct_params_default_t
   {
-    using real_t = double;
+    using real_t = float;
     enum { n_dims = 2 };
-    enum { n_eqns = 3 };
+    enum { n_eqns = 4 };
     enum { rhs_scheme = solvers::trapez };
     enum { prs_scheme = solvers::cr };
+//    enum { opts = opts::nug };
     struct ix { enum {
-      u, w, tht, 
+      u, w, tht, rv,
       vip_i=u, vip_j=w, vip_den=-1
     }; };
   }; 
@@ -31,17 +33,16 @@ int main()
 
   const int r0 = 500; 
   const int nx = 201, ny = 201, nt = 1200;
-  typename ct_params_t::real_t Tht_ref = 300; //1; // reference state (constant throughout the domain)
 
   // conjugate residual
-  using solver_t = output::gnuplot<solvers::boussinesq<ct_params_t>>;
+  using solver_t = lgrngn_solver<ct_params_t>;
 
   // run-time parameters
   solver_t::rt_params_t p;
 
   p.dt = .75;
   p.di = p.dj = 10.; 
-  p.Tht_ref = Tht_ref; 
+  p.Tht_ref = 300.;//libcloudphxx::common::theta_dry::std2dry(setup::th_0, setup::rv_0) / si::kelvins; 
 
   p.outfreq = 100;
   p.outvars = {
@@ -73,7 +74,7 @@ int main()
   p.prs_tol = 1e-7;
   p.grid_size = {nx, ny};
 
-  libmpdataxx::concurr::threads<
+  libmpdataxx::concurr::boost_thread<
     solver_t, 
     bcond::cyclic , bcond::cyclic,
     bcond::rigid , bcond::rigid
@@ -84,7 +85,7 @@ int main()
     blitz::firstIndex i;
     blitz::secondIndex j;
 
-    slv.advectee(ix::tht) = Tht_ref + where(
+    slv.advectee(ix::tht) = p.Tht_ref + where(
       // if
       pow(i * p.di - 1.04    * r0 , 2) + 
       pow(j * p.dj - 1.04 * r0 , 2) <= pow(r0, 2), 
@@ -93,8 +94,12 @@ int main()
       // else
       0
     );
+ //   slv.advectee(ix::rv) = setup::rv_0;
+
     slv.advectee(ix::u) = 0; 
     slv.advectee(ix::w) = 0; 
+    // density profile
+//    slv.g_factor() = setup::rhod()(j * p.dj);
   }
 
   // integration
