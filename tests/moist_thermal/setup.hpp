@@ -17,31 +17,94 @@ namespace setup
   namespace moist_air = libcloudphxx::common::moist_air;
   namespace const_cp = libcloudphxx::common::const_cp;
 
-  template <class real_t>
-  real_t RH_to_rv(const real_t &RH, const real_t &T, const real_t &p)
+  quantity<si::dimensionless, real_t> RH_to_rv(const real_t &RH, const quantity<si::temperature, real_t> &T, const quantity<si::pressure, real_t> &p)
   {
     return moist_air::eps<real_t>() * RH * const_cp::p_vs<real_t>(T) / (p - RH * const_cp::p_vs<real_t>(T));
   }
 
   real_t env_RH = 0.2;
-  real_t prtrb_RH = 1.;
+  real_t prtrb_RH = 1.200;
 
   const quantity<si::temperature, real_t>
-    T_0 = 283. * si::kelvins;  // surface temperature
+    T_0(283. * si::kelvins);  // surface temperature
   const quantity<si::pressure, real_t>
     p_0 = 85000 * si::pascals; // surface pressure
-  const real_t rv_0 = RH_to_rv(env_RH, T_0, p_0);
+  const quantity<si::dimensionless, real_t> rv_0(RH_to_rv(env_RH, T_0, p_0));
+  // theta (std) at surface
+  const quantity<si::temperature, real_t> th_0 = T_0 * pow(100000 * si::pascals / p_0,  moist_air::R_d<real_t>() / moist_air::c_pd<real_t>() );
+  const quantity<si::temperature, real_t> th_0_dry = theta_dry::std2dry<real_t>(th_0, rv_0);
+  const quantity<si::length, real_t> z_0(0. * si::metres);
 
-  // calc theta_dry at height z (c.f. Grabowski Clark 1991)
+  // calc theta std at height z (c.f. Grabowski Clark 1991)
   template <class real_t>
   quantity<si::temperature, real_t> th(const real_t &z)
   {
-    // theta at surface
-    real_t th_0 = T_0 / si::kelvins * pow(100000 * si::pascals / p_0,  moist_air::R_d<real_t>() / moist_air::c_pd<real_t>() );
     // theta at height z
-    real_t th = th_0 * exp(1.3e-5 * z);
-    return theta_dry::std2dry<real_t>(th, rv_0); 
+    const quantity<si::temperature, real_t> th = ((th_0 / si::kelvins * real_t(exp(1.3e-5 * z))) * si::kelvins);
+    return th;
   }
+
+  // assume hydrostatic pressure
+  template <class real_t>
+  quantity<si::pressure, real_t> p(const real_t &z)
+  {
+    quantity<si::pressure, real_t> p = hydrostatic::p(
+      z * si::metres, th_0_dry, rv_0, z_0, p_0
+    ); // aprox; it should be anelastic; also theta and rv are not constant
+    return p;
+  }
+
+  // theta std to temperature
+  template <class real_t>
+  quantity<si::temperature, real_t> th2T(const quantity<si::temperature, real_t> &th, const quantity<si::pressure, real_t> &p)
+  {
+    quantity<si::temperature, real_t> T = th  * pow(100000 * si::pascals / p,  - moist_air::R_d<real_t>() / moist_air::c_pd<real_t>() );
+    return T;
+  }
+
+  struct env_rv
+  {
+    real_t operator()(const real_t &z) const
+    {
+      return RH_to_rv(env_RH, th2T(th(z), p(z)), p(z));
+    }
+  BZ_DECLARE_FUNCTOR(env_rv);
+  };
+
+  struct prtrb_rv
+  {
+    real_t operator()(const real_t &z) const
+    {
+      return RH_to_rv(prtrb_RH, th2T(th(z), p(z)), p(z));
+    }
+  BZ_DECLARE_FUNCTOR(prtrb_rv);
+  };
+
+  struct th_dry
+  {
+    real_t operator()(const real_t &z) const
+    {
+      return theta_dry::std2dry<real_t>(th(z), env_rv()(z)) / si::kelvins;
+    }
+  BZ_DECLARE_FUNCTOR(th_dry);
+  };
+
+  // density profile as a function of altitude
+  // also approx.
+  struct rhod
+  {
+    real_t operator()(real_t z) const
+    {
+      quantity<si::mass_density, real_t> rhod = theta_std::rhod(
+        p(z), th_0, rv_0
+      );
+
+      return rhod / si::kilograms * si::cubic_metres;
+    }
+
+    // to make the rhod() functor accept Blitz arrays as arguments
+    BZ_DECLARE_FUNCTOR(rhod);
+  };
 
   //aerosol bimodal lognormal dist. 
   const quantity<si::length, real_t>
@@ -55,25 +118,6 @@ namespace setup
     n2_stp = real_t(40e6) / si::cubic_metres;
   const quantity<si::dimensionless, real_t> kappa = .61; // CCN-derived value from Table 1 in Petters and Kreidenweis 2007
 
-  // density profile as a function of altitude
-  struct rhod
-  {
-    real_t operator()(real_t z) const
-    {
-      quantity<si::pressure, real_t> p = hydrostatic::p(
-        z * si::metres, th_0, rv_0, z_0, p_0
-      );
-
-      quantity<si::mass_density, real_t> rhod = theta_std::rhod(
-        p, th_0, rv_0
-      );
-
-      return rhod / si::kilograms * si::cubic_metres;
-    }
-
-    // to make the rhod() functor accept Blitz arrays as arguments
-    BZ_DECLARE_FUNCTOR(rhod);
-  };
 
   // lognormal aerosol distribution
   template <typename T>

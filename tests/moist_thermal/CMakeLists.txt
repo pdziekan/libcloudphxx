@@ -11,6 +11,9 @@ project(moist_thermal CXX)
 
 find_package(libmpdata++)
 
+find_package(HDF5 COMPONENTS CXX REQUIRED QUIET)
+find_package(Boost COMPONENTS iostreams system filesystem REQUIRED)
+
 if(NOT libmpdataxx_FOUND)
   message(FATAL_ERROR "local libmpdata++-config.cmake not found!")
 endif()
@@ -61,3 +64,10 @@ target_link_libraries(moist_thermal ${Boost_LIBRARIES})
 target_link_libraries(moist_thermal ${libcloudphxx_LIBRARIES})
 
 add_test(moist_thermal moist_thermal)
+
+add_executable(plot_lgrngn plot_lgrngn.cpp)
+add_test(plot_lgrngn plot_lgrngn ${CMAKE_BINARY_DIR})
+target_link_libraries(plot_lgrngn ${HDF5_LIBRARIES})
+target_include_directories(plot_lgrngn PUBLIC ${HDF5_INCLUDE_DIRS})
+target_link_libraries(plot_lgrngn ${Boost_LIBRARIES})
+target_include_directories(plot_lgrngn PUBLIC ${Boost_INCLUDE_DIRS})
