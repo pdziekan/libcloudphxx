@@ -14,7 +14,7 @@ int main(int ac, char** av)
 
   for (int at = 0; at < n["t"]; ++at) // TODO: mark what time does it actually mean!
   {
-    for (auto &plt : std::set<std::string>({"rv", "tht", "sd_conc", "no_acti"}))
+    for (auto &plt : std::set<std::string>({"rv", "tht", "sd_conc", "rr", "rl"}))
     {
       Gnuplot gp;
       init(gp, h5 + ".plot/" + plt + "/" + zeropad(at * n["outfreq"]) + ".svg", 1, 1, n); 
@@ -23,28 +23,30 @@ int main(int ac, char** av)
       {
       	// cloud particle concentration
       	auto tmp = h5load(h5, "rv", at * n["outfreq"]);
-      	gp << "rv'\n";
       	plot(gp, tmp);
       }
       if (plt == "tht")
       {
       	// cloud particle concentration
       	auto tmp = h5load(h5, "tht", at * n["outfreq"]);
-      	gp << "tht'\n";
       	plot(gp, tmp);
       }
       if (plt == "sd_conc")
       {
       	// cloud particle concentration
       	auto tmp = h5load(h5, "sd_conc", at * n["outfreq"]);
-      	gp << "sd_conc\n";
       	plot(gp, tmp);
       }
-      if (plt == "no_acti")
+      if (plt == "rr")
       {
-      	// cloud particle concentration
-      	auto tmp = h5load(h5, "no_acti", at * n["outfreq"]);
-      	gp << "no_acti'\n";
+      	// rain water mixing ratio
+      	auto tmp = h5load(h5, "rr_mom3", at * n["outfreq"]) * 4./3 * 3.14 * 1e3 * 1e3;
+      	plot(gp, tmp);
+      }
+      if (plt == "rl")
+      {
+      	// rain water mixing ratio
+      	auto tmp = h5load(h5, "rl_mom3", at * n["outfreq"]) * 4./3 * 3.14 * 1e3 * 1e3;
       	plot(gp, tmp);
       }
       else assert(false);

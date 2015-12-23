@@ -51,10 +51,15 @@ class lgrngn_solver : public
     prtcls->diag_sd_conc();
     this->record_aux("sd_conc", prtcls->outbuf());
 
-    // recording number of activated droplets
-    prtcls->diag_RH_ge_Sc();
-    prtcls->diag_wet_mom(0);
-    this->record_aux("no_acti", prtcls->outbuf());
+    // cloud water
+    prtcls->diag_wet_rng(.5e-6, 25e-6);
+    prtcls->diag_wet_mom(3);
+    this->record_aux("rl_mom3", prtcls->outbuf());
+
+    // rain water
+    prtcls->diag_wet_rng(25e-6, 1);
+    prtcls->diag_wet_mom(3);
+    this->record_aux("rr_mom3", prtcls->outbuf());
   } 
 
   void hook_ante_loop(int nt) 
