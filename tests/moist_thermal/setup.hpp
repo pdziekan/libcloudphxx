@@ -23,7 +23,7 @@ namespace setup
   }
 
   real_t env_RH = 0.2;
-  real_t prtrb_RH = 1.200;
+  real_t prtrb_RH = 1.0200;
 
   const quantity<si::temperature, real_t>
     T_0(283. * si::kelvins);  // surface temperature
@@ -66,7 +66,7 @@ namespace setup
   {
     real_t operator()(const real_t &z) const
     {
-      return RH_to_rv(env_RH, th2T(th(z), p(z)), p(z));
+      return RH_to_rv(env_RH, th2T(th(real_t(0.)), p(z)), p(z));
     }
   BZ_DECLARE_FUNCTOR(env_rv);
   };
@@ -75,7 +75,7 @@ namespace setup
   {
     real_t operator()(const real_t &z) const
     {
-      return RH_to_rv(prtrb_RH, th2T(th(z), p(z)), p(z));
+      return RH_to_rv(prtrb_RH, th2T(th(real_t(0.)), p(z)), p(z));
     }
   BZ_DECLARE_FUNCTOR(prtrb_rv);
   };

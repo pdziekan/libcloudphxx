@@ -83,7 +83,7 @@ class lgrngn_solver : public
       params.cloudph_opts_init.nx = (this->mem->grid_size[0].length());
       params.cloudph_opts_init.nz = (this->mem->grid_size[1].length());
 
-      params.cloudph_opts_init.sd_conc = 16;
+      params.cloudph_opts_init.sd_conc = 64;
       params.cloudph_opts_init.n_sd_max = 
         params.cloudph_opts_init.sd_conc * 
         params.cloudph_opts_init.nx * 
@@ -149,7 +149,7 @@ class lgrngn_solver : public
       {
         using libmpdataxx::arakawa_c::h;
         // temporarily Cx & Cz are multiplied by rhod ...
-/*        auto 
+        auto 
           Cx = this->mem->GC[0](
             this->mem->grid_size[0]^h, 
             this->mem->grid_size[1]
@@ -158,7 +158,7 @@ class lgrngn_solver : public
             this->mem->grid_size[0], 
             this->mem->grid_size[1]^h
           ).reindex({0,0}).copy();
-*/
+
         // ... and now dividing them by rhod (z=0 is located at j=1/2)
        /* {
           blitz::secondIndex j;
@@ -173,11 +173,11 @@ class lgrngn_solver : public
           make_arrinfo(this->mem->advectee(ix::tht)),
           make_arrinfo(this->mem->advectee(ix::rv)),
           make_arrinfo(rhod),
-          make_arrinfo(this->mem->advectee(ix::u)),
-//          make_arrinfo(Cx), // ix::u ?
+//          make_arrinfo(this->mem->advectee(ix::u)),
+          make_arrinfo(Cx), // ix::u ?
           libcloudphxx::lgrngn::arrinfo_t<real_t>(),
-          make_arrinfo(this->mem->advectee(ix::w))
-   //       make_arrinfo(Cz) // ix:w ?
+  //        make_arrinfo(this->mem->advectee(ix::w))
+          make_arrinfo(Cz) // ix:w ?
         );
 //        std::cout << this->mem->advectee(ix::rv);
       }

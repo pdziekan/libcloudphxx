@@ -34,7 +34,7 @@ int main()
 
   const int r0 = 400;  // 500 // 100% humidity radius
   const int r1 = 600;  // transition region radius
-  const int nx = 201, ny = 201, nt = 1200; // nx=ny=201
+  const int nx = 201, ny = 201, nt = 3600; // nx=ny=201
 
   // conjugate residual
   using solver_t = lgrngn_solver<ct_params_t>;
@@ -94,7 +94,7 @@ int main()
     slv.advectee(ix::rv) = 0. + where(
       // if
       pow((i - nx/2) * p.di, 2) + 
-      pow(j * p.dj - 1.2 * r1 , 2) <= pow(r0, 2), 
+      pow(j * p.dj - 1.04 * r1 , 2) <= pow(r0, 2), 
       // then
       setup::prtrb_rv()(j*p.dj), 
       // else
@@ -102,11 +102,11 @@ int main()
       where(
       // if
         pow((i - nx/2) * p.di , 2) + 
-        pow(j * p.dj - 1.2 * r1 , 2) <= pow(r1, 2), 
+        pow(j * p.dj - 1.04 * r1 , 2) <= pow(r1, 2), 
         // then
         (setup::prtrb_rv()(j*p.dj) - setup::env_rv()(j*p.dj)) * 
           pow(cos(M_PI/ 2. *
-            (sqrt(pow((i - nx/2) * p.di,2) + pow(j * p.dj - 1.2 * r1,2)) - r0) / 100. // (r - r0) / 100
+            (sqrt(pow((i - nx/2) * p.di,2) + pow(j * p.dj - 1.04 * r1,2)) - r0) / (r1 - r0) // (r - r0) / (r1 - r0)
             ), 2),
         // else
         0.
