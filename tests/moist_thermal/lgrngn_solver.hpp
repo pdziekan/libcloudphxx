@@ -70,7 +70,7 @@ class lgrngn_solver : public
     {
       assert(params.dt != 0);
 
-      params.backend = libcloudphxx::lgrngn::OpenMP;
+      params.backend = libcloudphxx::lgrngn::CUDA;
       params.cloudph_opts.cond = true;
       params.cloudph_opts.adve = true;
       params.cloudph_opts.coal = true;
@@ -190,14 +190,14 @@ class lgrngn_solver : public
       // running asynchronous stuff
       { 
         using libcloudphxx::lgrngn::particles_t;
-        using libcloudphxx::lgrngn::OpenMP;
+        using libcloudphxx::lgrngn::CUDA;
 
         prtcls->step_async(params.cloudph_opts);
 //        assert(!ftr.valid());
     /*    ftr = std::async(
           std::launch::async,  
-          &particles_t<real_t, OpenMP>::step_async, 
-          dynamic_cast<particles_t<real_t, OpenMP>*>(prtcls.get()),
+          &particles_t<real_t, CUDA>::step_async, 
+          dynamic_cast<particles_t<real_t, CUDA>*>(prtcls.get()),
           params.cloudph_opts
         );*/
 //        assert(ftr.valid());
