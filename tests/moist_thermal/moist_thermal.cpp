@@ -89,7 +89,7 @@ int main()
     blitz::firstIndex i;
     blitz::secondIndex j;
 
-    slv.advectee(ix::tht) = tht_env_init; //setup::th_dry()(j * p.dj);
+    slv.advectee(ix::tht) = setup::th_dry()(j * p.dj);
     slv.advectee(ix::rv) = 0. + where(
       // if
       pow((i - nx/2) * p.di, 2) + 

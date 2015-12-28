@@ -28,10 +28,10 @@ class lgrngn_solver : public
 
   // member fields
   std::unique_ptr<libcloudphxx::lgrngn::particles_proto_t<real_t>> prtcls;
-  blitz::Array<real_t,2> rhod;
-  blitz::Array<real_t,2> tht_env_init;
 
   rt_params_t params;
+  blitz::Array<real_t,2> rhod;
+  blitz::Array<real_t,2> tht_env_init;
 //  std::future<real_t> ftr;
 
   // methods
@@ -76,10 +76,13 @@ class lgrngn_solver : public
     const auto &Tht = this->state(ix::tht); 
     const auto &ijk = this->ijk;
 
-    rhs.at(ix::w)(ijk) += 
-      g * (Tht(ijk) - tht_env_init(ijk)) / tht_env_init(ijk); 
+    if(at>1)
+    {
+      std::cout << "update at" << at << " tht init" << tht_env_init << std::flush;
+      rhs.at(ix::w)(ijk) += 
+        9.81 * (Tht(ijk) - tht_env_init(ijk)) / tht_env_init(ijk); 
+    }
   }
-
 
   void hook_ante_loop(int nt) 
   {
@@ -89,7 +92,7 @@ class lgrngn_solver : public
     {
       assert(params.dt != 0);
 
-      params.backend = libcloudphxx::lgrngn::CUDA;
+      params.backend = libcloudphxx::lgrngn::OpenMP;
       params.cloudph_opts.cond = true;
       params.cloudph_opts.adve = true;
       params.cloudph_opts.coal = true;
@@ -97,15 +100,12 @@ class lgrngn_solver : public
 
       params.cloudph_opts_init.dt = params.dt; // advection timestep = microphysics timestep
       params.cloudph_opts_init.dx = params.di;
-      params.cloudph_opts_init.dz = params.dj;
 
       // libmpdata++'s grid interpretation
       params.cloudph_opts_init.x0 = params.di / 2;
       params.cloudph_opts_init.z0 = params.dj / 2;
       params.cloudph_opts_init.x1 = (this->mem->grid_size[0].length() - .5) * params.di;
       params.cloudph_opts_init.z1 = (this->mem->grid_size[1].length() - .5) * params.dj;
-      params.cloudph_opts_init.nx = (this->mem->grid_size[0].length());
-      params.cloudph_opts_init.nz = (this->mem->grid_size[1].length());
 
       params.cloudph_opts_init.sstp_coal = 1;
       params.cloudph_opts_init.sstp_cond = 10;
@@ -132,9 +132,10 @@ class lgrngn_solver : public
         params.cloudph_opts_init
       ));
 
+      rhod.resize(params.cloudph_opts_init.nx, params.cloudph_opts_init.nz); 
+
       blitz::secondIndex j;
       rhod = setup::rhod()(j * params.cloudph_opts_init.dz);
-      tht_env_init = setup::th_dry()(j * p.dj);
 
       prtcls->init(
         make_arrinfo(this->mem->advectee(ix::tht)),
@@ -209,14 +210,14 @@ class lgrngn_solver : public
       // running asynchronous stuff
       { 
         using libcloudphxx::lgrngn::particles_t;
-        using libcloudphxx::lgrngn::CUDA;
+        using libcloudphxx::lgrngn::OpenMP;
 
         prtcls->step_async(params.cloudph_opts);
 //        assert(!ftr.valid());
     /*    ftr = std::async(
           std::launch::async,  
-          &particles_t<real_t, CUDA>::step_async, 
-          dynamic_cast<particles_t<real_t, CUDA>*>(prtcls.get()),
+          &particles_t<real_t, OpenMP>::step_async, 
+          dynamic_cast<particles_t<real_t, OpenMP>*>(prtcls.get()),
           params.cloudph_opts
         );*/
 //        assert(ftr.valid());
@@ -240,9 +241,15 @@ class lgrngn_solver : public
     const rt_params_t &p
   ) : 
     parent_t(args, p),
-    params(p),
-    rhod(params.cloudph_opts_init.nx, params.cloudph_opts_init.nz),
-    tht_env_init(params.cloudph_opts_init.nx, params.cloudph_opts_init.nz)
+    params(p)
   {
+    params.cloudph_opts_init.nx = (this->mem->grid_size[0].length());
+    params.cloudph_opts_init.nz = (this->mem->grid_size[1].length());
+    params.cloudph_opts_init.dz = params.dj;
+    tht_env_init.resize(params.cloudph_opts_init.nx, params.cloudph_opts_init.nz); 
+    blitz::secondIndex j;
+    tht_env_init = setup::th_dry()(j * params.cloudph_opts_init.dz);
+
+    std::cout << "ctr tht init" << tht_env_init << std::flush;
   }  
 };
