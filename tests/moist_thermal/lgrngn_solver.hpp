@@ -28,6 +28,8 @@ class lgrngn_solver : public
 
   // member fields
   std::unique_ptr<libcloudphxx::lgrngn::particles_proto_t<real_t>> prtcls;
+  blitz::Array<real_t,2> rhod;
+  blitz::Array<real_t,2> tht_env_init;
 
   rt_params_t params;
 //  std::future<real_t> ftr;
@@ -61,6 +63,23 @@ class lgrngn_solver : public
     prtcls->diag_wet_mom(3);
     this->record_aux("rr_mom3", prtcls->outbuf());
   } 
+
+  void update_rhs(
+    libmpdataxx::arrvec_t<
+      typename parent_t::arr_t
+    > &rhs, 
+    const real_t &dt, 
+    const int &at 
+  ) {
+    parent_t::update_rhs(rhs, dt, at); 
+
+    const auto &Tht = this->state(ix::tht); 
+    const auto &ijk = this->ijk;
+
+    rhs.at(ix::w)(ijk) += 
+      g * (Tht(ijk) - tht_env_init(ijk)) / tht_env_init(ijk); 
+  }
+
 
   void hook_ante_loop(int nt) 
   {
@@ -113,9 +132,9 @@ class lgrngn_solver : public
         params.cloudph_opts_init
       ));
 
-      blitz::Array<real_t,2> rhod(params.cloudph_opts_init.nx, params.cloudph_opts_init.nz);
       blitz::secondIndex j;
       rhod = setup::rhod()(j * params.cloudph_opts_init.dz);
+      tht_env_init = setup::th_dry()(j * p.dj);
 
       prtcls->init(
         make_arrinfo(this->mem->advectee(ix::tht)),
@@ -151,9 +170,6 @@ class lgrngn_solver : public
         ftr.get();
       } 
 */
-      blitz::Array<real_t,2> rhod(params.cloudph_opts_init.nx, params.cloudph_opts_init.nz);
-      blitz::secondIndex j;
-      rhod = setup::rhod()(j * params.cloudph_opts_init.dz);
       {
         using libmpdataxx::arakawa_c::h;
         // temporarily Cx & Cz are multiplied by rhod ...
@@ -224,7 +240,9 @@ class lgrngn_solver : public
     const rt_params_t &p
   ) : 
     parent_t(args, p),
-    params(p)
+    params(p),
+    rhod(params.cloudph_opts_init.nx, params.cloudph_opts_init.nz),
+    tht_env_init(params.cloudph_opts_init.nx, params.cloudph_opts_init.nz)
   {
   }  
 };

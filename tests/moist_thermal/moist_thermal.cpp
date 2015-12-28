@@ -44,7 +44,6 @@ int main()
 
   p.dt = .75;
   p.di = p.dj = 10.; 
-  p.Tht_ref = setup::th_dry()(0);
 
   p.outfreq = 100;
   p.outdir = "wyniki/out_lgrngn";
@@ -90,7 +89,7 @@ int main()
     blitz::firstIndex i;
     blitz::secondIndex j;
 
-    slv.advectee(ix::tht) = setup::th_dry()(0.);
+    slv.advectee(ix::tht) = tht_env_init; //setup::th_dry()(j * p.dj);
     slv.advectee(ix::rv) = 0. + where(
       // if
       pow((i - nx/2) * p.di, 2) + 
