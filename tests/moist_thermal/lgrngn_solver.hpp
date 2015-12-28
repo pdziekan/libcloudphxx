@@ -1,7 +1,7 @@
 #pragma once
 #include <boost/assign/ptr_map_inserter.hpp> 
 
-#include <libmpdata++/solvers/boussinesq.hpp>
+#include <libmpdata++/solvers/mpdata_rhs_vip_prs.hpp>
 #include <libmpdata++/output/hdf5.hpp>
 #include <libcloudph++/lgrngn/factory.hpp>
 #include <future>
@@ -11,9 +11,9 @@ using namespace libmpdataxx; // TODO: get rid of it?
 
 template <class ct_params_t>
 class lgrngn_solver : public 
-  output::hdf5<solvers::boussinesq<ct_params_t>>
+  output::hdf5<solvers::mpdata_rhs_vip_prs<ct_params_t>>
 {
-  using parent_t = output::hdf5<solvers::boussinesq<ct_params_t>>;
+  using parent_t = output::hdf5<solvers::mpdata_rhs_vip_prs<ct_params_t>>;
 
   public:
   using ix = typename ct_params_t::ix;
@@ -88,6 +88,9 @@ class lgrngn_solver : public
       params.cloudph_opts_init.nx = (this->mem->grid_size[0].length());
       params.cloudph_opts_init.nz = (this->mem->grid_size[1].length());
 
+      params.cloudph_opts_init.sstp_coal = 1;
+      params.cloudph_opts_init.sstp_cond = 10;
+
       params.cloudph_opts_init.sd_conc = 64;
       params.cloudph_opts_init.n_sd_max = 
         params.cloudph_opts_init.sd_conc * 
@@ -95,7 +98,7 @@ class lgrngn_solver : public
         params.cloudph_opts_init.nz; 
 
       params.cloudph_opts_init.terminal_velocity = libcloudphxx::lgrngn::vt_t::khvorostyanov_nonspherical;
-      params.cloudph_opts_init.kernel = libcloudphxx::lgrngn::kernel_t::hall_davis_no_waals;
+      params.cloudph_opts_init.kernel = libcloudphxx::lgrngn::kernel_t::geometric;
 
       boost::assign::ptr_map_insert<
         setup::log_dry_radii<setup::real_t> // value type
