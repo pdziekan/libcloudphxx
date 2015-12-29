@@ -7,8 +7,6 @@
 
 
 // contains definitions of members of particles_t specialized for multiple GPUs
-// TODO: multi_CUDA doesn't work for real_t=float, most probably because position in x 
-// is out of domain after copy left... (i.e. x=x1)
 #include <omp.h>
 
 namespace libcloudphxx
@@ -27,7 +25,9 @@ namespace libcloudphxx
         BOOST_GPU_ENABLED
         real_t operator()(real_t x)
         {
-          return rmt + x - lcl;
+          real_t res = rmt + x - lcl;
+          if(res == rmt) res = nextafter(res, real_t(0.)); // in single precision, we used to get x=x1
+          return res;
         }
       };
     };
@@ -262,22 +262,9 @@ namespace libcloudphxx
           gpuErrchk(cudaEventDestroy(events[dev_id]));
         }
 
-        // finalize async, same as in impl_step - TODO: move to a single function...
+        // finalize async
         if(glob_opts_init.dev_count>1)
-        {   
-          // recycling out-of-domain/invalidated particles 
-          // currently DISABLED
-          thrust_size_t n_rcyc = 0;//pimpl->rcyc();
-          // TODO: ! if we do not recycle, we should remove them to care for out-od-domain advection after sedimentation...
- 
-          // remove particles sent left/right, coalesced or oud of domain and resize all n_part vectors
-          if(opts.sedi || opts.adve || opts.coal)
-            particles[dev_id].pimpl->hskpng_remove_n0();
- 
-          // updating particle->cell look-up table
-          if (opts.adve || opts.sedi || n_rcyc)
-            particles[dev_id].pimpl->hskpng_ijk();
-        }
+          particles[dev_id].pimpl->step_finalize(opts);
       }
       return res;
     }
