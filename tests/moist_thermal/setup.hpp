@@ -64,7 +64,7 @@ namespace setup
 
   struct env_rv
   {
-    real_t operator()(const real_t &z) const
+    quantity<si::dimensionless, real_t> operator()(const real_t &z) const
     {
       return RH_to_rv(env_RH, th2T(th(z), p(z)), p(z));
     }
@@ -73,7 +73,7 @@ namespace setup
 
   struct prtrb_rv
   {
-    real_t operator()(const real_t &z) const
+    quantity<si::dimensionless, real_t> operator()(const real_t &z) const
     {
       return RH_to_rv(prtrb_RH, th2T(th(z), p(z)), p(z));
     }
@@ -96,7 +96,7 @@ namespace setup
     real_t operator()(real_t z) const
     {
       quantity<si::mass_density, real_t> rhod = theta_std::rhod(
-        p(z), th_0, rv_0
+        p(z), th(z), env_rv()(z)
       );
 
       return rhod / si::kilograms * si::cubic_metres;
