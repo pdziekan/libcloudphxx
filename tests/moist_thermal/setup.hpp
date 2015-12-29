@@ -5,6 +5,7 @@
 #include <libcloudph++/common/theta_dry.hpp>
 #include <libcloudph++/common/lognormal.hpp>
 #include <libcloudph++/common/unary_function.hpp>
+#include <libcloudph++/common/moist_air.hpp>
 
 namespace setup
 {

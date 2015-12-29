@@ -32,6 +32,7 @@ class lgrngn_solver : public
   rt_params_t params;
   blitz::Array<real_t,2> rhod;
   blitz::Array<real_t,2> tht_env_init;
+  blitz::Array<real_t,2> rv_env_init;
 //  std::future<real_t> ftr;
 
   // methods
@@ -74,10 +75,15 @@ class lgrngn_solver : public
     parent_t::update_rhs(rhs, dt, at); 
 
     const auto &Tht = this->state(ix::tht); 
+    const auto &rv = this->state(ix::rv); 
     const auto &ijk = this->ijk;
 
+    namespace moist_air = libcloudphxx::common::moist_air;
+
+    const real_t eps = moist_air::R_v<real_t>() / moist_air::R_d<real_t>() - 1.;
+
     rhs.at(ix::w)(ijk) += 
-      9.81 * (Tht(ijk) - tht_env_init(ijk)) / tht_env_init(ijk); 
+      9.81 * ((Tht(ijk) - tht_env_init(ijk)) / tht_env_init(ijk) + eps * (rv - rv_env_init(ijk)) ); 
   }
 
   void hook_ante_loop(int nt) 
@@ -243,7 +249,9 @@ class lgrngn_solver : public
     params.cloudph_opts_init.nz = (this->mem->grid_size[1].length());
     params.cloudph_opts_init.dz = params.dj;
     tht_env_init.resize(params.cloudph_opts_init.nx, params.cloudph_opts_init.nz); 
+    rv_env_init.resize(params.cloudph_opts_init.nx, params.cloudph_opts_init.nz); 
     blitz::secondIndex j;
     tht_env_init = setup::th_dry()(j * params.cloudph_opts_init.dz);
+    rv_env_init = setup::env_rv()(j * params.cloudph_opts_init.dz);
   }  
 };

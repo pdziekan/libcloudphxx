@@ -34,7 +34,7 @@ int main()
 
   const int r0 = 200;  // 500 // 100% humidity radius
   const int r1 = 300;  // transition region radius
-  const int nx = 101, ny = 101, nt = 600; // nx=ny=201
+  const int nx = 101, ny = 101, nt = 1800; // nx=ny=201
 
   // conjugate residual
   using solver_t = lgrngn_solver<ct_params_t>;
