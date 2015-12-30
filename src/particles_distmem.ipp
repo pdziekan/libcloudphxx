@@ -33,7 +33,7 @@ namespace libcloudphxx
       // only used for output by process rank==0
       thrust::host_vector<real_t> outbuf;  
 
-      // external n_x_bfr
+      // external n_x_bfr, i.e. n_x in/
       int ext_n_x_bfr;
 
       int rank, size;
@@ -45,7 +45,7 @@ namespace libcloudphxx
 
       int n_x_bfr()
       {
-        return n_x_bfr + rank() * detail::get_dev_nx(opts_init, 0, size());
+        return ext_n_x_bfr + rank() * detail::get_dev_nx(opts_init, 0, size());
       }
 
       opts_init_t<real_t> lcl_opts_init()
@@ -64,13 +64,14 @@ namespace libcloudphxx
 
       // ctor
       distmem(const opts_init_t<real_t> &opts_init, const int &_rank=-1, const int &_size=-1, const int _n_x_bfr=0):
-        opts_init(opts_init)
+        opts_init(opts_init),
+        ext_n_x_bfr(_n_x_bfr)
       {
-        // rank and size are not externally specified - no a multi_CUDA spawn
+        // rank and size are not externally specified - its not a multi_CUDA spawn
         if(_rank==-1 && _size==-1)
         {
-#if !defined(USE_MPI)
-          if (
+#if defined(USE_MPI)
+/*          if (
           // mpich
           std::getenv("PMI_RANK") != NULL ||
           // openmpi
@@ -79,13 +80,15 @@ namespace libcloudphxx
           std::getenv("LAMRANK") != NULL
           ) throw std::runtime_error("mpirun environment variable detected but libcloudphxx was compiled with MPI disabled");
           // TODO: mvapich2
-
+*/
           // init mpi
           MPI_CHECK(MPI_Init(nullptr, nullptr));
   
           MPI_CHECK(MPI_Comm_rank(MPI_COMM_WORLD, &rank));
+          MPI_CHECK(MPI_Comm_size(MPI_COMM_WORLD, &size));
           if(rank==0)
 #endif
+            // mCUDA spawns dont need outbuf?
             outbuf.resize(
               detail::m1(opts_init.nx) *
               detail::m1(opts_init.ny) *
