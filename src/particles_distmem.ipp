@@ -26,15 +26,15 @@ namespace libcloudphxx
       }
     }
 
-    template <typename real_t, backend_t device>
-    struct particles_t<real_t, device>::distmem
+    template <typename real_t>
+    struct particles_proto_t<real_t>::distmem
     {
       // host vector of the size of the total number of cells
       // only used for output by process rank==0
       thrust::host_vector<real_t> outbuf;  
 
       // external n_x_bfr
-      int n_x_bfr;
+      int ext_n_x_bfr;
 
       int rank, size;
 
@@ -59,6 +59,7 @@ namespace libcloudphxx
         else                   lcl_opts_init.x1 = lcl_opts_init.x1 - rank() * detail::get_dev_nx(opts_init, 0, size()) * lcl_opts_init.dx;
 
         lcl_opts_init.n_sd_max = lcl_opts_init.n_sd_max / size() + 1;
+        return lcl_opts_init;
       }
 
       // ctor
