@@ -91,7 +91,6 @@ namespace setup
   };
 
   // density profile as a function of altitude
-  // also approx.
   struct rhod
   {
     real_t operator()(real_t z) const

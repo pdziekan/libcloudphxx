@@ -23,7 +23,7 @@ int main()
     enum { n_eqns = 4 };
     enum { rhs_scheme = solvers::trapez };
     enum { prs_scheme = solvers::cr };
-//    enum { opts = opts::nug };
+    enum { opts = opts::nug };
     struct ix { enum {
       u, w, tht, rv,
       vip_i=u, vip_j=w, vip_den=-1
@@ -34,7 +34,8 @@ int main()
 
   const int r0 = 200;  // 500 // 100% humidity radius
   const int r1 = 300;  // transition region radius
-  const int nx = 101, ny = 101, nt = 1800; // nx=ny=201
+  int nx = 201, ny = 201, nt = 480; // nx, ny - no of cells, nt - time in sec
+  int outfreq = 60; // in sec
 
   // conjugate residual
   using solver_t = lgrngn_solver<ct_params_t>;
@@ -42,10 +43,12 @@ int main()
   // run-time parameters
   solver_t::rt_params_t p;
 
-  p.dt = .75;
-  p.di = p.dj = 20.; 
+  p.dt = .2;
+  p.di = p.dj = 10.; 
 
-  p.outfreq = 60;
+  p.outfreq = int(double(outfreq) / p.dt + 0.5);
+  nt = int(double(nt) / p.dt + 0.5);
+
   p.outdir = "wyniki/out_lgrngn";
   p.outvars = {
 //    {ix::u,   {.name = "u",   .unit = "m/s"}}, 
@@ -116,7 +119,7 @@ int main()
     slv.advectee(ix::u) = 0; 
     slv.advectee(ix::w) = 0; 
     // density profile
-//    slv.g_factor() = setup::rhod()(j * p.dj);
+    slv.g_factor() = setup::rhod()(j * p.dj);
   }
 
   // integration
