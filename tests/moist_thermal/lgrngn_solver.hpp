@@ -118,8 +118,8 @@ class lgrngn_solver : public
         params.cloudph_opts_init.nx * 
         params.cloudph_opts_init.nz; 
 
-      params.cloudph_opts_init.terminal_velocity = libcloudphxx::lgrngn::vt_t::khvorostyanov_nonspherical;
-      params.cloudph_opts_init.kernel = libcloudphxx::lgrngn::kernel_t::geometric;
+      params.cloudph_opts_init.terminal_velocity = libcloudphxx::lgrngn::vt_t::khvorostyanov_spherical;
+      params.cloudph_opts_init.kernel = libcloudphxx::lgrngn::kernel_t::hall_davis_no_waals;
 
       boost::assign::ptr_map_insert<
         setup::log_dry_radii<setup::real_t> // value type
