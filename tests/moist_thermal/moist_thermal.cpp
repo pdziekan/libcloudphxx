@@ -23,7 +23,7 @@ int main()
     enum { n_eqns = 4 };
     enum { rhs_scheme = solvers::trapez };
     enum { prs_scheme = solvers::cr };
-    enum { opts = opts::nug };
+//    enum { opts = opts::nug };
     struct ix { enum {
       u, w, tht, rv,
       vip_i=u, vip_j=w, vip_den=-1
@@ -43,7 +43,7 @@ int main()
   // run-time parameters
   solver_t::rt_params_t p;
 
-  p.dt = .2;
+  p.dt = 1.;
   p.di = p.dj = 10.; 
 
   p.outfreq = int(double(outfreq) / p.dt + 0.5);
@@ -119,7 +119,7 @@ int main()
     slv.advectee(ix::u) = 0; 
     slv.advectee(ix::w) = 0; 
     // density profile
-    slv.g_factor() = setup::rhod()(j * p.dj);
+//    slv.g_factor() = setup::rhod()(j * p.dj);
   }
 
   // integration

@@ -24,7 +24,7 @@ namespace setup
   }
 
   real_t env_RH = 0.2;
-  real_t prtrb_RH = 1.0200;
+  real_t prtrb_RH = 1.01;
 
   const quantity<si::temperature, real_t>
     T_0(283. * si::kelvins);  // surface temperature
