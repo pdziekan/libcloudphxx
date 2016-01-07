@@ -23,7 +23,7 @@ int main()
     enum { n_eqns = 4 };
     enum { rhs_scheme = solvers::trapez };
     enum { prs_scheme = solvers::cr };
-//    enum { opts = opts::nug };
+    enum { opts = opts::nug | opts::iga | opts::fct};
     struct ix { enum {
       u, w, tht, rv,
       vip_i=u, vip_j=w, vip_den=-1
@@ -34,7 +34,7 @@ int main()
 
   const int r0 = 200;  // 500 // 100% humidity radius
   const int r1 = 300;  // transition region radius
-  int nx = 201, ny = 201, nt = 480; // nx, ny - no of cells, nt - time in sec
+  int nx = 401, ny = 401, nt = 1200; // nx, ny - no of cells, nt - time in sec
   int outfreq = 60; // in sec
 
   // conjugate residual
@@ -43,16 +43,16 @@ int main()
   // run-time parameters
   solver_t::rt_params_t p;
 
-  p.dt = 1.;
-  p.di = p.dj = 10.; 
+  p.dt = .5;
+  p.di = p.dj = 5.; 
 
   p.outfreq = int(double(outfreq) / p.dt + 0.5);
   nt = int(double(nt) / p.dt + 0.5);
 
   p.outdir = "wyniki/out_lgrngn";
   p.outvars = {
-//    {ix::u,   {.name = "u",   .unit = "m/s"}}, 
-//    {ix::w,   {.name = "w",   .unit = "m/s"}}, 
+    {ix::u,   {.name = "u",   .unit = "m/s"}}, 
+    {ix::w,   {.name = "w",   .unit = "m/s"}}, 
     {ix::tht, {.name = "tht", .unit = "K"  }},
     {ix::rv, {.name = "rv", .unit = "kg/kg"  }}
   };
@@ -119,7 +119,7 @@ int main()
     slv.advectee(ix::u) = 0; 
     slv.advectee(ix::w) = 0; 
     // density profile
-//    slv.g_factor() = setup::rhod()(j * p.dj);
+    slv.g_factor() = setup::rhod()(j * p.dj);
   }
 
   // integration
