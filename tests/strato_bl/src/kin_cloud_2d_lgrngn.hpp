@@ -168,7 +168,6 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
 //std::cout << tmp1 << std::endl;
         tmp2(i, j) = 0.25 * (tmp1(i, j + 1) + 2 * tmp1(i, j) + tmp1(i, j - 1));
         rhs.at(ix::w)(ijk) += tmp2(ijk);
-
         // large-scale vertical wind
         for(auto type : std::set<int>{ix::th, ix::rv, ix::u, ix::w})
         {
@@ -177,7 +176,6 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
           tmp2(i, j) = - w_LS(i, j) * (tmp1(i, j + 1) - tmp1(i, j - 1)) / (2. * this->dj);
           rhs.at(type)(ijk) += tmp2(ijk);
         }
-
         break;
       }   
    
@@ -190,7 +188,6 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
         this->xchng_sclr(tmp1, i, j); 
         tmp2(i, j) = 0.25 * (tmp1(i, j + 1) + 2 * tmp1(i, j) + tmp1(i, j - 1));
         rhs.at(ix::w)(ijk) += tmp2(ijk);
-
         // large-scale vertical wind
         for(auto type : std::set<int>{ix::th, ix::rv, ix::u, ix::w})
         {
@@ -199,20 +196,27 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
           tmp2(i, j) = - w_LS(i, j) * (tmp1(i, j + 1) - tmp1(i, j - 1)) / (2. * this->dj);
           rhs.at(type)(ijk) += tmp2(ijk);
         }
-
         // --- radiative heating ---
         // TODO: adapt it to trapezoidal integration
         {
           // calc liquid water specific mixing ratio
           int nx = this->mem->grid_size[0].length(); 
           int nz = this->mem->grid_size[1].length(); 
-          prtcls->diag_all();
-          prtcls->diag_wet_mom(3);
-          blitz::Array<real_t,2> r_l(prtcls->outbuf(), blitz::shape(nx, nz), blitz::neverDeleteData);
-          r_l = r_l * 4./3. * 1000. * 3.14159;
-          // now multiply by rhod and kappa
-          r_l = r_l * rhod; 
-          r_l = r_l * setup::heating_kappa;
+          if(this->rank==0)
+          {
+//std::cout<<"diag all" << std::endl;
+            prtcls->diag_all();
+//std::cout<<"diag wet mom 3" << std::endl;
+            prtcls->diag_wet_mom(3);
+//std::cout<<"diag Arr fron ourbug" << std::endl;
+            r_l = blitz::Array<real_t,2>(prtcls->outbuf(), blitz::shape(nx, nz), blitz::neverDeleteData);
+//            std::cout << "r_l("<<this->rank<<"): " <<  r_l << std::endl;
+            r_l = r_l * 4./3. * 1000. * 3.14159;
+            // now multiply by rhod and kappa
+            r_l = r_l * rhod; 
+            r_l = r_l * setup::heating_kappa;
+          }
+          this->mem->barrier();
    //       std::cout << "r_l: " <<  r_l << std::endl;
           // find inversion height
           blitz::secondIndex j;
@@ -245,7 +249,6 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
           }
           rhs.at(ix::th)(ijk) += F(ijk) / this->dj / rhod(ijk); // heating[W/m^2] / cell height[m] / rhod[kg/m^3] / specific heat capacity of moist air [J/K/kg]
         }
-
         // --- surface fluxes ---
         {
           int nx = this->mem->grid_size[0].length(); 
@@ -267,7 +270,6 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
           }
           rhs.at(ix::u)(i, blitz::Range(0,0)) += F(i, blitz::Range(0,0)) *  pow(setup::u_fric,2) /  this->dj; 
         }
-
         break;
       }   
     }  
@@ -390,6 +392,7 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
   blitz::Array<real_t,2> F; // radiatvie heating
   blitz::Array<real_t,2> Q; // radiatvie heating hlpr
   blitz::Array<real_t,1> j_i; // inversion height index
+  blitz::Array<real_t,2> r_l; 
 
   public:
 
@@ -408,6 +411,7 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
     w_LS.resize(this->mem->grid_size[0].length(), this->mem->grid_size[1].length());
     F.resize(this->mem->grid_size[0].length(), this->mem->grid_size[1].length());
     Q.resize(this->mem->grid_size[0].length(), this->mem->grid_size[1].length());
+    r_l.resize(this->mem->grid_size[0].length(), this->mem->grid_size[1].length());
     j_i.resize(this->mem->grid_size[0].length());
     blitz::secondIndex j;
     th_init = setup::th_dry()(j * p.dz);
