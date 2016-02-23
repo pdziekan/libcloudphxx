@@ -73,13 +73,13 @@ namespace setup
   };
 
   // initial dry air potential temp at height z, assuming theta_std = theta_l (spinup needed)
-  struct th_dry
+  struct th_dry_fctr
   {
     real_t operator()(const real_t &z) const
     {
       return theta_dry::std2dry<real_t>(th_l(z), r_t()(z)) / si::kelvins;
     }
-    BZ_DECLARE_FUNCTOR(th_dry);
+    BZ_DECLARE_FUNCTOR(th_dry_fctr);
   };
 
   // westerly wind
@@ -103,33 +103,33 @@ namespace setup
   };
 
   // large-scale vertical wind
-  struct w_LS
+  struct w_LS_fctr
   {
     real_t operator()(const real_t &z) const
     {
       return -D * z; 
     }
-    BZ_DECLARE_FUNCTOR(w_LS);
+    BZ_DECLARE_FUNCTOR(w_LS_fctr);
   };
 
   // density profile as a function of altitude
-  struct rhod
+  struct rhod_fctr
   {
     real_t operator()(real_t z) const
     {
       quantity<si::pressure, real_t> p = hydrostatic::p(
-	z * si::metres, th_dry()(0.) * si::kelvins, r_t()(0.), z_0, p_0
+	z * si::metres, th_dry_fctr()(0.) * si::kelvins, r_t()(0.), z_0, p_0
       );
       
       quantity<si::mass_density, real_t> rhod = theta_std::rhod(
-	p, th_dry()(0.) * si::kelvins, r_t()(0.)
+	p, th_dry_fctr()(0.) * si::kelvins, r_t()(0.)
       );
 
       return rhod / si::kilograms * si::cubic_metres;
     }
 
     // to make the rhod() functor accept Blitz arrays as arguments
-    BZ_DECLARE_FUNCTOR(rhod);
+    BZ_DECLARE_FUNCTOR(rhod_fctr);
   };
 
 
@@ -161,6 +161,34 @@ namespace setup
     params.dt = dt / si::seconds;
     params.dx = (X / si::metres) / (nx-1); 
     params.dz = (Z / si::metres) / (nz-1);
+ 
+    // prescribed density
+/*    blitz::Array<real_t, 2> rhod(nx, nz);
+    {
+      blitz::secondIndex j;
+      rhod = rhod_fctr()(j * params.dz);
+    }
+    std::cout << "rhod w setopts" << rhod << std::endl;
+
+    params.rhod = new blitz::Array<real_t, 2>(rhod.dataFirst(), rhod.shape(), blitz::neverDeleteData);
+    std::cout << "params.rhod w setopts" << params.rhod << " " << *params.rhod << std::endl;
+
+    // prescribed large-scale vertical wind
+    blitz::Array<real_t, 2> w_LS(nx, nz);
+    {
+      blitz::secondIndex j;
+      w_LS = w_LS_fctr()(j * params.dz);
+    }
+    params.w_LS = new blitz::Array<real_t, 2>(w_LS.dataFirst(), w_LS.shape(), blitz::neverDeleteData);
+
+    // prescribed initial temp profile
+    blitz::Array<real_t, 2> th_init(nx, nz);
+    {
+      blitz::secondIndex j;
+      th_init = th_dry_fctr()(j * params.dz);
+    }
+    params.th_init = new blitz::Array<real_t, 2>(th_init.dataFirst(), th_init.shape(), blitz::neverDeleteData);
+*/
   }
 
   // function expecting a libmpdata++ solver as argument
@@ -182,7 +210,7 @@ namespace setup
       dz = (Z / si::metres) / (nz-1); 
 
     // initial potential temperature & water vapour mixing ratio profiles
-    solver.advectee(ix::th) = th_dry()(j * dz); 
+    solver.advectee(ix::th) = th_dry_fctr()(j * dz); 
     // randomly prtrb tht
     std::random_device rd;
     auto seed = rd();
@@ -203,7 +231,7 @@ namespace setup
     solver.advectee(ix::w) = 0;  
 
     // density profile
-    solver.g_factor() = rhod()(j * dz);
+    solver.g_factor() = rhod_fctr()(j * dz);
   }
 
   // lognormal aerosol distribution

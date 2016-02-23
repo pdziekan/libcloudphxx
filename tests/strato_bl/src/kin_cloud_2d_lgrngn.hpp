@@ -25,7 +25,21 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
 
   // member fields
   std::unique_ptr<libcloudphxx::lgrngn::particles_proto_t<real_t>> prtcls;
+  typename parent_t::arr_t rhod, w_LS, th_init, F;
+  blitz::Array<real_t, 1> j_i;
 
+  // global arrays, shared among threads
+  typename parent_t::arr_t &tmp1,
+                           &tmp2,
+                           &r_l;  // these 3 are modified during simulation
+/*
+                           &rhod,
+                           &w_LS, 
+                           &th_init, // these 3 are set during init
+*/
+/*                           &F, // radiatvie heating
+                           &Q, // radiatvie heating hlpr
+                           &j_i; // inversion height index */
   // helper methods
   void diag()
   {
@@ -127,6 +141,8 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
         params.cloudph_opts_init
       ));
 
+//  std::cout << "call init" << std::endl;
+//  std::cout << "rhod " << rhod << std::endl;
 	prtcls->init(
 	  make_arrinfo(this->mem->advectee(ix::th)),
 	  make_arrinfo(this->mem->advectee(ix::rv)),
@@ -144,50 +160,176 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
     const int &at 
   )   
   {   
+//  std::cout << "call updatre rhs" << std::endl;
     parent_t::update_rhs(rhs, dt, at);
     using ix = typename ct_params_t::ix;
 
     const auto &Tht = this->state(ix::th); 
+    const auto &rv = this->state(ix::rv); 
     const auto &ijk = this->ijk;
     const auto &i = this->i;
     const auto &j = this->j;
 
-
     const real_t g = 9.8; 
 
     switch (at) 
+
     {   
       case (0): 
       {   
-//        rhs.at(ix::tht)(ijk) += H(ijk) - (*this->mem->vab_coeff)(ijk) * (Tht(ijk) - th_init(ijk));
-
 // TODO: update rhs fails for non-serial libmpdata
+/*
+        // buoyancy
         tmp1(ijk) = g * (Tht(ijk) - th_init(ijk)) / th_init(ijk);
-//std::cout << tmp1 << std::endl;
         this->xchng_sclr(tmp1, i, j); 
-//std::cout << tmp1 << std::endl;
         tmp2(i, j) = 0.25 * (tmp1(i, j + 1) + 2 * tmp1(i, j) + tmp1(i, j - 1));
         rhs.at(ix::w)(ijk) += tmp2(ijk);
+
         // large-scale vertical wind
         for(auto type : std::set<int>{ix::th, ix::rv, ix::u, ix::w})
         {
           tmp1(ijk) = this->state(type)(ijk);
-          this->xchng_sclr(tmp1, i, j); 
-          tmp2(i, j) = - w_LS(i, j) * (tmp1(i, j + 1) - tmp1(i, j - 1)) / (2. * this->dj);
+          this->xchng_sclr(tmp1, i, j);
+          tmp2(i, j) = - w_LS(i, j) * (tmp1(i, j + 1) - tmp1(i, j - 1)) / (2. * this->dj); // use built-in blitz stencil?
           rhs.at(type)(ijk) += tmp2(ijk);
         }
+*/
+        // --- radiative heating ---
+        // TODO: adapt it to trapezoidal integration
+        {
+          // calc liquid water specific mixing ratio
+          int nx = this->mem->grid_size[0].length(); //76
+          int nz = this->mem->grid_size[1].length(); //76
+//          std::cout << "nx: " << nx << "nz: " << nz << std::endl;
+          if(this->rank==0)
+          {
+            prtcls->diag_all();
+            prtcls->diag_wet_mom(3);
+//            blitz::Array<real_t,2> tmp_r_l(prtcls->outbuf(), blitz::shape(nx, nz), blitz::neverDeleteData);
+//            std::cout << "tmp_r_l("<<this->rank<<"): " <<  tmp_r_l << std::endl;
+            auto rl = r_l(blitz::Range(0,nx-1), blitz::Range(0,nz-1)); // rl references the nohalo subdomain
+            rl = blitz::Array<real_t,2>(prtcls->outbuf(), blitz::shape(nx, nz), blitz::duplicateData); // copy in data from outbuf
+//            std::cout << "r_l("<<this->rank<<"): " <<  r_l << std::endl;
+            rl = rl * 4./3. * 1000. * 3.14159;
+            // now multiply by rhod and kappa
+            rl = rl * rhod; 
+            rl = rl * setup::heating_kappa;
+          }
+          this->mem->barrier();
+
+          // index of first cell above inversion
+          blitz::secondIndex ji;
+          j_i(i) = blitz::first( (rv(ijk) + r_l(ijk))< setup::q_i, ji) - rv.base(1); // rv and r_l have same bases (first indices), subarrays (i.e. rv(ijk)) start with the same base as original arr (i.e. rv)!
+
+          // calc Eqs. 5 and 6 from Ackerman et al 2009
+          // TODO: z-th cell will be accounted for twice (in each integral)...
+          for(int x = i.first() ; x <= i.last(); ++x) // 0..75 || 0..37 38..75 || ...
+          {
+            for(int z = 0 ; z < nz; ++z)
+            {
+              F(x, z) =  setup::F_0 * exp(- (nz - z) * this->dj *  blitz::sum(r_l(x, blitz::Range(z, nz-1))));
+//              std::cout << x << " " << z << " " << r_l(x, blitz::Range(z,nz-1)) << std::endl << blitz::sum(r_l(x, blitz::Range(z, nz-1))) << " " << F(x, z) << std::endl;
+  //            if(x==3)
+    //            std::cout << z << " " << F(x,z) << std::endl;
+//              if(z>0)
+              F(x, z) += setup::F_1 * exp(- ((z) - 0) * this->dj * blitz::sum(r_l(x, blitz::Range(0, z))));
+  //            else
+    //            F(x, z) += setup::F_1 * exp(- this->dj * blitz::sum(r_l(x, blitz::Range(0, 0))));
+
+      //        if(x==3)
+        //        std::cout << z << " " << F(x,z) << std::endl;
+
+              if(z > j_i(x) )
+              {
+                real_t z_d = (z - j_i(x)) * this->dj;
+                F(x, z) += setup::c_p * setup::rho_i * setup::D * (0.25 * pow(z_d, 4./3) + j_i(x) * this->dj * pow(z_d, 1./3)); 
+              }
+
+          //    if(x==3)
+            //    std::cout << z << " " << F(x,z) << std::endl;
+              F(x, z) = F(x, z) / (libcloudphxx::common::moist_air::c_p<real_t>(rv(x, z)) * si::kilograms * si::kelvins / si::joules); // divide by specific heat capacity
+              F(x, z) = F(x, z) / (libcloudphxx::common::theta_dry::T<real_t>(Tht(x, z) * si::kelvins, rhod(x,z) * si::kilograms / si::metres  / si::metres / si::metres) / si::kelvins); // divide by temperature
+            }
+          }
+          F(ijk) = F(ijk) / this->dj / rhod(ijk); // heating[W/m^2] / cell height[m] / rhod[kg/m^3] / specific heat capacity of moist air [J/K/kg]
+          // Eq. 3.33 from Curry and Webster
+          blitz::Range notop(0, nz-2);
+          tmp1(i, notop) -= Tht(i,notop) *           // theta dry
+                                (F(i, notop+1) - F(i, notop)); // gradient of heat flux 
+          tmp1(i, j.last()) -= Tht(i,j.last()) *              // theta dry
+                                (F(i, j.last()) - F(i, j.last()-1));    // gradient of heat flux 
+          this->xchng_sclr(tmp1, i, j);
+          tmp2(i, j) = 0.25 * (tmp1(i, j + 1) + 2 * tmp1(i, j) + tmp1(i, j - 1));
+          rhs.at(ix::th)(ijk) += tmp2(ijk);
+
+// debug output
+
+for(int rank=0;rank<4;++rank)
+{
+if(this->rank==rank)
+{
+          std::cout << "rv " << rv << std::endl;
+          std::cout << "rv(ijk) " << rv(ijk) << std::endl;
+          std::cout << "rl " << r_l << std::endl;
+          std::cout << "rl(ijk) " << r_l(ijk) << std::endl;
+          std::cout << "rhod(ijk) " << rhod(ijk) << std::endl;
+          std::cout << "F(ijk) " << F(ijk) << std::endl;
+          std::cout << "rhs(th) " << rhs.at(ix::th) << std::endl;
+          std::cout << "th " << Tht << std::endl;
+//          std::cout << "first " << blitz::first( (rv + r_l ) < setup::q_i, ji) << std::endl;
+          std::cout << "ji " << j_i(i) << std::endl;
+          std::cout << this->rank << " " << i.first() << " " << i.last() << std::endl;
+          std::cout << this->rank << " " << j.first() << " " << j.last() << std::endl;
+          std::cout << this->rank << " " << ijk.lbound(0) << " " << ijk.ubound(0) << std::endl;
+          std::cout << this->rank << " " << ijk.lbound(1) << " " << ijk.ubound(1) << std::endl;
+}
+this->mem->barrier();
+}
+
+        }
+        // --- surface fluxes ---
+/*
+        {
+          // sensible heat
+          for(int x = i.first() ; x <= i.last(); ++x)
+          {
+            F(x, 0) = setup::F_sens / (libcloudphxx::common::moist_air::c_p<real_t>(this->state(ix::rv)(x, 0)) * si::kilograms * si::kelvins / si::joules); // heating divided by specific heat capacity
+            F(x, 0) = F(x, 0) / (libcloudphxx::common::theta_dry::T<real_t>(Tht(x, 0) * si::kelvins, rhod(x,0) * si::kilograms / si::metres  / si::metres / si::metres) / si::kelvins); // divide by temperature
+          }
+          // heating[W/m^2] / cell height[m] / rhod[kg/m^3] / specific heat capacity of moist air [J/K/kg]
+          rhs.at(ix::th)(i, blitz::Range(0,0)) += F(i, blitz::Range(0,0)) *                                                       // heat in W/m^2 divided by spec heat capacity
+            Tht(i, blitz::Range(0,0)) /                                                                                           // times dry potential temp
+            this->dj /                                                                                                            // divide by cell height
+            rhod(i, blitz::Range(0,0));                                                                                           // divide by density
+
+          // latent heat
+          // heating[W/m^2] / cell height[m] / rhod[kg/m^3] / latent heat of evaporation [J/kg]
+          rhs.at(ix::rv)(i, blitz::Range(0,0)) += setup::F_lat /                           // heating 
+          (libcloudphxx::common::const_cp::l_tri<real_t>() * si::kilograms / si::joules) / // latent heat of evaporation
+          this->dj /                                                                       // cell height
+          rhod(i, blitz::Range(0,0));                                                      // density
+ 
+          // momentum flux
+          for(int x = i.first() ; x <= i.last(); ++x)
+          {
+            F(x, 0) = this->state(ix::u)(x, 0) < 0 ? 1 : -1;  // sign of u
+          }
+          rhs.at(ix::u)(i, blitz::Range(0,0)) += F(i, blitz::Range(0,0)) *  pow(setup::u_fric,2) /  this->dj;  
+        }
+*/
         break;
       }   
-   
+
+/*   
       case (1): 
       {   
-//        rhs.at(ix::tht)(ijk) += (H(ijk) - (*this->mem->vab_coeff)(ijk) * (Tht(ijk) - th_init(ijk)))
-//                                / (1.0 + 0.5 * (*this->mem->vab_coeff)(ijk) * this->dt);
 
+        // buoyancy
         tmp1(ijk) = g * (Tht(ijk) + 0.5 * this->dt * rhs.at(ix::th)(ijk) - th_init(ijk)) / th_init(ijk);
         this->xchng_sclr(tmp1, i, j); 
         tmp2(i, j) = 0.25 * (tmp1(i, j + 1) + 2 * tmp1(i, j) + tmp1(i, j - 1));
         rhs.at(ix::w)(ijk) += tmp2(ijk);
+
         // large-scale vertical wind
         for(auto type : std::set<int>{ix::th, ix::rv, ix::u, ix::w})
         {
@@ -196,82 +338,9 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
           tmp2(i, j) = - w_LS(i, j) * (tmp1(i, j + 1) - tmp1(i, j - 1)) / (2. * this->dj);
           rhs.at(type)(ijk) += tmp2(ijk);
         }
-        // --- radiative heating ---
-        // TODO: adapt it to trapezoidal integration
-        {
-          // calc liquid water specific mixing ratio
-          int nx = this->mem->grid_size[0].length(); 
-          int nz = this->mem->grid_size[1].length(); 
-          if(this->rank==0)
-          {
-//std::cout<<"diag all" << std::endl;
-            prtcls->diag_all();
-//std::cout<<"diag wet mom 3" << std::endl;
-            prtcls->diag_wet_mom(3);
-//std::cout<<"diag Arr fron ourbug" << std::endl;
-            r_l = blitz::Array<real_t,2>(prtcls->outbuf(), blitz::shape(nx, nz), blitz::neverDeleteData);
-//            std::cout << "r_l("<<this->rank<<"): " <<  r_l << std::endl;
-            r_l = r_l * 4./3. * 1000. * 3.14159;
-            // now multiply by rhod and kappa
-            r_l = r_l * rhod; 
-            r_l = r_l * setup::heating_kappa;
-          }
-          this->mem->barrier();
-   //       std::cout << "r_l: " <<  r_l << std::endl;
-          // find inversion height
-          blitz::secondIndex j;
-          j_i = blitz::first( (this->mem->advectee(ix::rv) + r_l) < setup::q_i, j);
-     //     std::cout << "j_i: " << j_i << std::endl;
-
-          // calc Eqs. 5 and 6 from Ackerman et al 2009
-          for(int i = 0 ; i < nx; ++i)
-          {
-            for(int j = 0 ; j < nz; ++j)
-            {
-              Q(i, j) = this->mem->sum(r_l, rng_t(i, i), rng_t(j, this->j.last()), false);
-              Q(i, j) = Q(i, j) * (nz - j) * this->dj;
-              F(i, j) = setup::F_0 * exp(- Q(i, j));
-
-              if(j > 0)
-              {
-                Q(i, j) = this->mem->sum(r_l, rng_t(i, i), rng_t(0, j-1), false);
-                Q(i, j) = Q(i, j) * (nz - j) * this->dj;
-                F(i, j) += setup::F_0 * exp(- Q(i, j));
-              }
-              if(j > j_i(i) )
-              {
-                real_t z_d = (j - j_i(i)) * this->dj;
-                F(i, j) += setup::c_p * setup::rho_i * setup::D * (0.25 * pow(z_d, 4./3) + j_i(i) * this->dj * pow(z_d, 1./3)); 
-              }
-     //         std::cout << "F: " << F << std::endl;
-              F(i, j) = F(i, j) / (libcloudphxx::common::moist_air::c_p<real_t>(this->state(ix::rv)(i, j)) * si::kilograms * si::kelvins / si::joules); // divide by specific heat capacity
-            }
-          }
-          rhs.at(ix::th)(ijk) += F(ijk) / this->dj / rhod(ijk); // heating[W/m^2] / cell height[m] / rhod[kg/m^3] / specific heat capacity of moist air [J/K/kg]
-        }
-        // --- surface fluxes ---
-        {
-          int nx = this->mem->grid_size[0].length(); 
-
-          // sensible heat
-          for(int i = 0 ; i < nx; ++i)
-          {
-            F(i, 0) = setup::F_sens / (libcloudphxx::common::moist_air::c_p<real_t>(this->state(ix::rv)(i, 0)) * si::kilograms * si::kelvins / si::joules); // divide by specific heat capacity
-          }
-          rhs.at(ix::th)(i, blitz::Range(0,0)) += F(i, blitz::Range(0,0)) / this->dj / rhod(i, blitz::Range(0,0)); // heating[W/m^2] / cell height[m] / rhod[kg/m^3] / specific heat capacity of moist air [J/K/kg]
-
-          // latent heat
-          rhs.at(ix::rv)(i, blitz::Range(0,0)) += setup::F_lat / (libcloudphxx::common::const_cp::l_tri<real_t>() * si::kilograms / si::joules) / this->dj / rhod(i, blitz::Range(0,0)); // heating[W/m^2] / cell height[m] / rhod[kg/m^3] / latent heat of evaporation [J/kg]
- 
-          // momentum flux
-          for(int i = 0 ; i < nx; ++i)
-          {
-            F(i, 0) = this->state(ix::u)(i, 0) < 0 ? 1 : -1;  // sign of u
-          }
-          rhs.at(ix::u)(i, blitz::Range(0,0)) += F(i, blitz::Range(0,0)) *  pow(setup::u_fric,2) /  this->dj; 
-        }
         break;
-      }   
+      }
+*/
     }  
   }
 
@@ -316,8 +385,8 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
         // ... and now dividing them by rhod (z=0 is located at j=1/2)
         {
           blitz::secondIndex j;
-          Cx /= setup::rhod()(   j     * this->dj);
-          Cz /= setup::rhod()((j - .5) * this->dj);
+          Cx /= setup::rhod_fctr()(   j     * this->dj);
+          Cz /= setup::rhod_fctr()((j - .5) * this->dj);
         }
         // running synchronous stuff
         prtcls->step_sync(
@@ -384,15 +453,6 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
 
   // per-thread copy of params
   rt_params_t params;
-  blitz::Array<real_t,2> th_init;
-  blitz::Array<real_t,2> tmp1;
-  blitz::Array<real_t,2> tmp2;
-  blitz::Array<real_t,2> rhod;
-  blitz::Array<real_t,2> w_LS; //large-scale vertical wind
-  blitz::Array<real_t,2> F; // radiatvie heating
-  blitz::Array<real_t,2> Q; // radiatvie heating hlpr
-  blitz::Array<real_t,1> j_i; // inversion height index
-  blitz::Array<real_t,2> r_l; 
 
   public:
 
@@ -402,9 +462,31 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
     const rt_params_t &p
   ) : 
     parent_t(args, p),
-    params(p)
+    params(p),
+    tmp1(args.mem->tmp[__FILE__][0][0]),
+    tmp2(args.mem->tmp[__FILE__][0][1]),
+    r_l(args.mem->tmp[__FILE__][0][2])
   {
-    th_init.resize(this->mem->grid_size[0].length(), this->mem->grid_size[1].length());
+    int nx = this->mem->grid_size[0].length();
+    int nz = this->mem->grid_size[1].length();
+    rhod.resize(nx,nz);
+    w_LS.resize(nx,nz);
+    th_init.resize(nx,nz);
+    F.resize(nx,nz);
+    j_i.resize(nx);
+
+    blitz::secondIndex j;
+    // prescribed density
+    rhod = setup::rhod_fctr()(j * params.dz);
+//    std::cout << "rhod w setopts" << rhod << std::endl;
+
+    // prescribed large-scale vertical wind
+    w_LS = setup::w_LS_fctr()(j * params.dz);
+
+    // prescribed initial temp profile
+    th_init = setup::th_dry_fctr()(j * params.dz);
+
+/*    th_init.resize(this->mem->grid_size[0].length(), this->mem->grid_size[1].length());
     rhod.resize(this->mem->grid_size[0].length(), this->mem->grid_size[1].length());
     tmp1.resize(blitz::Range(-2, this->mem->grid_size[0].length() + 2), blitz::Range(-2, this->mem->grid_size[1].length() + 2));
     tmp2.resize(blitz::Range(-2, this->mem->grid_size[0].length() + 2), blitz::Range(-2, this->mem->grid_size[1].length() + 2));
@@ -413,12 +495,15 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
     Q.resize(this->mem->grid_size[0].length(), this->mem->grid_size[1].length());
     r_l.resize(this->mem->grid_size[0].length(), this->mem->grid_size[1].length());
     j_i.resize(this->mem->grid_size[0].length());
-    blitz::secondIndex j;
-    th_init = setup::th_dry()(j * p.dz);
-    rhod = setup::rhod()(j * p.dz);
-    w_LS = setup::w_LS()(j * p.dz);
+*/
 
     // delaying any initialisation to ante_loop as rank() does not function within ctor! // TODO: not anymore!!!
     // TODO: equip rank() in libmpdata with an assert() checking if not in serial block
   }  
+
+  static void alloc(typename parent_t::mem_t *mem, const int &n_iters)
+  {
+    parent_t::alloc(mem, n_iters);
+    parent_t::alloc_tmp_sclr(mem, __FILE__, 3); // tmp1, tmp2, r_l
+  }
 };
