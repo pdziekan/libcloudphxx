@@ -178,7 +178,6 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
       case (0): 
       {   
 // TODO: update rhs fails for non-serial libmpdata
-/*
         // buoyancy
         tmp1(ijk) = g * (Tht(ijk) - th_init(ijk)) / th_init(ijk);
         this->xchng_sclr(tmp1, i, j); 
@@ -193,7 +192,6 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
           tmp2(i, j) = - w_LS(i, j) * (tmp1(i, j + 1) - tmp1(i, j - 1)) / (2. * this->dj); // use built-in blitz stencil?
           rhs.at(type)(ijk) += tmp2(ijk);
         }
-*/
         // --- radiative heating ---
         // TODO: adapt it to trapezoidal integration
         {
@@ -263,7 +261,7 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
           rhs.at(ix::th)(ijk) += tmp2(ijk);
 
 // debug output
-
+/*
 for(int rank=0;rank<4;++rank)
 {
 if(this->rank==rank)
@@ -285,10 +283,10 @@ if(this->rank==rank)
 }
 this->mem->barrier();
 }
+*/
 
         }
         // --- surface fluxes ---
-/*
         {
           // sensible heat
           for(int x = i.first() ; x <= i.last(); ++x)
@@ -316,7 +314,6 @@ this->mem->barrier();
           }
           rhs.at(ix::u)(i, blitz::Range(0,0)) += F(i, blitz::Range(0,0)) *  pow(setup::u_fric,2) /  this->dj;  
         }
-*/
         break;
       }   
 

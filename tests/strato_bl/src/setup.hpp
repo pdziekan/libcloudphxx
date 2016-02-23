@@ -34,7 +34,7 @@ namespace setup
     X    = 2560 * si::metres;
   const real_t z_i  = 795; //initial inversion height
   const quantity<si::time, real_t>
-    dt = real_t(0.1) * si::seconds;
+    dt = real_t(.1) * si::seconds;
   const real_t heating_kappa = 85; // m^2/kg
   const real_t F_0 = 70; // w/m^2
   const real_t F_1 = 22; // w/m^2
