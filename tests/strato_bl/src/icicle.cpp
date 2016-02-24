@@ -33,8 +33,9 @@ void run(int nx, int nz, int nt, const std::string &outdir, const int &outfreq, 
   p.spinup = spinup;
   p.relax_th_rv = relax_th_rv;
   p.prs_tol=1e-7;
-  setup::setopts(p, nx, nz);
   setopts_micro<solver_t>(p, nx, nz, nt);
+  //std::cout << "params.rhod po setopts micro " << p.rhod << " "  << *p.rhod << std::endl;
+  setup::setopts(p, nx, nz);
 
   // solver instantiation
   std::unique_ptr<
@@ -84,7 +85,7 @@ struct ct_params_common : ct_params_default_t
   using real_t = setup::real_t;
   enum { n_dims = 2 };
   enum { opts = opts::nug | opts::iga | opts::fct }; 
-  enum { rhs_scheme = solvers::trapez };
+  enum { rhs_scheme = solvers::euler_a /* solvers::trapez*/ }; // TODO: turn trapez back on
   enum { prs_scheme = solvers::cr };
 };
 
