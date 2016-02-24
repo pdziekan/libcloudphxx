@@ -39,7 +39,6 @@ void plot(Gnuplot &gp, const data_t &data)
 
   gp << "set xrange [0:" << tmp.extent(0)-1 << "]\n";
   gp << "set yrange [0:" << tmp.extent(1)-1 << "]\n";
-  gp << "splot '-' binary" << gp.binfmt(tmp) << " scan=yx origin=(0,0,0) with image failsafe notitle\n";
-
+  gp << "splot '-' binary" << gp.binfmt(tmp.transpose(blitz::secondDim, blitz::firstDim)) << " scan=yx origin=(0,0,0) with image failsafe notitle\n";
   gp.sendBinary(tmp);
 }

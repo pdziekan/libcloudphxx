@@ -33,7 +33,7 @@ endif()
 
 ############################################################################################
 # Boost libraries
-find_package(Boost QUIET)
+find_package(Boost)
 if(Boost_FOUND)
   set(libcloudphxx_LIBRARIES "${libcloudphxx_LIBRARIES};${Boost_LIBRARIES}")
   set(libcloudphxx_INCLUDE_DIRS "${libcloudphxx_INCLUDE_DIRS};${Boost_INCLUDE_DIRS}")

@@ -31,7 +31,7 @@ namespace setup
   const quantity<si::length, real_t> 
     z_0  = 0    * si::metres,
     Z    = 1500 * si::metres, 
-    X    = 2560 * si::metres;
+    X    = 6400 * si::metres;
   const real_t z_i  = 795; //initial inversion height
   const quantity<si::time, real_t>
     dt = real_t(.1) * si::seconds;
