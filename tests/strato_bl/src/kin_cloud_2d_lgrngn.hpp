@@ -190,7 +190,8 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
           tmp1(ijk) = this->state(type)(ijk);
           this->xchng_sclr(tmp1, i, j);
           tmp2(i, j) = - w_LS(i, j) * (tmp1(i, j + 1) - tmp1(i, j - 1)) / (2. * this->dj); // use built-in blitz stencil?
-          rhs.at(type)(ijk) += tmp2(ijk);
+          tmp1(i, j) = 0.25 * (tmp2(i, j + 1) + 2 * tmp2(i, j) + tmp2(i, j - 1));
+          rhs.at(type)(ijk) += tmp1(ijk);
         }
         // --- radiative heating ---
         // TODO: adapt it to trapezoidal integration
@@ -251,11 +252,13 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
           }
           F(ijk) = F(ijk) / this->dj / rhod(ijk); // heating[W/m^2] / cell height[m] / rhod[kg/m^3] / specific heat capacity of moist air [J/K/kg]
           // Eq. 3.33 from Curry and Webster
-          blitz::Range notop(0, nz-2);
-          tmp1(i, notop) -= Tht(i,notop) *           // theta dry
-                                (F(i, notop+1) - F(i, notop)); // gradient of heat flux 
-          tmp1(i, j.last()) -= Tht(i,j.last()) *              // theta dry
-                                (F(i, j.last()) - F(i, j.last()-1));    // gradient of heat flux 
+          blitz::Range notopbot(1, nz-2);
+          tmp1(i, notopbot) -= Tht(i,notopbot) *                          // theta dry
+                            (F(i, notopbot+1) - F(i, notopbot-1)) / 2.;   // gradient of heat flux 
+          tmp1(i, j.last()) -= Tht(i,j.last()) *                          // theta dry
+                               (F(i, j.last()) - F(i, j.last()-1));       // gradient of heat flux 
+          tmp1(i, 0) -= Tht(i,0) *                                        // theta dry
+                        (F(i, 1) - F(i, 0));                              // gradient of heat flux 
           this->xchng_sclr(tmp1, i, j);
           tmp2(i, j) = 0.25 * (tmp1(i, j + 1) + 2 * tmp1(i, j) + tmp1(i, j - 1));
           rhs.at(ix::th)(ijk) += tmp2(ijk);
@@ -308,11 +311,13 @@ this->mem->barrier();
           rhod(i, blitz::Range(0,0));                                                      // density
  
           // momentum flux
+/*
           for(int x = i.first() ; x <= i.last(); ++x)
           {
             F(x, 0) = this->state(ix::u)(x, 0) < 0 ? 1 : -1;  // sign of u
           }
           rhs.at(ix::u)(i, blitz::Range(0,0)) += F(i, blitz::Range(0,0)) *  pow(setup::u_fric,2) /  this->dj;  
+*/
         }
         break;
       }   
