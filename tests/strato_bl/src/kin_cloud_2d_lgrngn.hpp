@@ -201,21 +201,6 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
           int nx = this->mem->grid_size[0].length(); //76
           int nz = this->mem->grid_size[1].length(); //76
 //          std::cout << "nx: " << nx << "nz: " << nz << std::endl;
-          if(this->rank==0)
-          {
-            prtcls->diag_all();
-            prtcls->diag_wet_mom(3);
-//            blitz::Array<real_t,2> tmp_r_l(prtcls->outbuf(), blitz::shape(nx, nz), blitz::neverDeleteData);
-//            std::cout << "tmp_r_l("<<this->rank<<"): " <<  tmp_r_l << std::endl;
-            auto rl = r_l(blitz::Range(0,nx-1), blitz::Range(0,nz-1)); // rl references the nohalo subdomain
-            rl = blitz::Array<real_t,2>(prtcls->outbuf(), blitz::shape(nx, nz), blitz::duplicateData); // copy in data from outbuf
-//            std::cout << "r_l("<<this->rank<<"): " <<  r_l << std::endl;
-            rl = rl * 4./3. * 1000. * 3.14159;
-            // now multiply by rhod and kappa
-            rl = rl * rhod; 
-            rl = rl * setup::heating_kappa;
-          }
-          this->mem->barrier();
 
           // index of first cell above inversion
           blitz::secondIndex ji;
@@ -360,6 +345,17 @@ this->mem->barrier();
         ftr.get();
       } else assert(!ftr.valid()); 
 #endif
+
+      // store liquid water content to be used in update_rhs (if done in update_rhs, it fails on async runs)
+      int nx = this->mem->grid_size[0].length(); //76
+      int nz = this->mem->grid_size[1].length(); //76
+      prtcls->diag_all();
+      prtcls->diag_wet_mom(3);
+      auto rl = r_l(blitz::Range(0,nx-1), blitz::Range(0,nz-1)); // rl references the nohalo subdomain
+      rl = blitz::Array<real_t,2>(prtcls->outbuf(), blitz::shape(nx, nz), blitz::duplicateData); // copy in data from outbuf
+      rl = rl * 4./3. * 1000. * 3.14159;
+      rl = rl * rhod; 
+      rl = rl * setup::heating_kappa;
 
       {
         using libmpdataxx::arakawa_c::h;
