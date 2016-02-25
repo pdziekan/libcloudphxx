@@ -33,7 +33,7 @@ int main(int ac, char** av)
   }
 
   string opts_common = 
-    "--outfreq=6000 --nt=144000 --spinup=36000 --nx=128 --nz=300 --relax_th_rv=false"; // DYCOMS: 128x300
+    "--outfreq=600 --nt=14400 --spinup=3600 --nx=128 --nz=300 --relax_th_rv=false"; // DYCOMS: 128x300
   set<string> opts_micro({
 //    "--micro=blk_1m --outdir=out_blk_1m",
 //    "--micro=blk_2m --outdir=out_blk_2m",

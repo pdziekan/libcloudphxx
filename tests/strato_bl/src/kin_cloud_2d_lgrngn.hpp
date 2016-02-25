@@ -197,7 +197,6 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
         // --- radiative heating ---
         // TODO: adapt it to trapezoidal integration
         {
-          // calc liquid water specific mixing ratio
           int nx = this->mem->grid_size[0].length(); //76
           int nz = this->mem->grid_size[1].length(); //76
 //          std::cout << "nx: " << nx << "nz: " << nz << std::endl;
