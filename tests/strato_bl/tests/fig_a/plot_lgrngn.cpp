@@ -74,7 +74,7 @@ int main(int ac, char** av)
 	//                                                         rho_w  kg2g
 	auto tmp = h5load(h5, "rw_rng000_mom3", at * n["outfreq"]) * 4./3 * 3.14 * 1e3 * 1e3;
 	gp << "set title 'cloud water mixing ratio [g/kg]'\n";
-	gp << "set cbrange [0:1.3]\n";
+//	gp << "set cbrange [0:1.3]\n";
 	plot(gp, tmp);
       }
       else if (plt == "rr")
@@ -84,7 +84,7 @@ int main(int ac, char** av)
 	auto tmp = h5load(h5, "rw_rng001_mom3", at * n["outfreq"]) * 4./3 * 3.14 * 1e3 * 1e3;
 	gp << "set logscale cb\n";
 	gp << "set title 'rain water mixing ratio [g/kg]'\n";
-	gp << "set cbrange [1e-2:1]\n";
+//	gp << "set cbrange [1e-2:1]\n";
 	plot(gp, tmp);
 	gp << "unset logscale cb\n";
       }
@@ -93,7 +93,7 @@ int main(int ac, char** av)
 	// cloud particle concentration
 	auto tmp = 1e-6 * h5load(h5, "rw_rng000_mom0", at * n["outfreq"]);
 	gp << "set title 'cloud droplet spec. conc. [mg^{-1}]'\n";
-	gp << "set cbrange [0:150]\n";
+//	gp << "set cbrange [0:150]\n";
 	plot(gp, tmp);
       }
       else if (plt == "nr")
@@ -101,7 +101,7 @@ int main(int ac, char** av)
 	// rain particle concentration
 	auto tmp = 1e-6 * h5load(h5, "rw_rng001_mom0", at * n["outfreq"]);
 	gp << "set title 'rain drop spec. conc. [mg^{-1}]'\n";
-	gp << "set cbrange [.01:10]\n";
+//	gp << "set cbrange [.01:10]\n";
 	gp << "set logscale cb\n";
 	plot(gp, tmp);
 	gp << "unset logscale cb\n";
@@ -111,7 +111,7 @@ int main(int ac, char** av)
 	// effective radius
 	auto r_eff = h5load(h5, "rw_rng000_mom3", at * n["outfreq"]) / h5load(h5, "rw_rng000_mom2", at * n["outfreq"]) * 1e6;
 	gp << "set title 'cloud droplet effective radius [μm]'\n"; 
-	gp << "set cbrange [1:20]\n";
+//	gp << "set cbrange [1:20]\n";
 	plot(gp, r_eff);
       }
       else if (plt == "na")
@@ -126,7 +126,7 @@ int main(int ac, char** av)
 	  str << "rw_rng" << std::setw(3) << std::setfill('0') << i + 2  << "_mom0";
 	  tmp = tmp + h5load(h5, str.str(), at * n["outfreq"]);
 	}
-	gp << "set cbrange [" << 0 << ":" << 150 << "]\n";
+//	gp << "set cbrange [" << 0 << ":" << 150 << "]\n";
 	gp << "set title 'aerosol concentration [mg^{-1}]'\n";
 	tmp /= 1e6;
 	plot(gp, tmp);
