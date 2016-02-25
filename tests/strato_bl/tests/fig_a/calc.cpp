@@ -33,11 +33,11 @@ int main(int ac, char** av)
   }
 
   string opts_common = 
-    "--outfreq=6 --nt=108 --spinup=12 --nx=21 --nz=21 --relax_th_rv=false"; // DYCOMS: 128x300
+    "--outfreq=6000 --nt=1800000 --spinup=36000 --nx=128 --nz=300 --relax_th_rv=false"; // DYCOMS: 128x300
   set<string> opts_micro({
 //    "--micro=blk_1m --outdir=out_blk_1m",
 //    "--micro=blk_2m --outdir=out_blk_2m",
-    "--adv_serial=false --micro=lgrngn --outdir=out_lgrngn --backend=CUDA --sd_conc=64 --sstp_cond=1 --sstp_coal=1"  
+    "--adv_serial=false --async=false --micro=lgrngn --outdir=out_lgrngn --backend=CUDA --sd_conc=64 --sstp_cond=1 --sstp_coal=1"  
       " --out_wet=\""
         ".5e-6:25e-6|0,1,2,3;" // FSSP
         "25e-6:1|0,3;"         // "rain"

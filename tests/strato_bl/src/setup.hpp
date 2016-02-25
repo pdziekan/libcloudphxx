@@ -31,7 +31,7 @@ namespace setup
   const quantity<si::length, real_t> 
     z_0  = 0    * si::metres,
     Z    = 1500 * si::metres, 
-    X    = 6400 * si::metres;
+    X    = 6400 * si::metres; // DYCOMS: 6400
   const real_t z_i  = 795; //initial inversion height
   const quantity<si::time, real_t>
     dt = real_t(.1) * si::seconds;
@@ -161,6 +161,8 @@ namespace setup
     params.dt = dt / si::seconds;
     params.dx = (X / si::metres) / (nx-1); 
     params.dz = (Z / si::metres) / (nz-1);
+    params.di = params.dx;
+    params.dj = params.dz;
  
     // prescribed density
 /*    blitz::Array<real_t, 2> rhod(nx, nz);

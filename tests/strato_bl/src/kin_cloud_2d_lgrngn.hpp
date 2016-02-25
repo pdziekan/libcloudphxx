@@ -107,7 +107,8 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
   bool get_rain() { return params.cloudph_opts.coal && params.cloudph_opts.sedi; }
   void set_rain(bool val) 
   { 
-    params.cloudph_opts.coal = params.cloudph_opts.sedi = val; 
+    params.cloudph_opts.coal = val;
+    params.cloudph_opts.sedi = val; 
     params.cloudph_opts.RH_max = val ? 44 : 1.01; // 1% limit during spinup // TODO: specify it somewhere else, dup in blk_2m
   };
 
@@ -218,7 +219,9 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
 
           // index of first cell above inversion
           blitz::secondIndex ji;
-          j_i(i) = blitz::first( (rv(ijk) + r_l(ijk))< setup::q_i, ji) - rv.base(1); // rv and r_l have same bases (first indices), subarrays (i.e. rv(ijk)) start with the same base as original arr (i.e. rv)!
+          blitz::Array<real_t, 2> tmp(rv(ijk).shape());
+          tmp  = rv(ijk) + r_l(ijk);
+          j_i(i) = blitz::first( tmp< setup::q_i, ji) - rv.base(blitz::secondDim); // rv and r_l have same bases (first indices), subarrays (i.e. rv(ijk)) start with the same base as original arr (i.e. rv)!
 
           // calc Eqs. 5 and 6 from Ackerman et al 2009
           // TODO: z-th cell will be accounted for twice (in each integral)...
@@ -227,16 +230,7 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
             for(int z = 0 ; z < nz; ++z)
             {
               F(x, z) =  setup::F_0 * exp(- (nz - z) * this->dj *  blitz::sum(r_l(x, blitz::Range(z, nz-1))));
-//              std::cout << x << " " << z << " " << r_l(x, blitz::Range(z,nz-1)) << std::endl << blitz::sum(r_l(x, blitz::Range(z, nz-1))) << " " << F(x, z) << std::endl;
-  //            if(x==3)
-    //            std::cout << z << " " << F(x,z) << std::endl;
-//              if(z>0)
               F(x, z) += setup::F_1 * exp(- ((z) - 0) * this->dj * blitz::sum(r_l(x, blitz::Range(0, z))));
-  //            else
-    //            F(x, z) += setup::F_1 * exp(- this->dj * blitz::sum(r_l(x, blitz::Range(0, 0))));
-
-      //        if(x==3)
-        //        std::cout << z << " " << F(x,z) << std::endl;
 
               if(z > j_i(x) )
               {
@@ -244,8 +238,6 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
                 F(x, z) += setup::c_p * setup::rho_i * setup::D * (0.25 * pow(z_d, 4./3) + j_i(x) * this->dj * pow(z_d, 1./3)); 
               }
 
-          //    if(x==3)
-            //    std::cout << z << " " << F(x,z) << std::endl;
               F(x, z) = F(x, z) / (libcloudphxx::common::moist_air::c_p<real_t>(rv(x, z)) * si::kilograms * si::kelvins / si::joules); // divide by specific heat capacity
               F(x, z) = F(x, z) / (libcloudphxx::common::theta_dry::T<real_t>(Tht(x, z) * si::kelvins, rhod(x,z) * si::kilograms / si::metres  / si::metres / si::metres) / si::kelvins); // divide by temperature
             }
@@ -311,13 +303,11 @@ this->mem->barrier();
           rhod(i, blitz::Range(0,0));                                                      // density
  
           // momentum flux
-/*
           for(int x = i.first() ; x <= i.last(); ++x)
           {
             F(x, 0) = this->state(ix::u)(x, 0) < 0 ? 1 : -1;  // sign of u
           }
           rhs.at(ix::u)(i, blitz::Range(0,0)) += F(i, blitz::Range(0,0)) *  pow(setup::u_fric,2) /  this->dj;  
-*/
         }
         break;
       }   
@@ -368,7 +358,7 @@ this->mem->barrier();
       ) {
         assert(ftr.valid());
         ftr.get();
-      } else assert(!ftr.valid());
+      } else assert(!ftr.valid()); 
 #endif
 
       {
