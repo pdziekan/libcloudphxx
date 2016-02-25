@@ -135,14 +135,14 @@ namespace setup
 
   //aerosol bimodal lognormal dist. 
   const quantity<si::length, real_t>
-    mean_rd1 = real_t(.04e-6 / 2) * si::metres,
-    mean_rd2 = real_t(.15e-6 / 2) * si::metres;
+    mean_rd1 = real_t(.011e-6) * si::metres,
+    mean_rd2 = real_t(.06e-6) * si::metres;
   const quantity<si::dimensionless, real_t>
-    sdev_rd1 = real_t(1.4),
-    sdev_rd2 = real_t(1.6);
+    sdev_rd1 = real_t(1.2),
+    sdev_rd2 = real_t(1.7);
   const quantity<power_typeof_helper<si::length, static_rational<-3>>::type, real_t>
-    n1_stp = real_t(60e6) / si::cubic_metres,
-    n2_stp = real_t(40e6) / si::cubic_metres;
+    n1_stp = real_t(125e6) / si::cubic_metres,
+    n2_stp = real_t(65e6) / si::cubic_metres;
 
   //aerosol chemical composition parameters (needed for activation)
   // for lgrngn:
