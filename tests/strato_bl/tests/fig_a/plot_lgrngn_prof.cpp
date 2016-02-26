@@ -22,9 +22,9 @@ int main(int ac, char** av)
 
   Gnuplot gp;
   string file = h5 + ".plot/profiles.svg";
-  init_prof(gp, file, 2, 2, n); 
+  init_prof(gp, file, 3, 2, n); 
 
-  for (auto &plt : std::set<std::string>({"rtot", "rliq", "thliq", "wvar"}))
+  for (auto &plt : std::set<std::string>({"rtot", "rliq", "wvar", "w3rd"}))
   {
     blitz::firstIndex i;
     blitz::secondIndex j;
@@ -70,6 +70,18 @@ int main(int ac, char** av)
         snap = snap * snap; // 2nd power
         res += snap;
         gp << "set title 'variance of w [m^2 / s^2]'\n";
+      }
+      else if (plt == "w3rd")
+      {
+	// variance of vertical velocity
+	auto tmp = h5load(h5, "w", at * n["outfreq"]);
+        blitz::Array<float, 2> snap(tmp);
+        res_prof = blitz::mean(snap(j,i), j); // mean w in horizontal at this moment
+        for(int ii = 0; ii < n["x"]; ++ii)
+          snap(ii,all) = snap(ii,all) - res_prof(j); // snap is now (w - w_mean)
+        snap = snap * snap * snap; // 3rd power
+        res += snap;
+        gp << "set title '3rd mom of w [m^3 / s^3]'\n";
       }
       else assert(false);
     } // time loop

@@ -66,7 +66,7 @@ namespace setup
     {
       const quantity<si::dimensionless, real_t> q_t = z < z_i ?
         9.45e-3 : 
-        (5. - 3. * (1. - exp((z - z_i)/500.))) * 1e-3;
+        (5. - 3. * (1. - exp((z_i - z)/500.))) * 1e-3;
       return q_t;
     }
     BZ_DECLARE_FUNCTOR(r_t);

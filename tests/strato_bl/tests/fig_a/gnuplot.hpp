@@ -27,6 +27,7 @@ void init_prof(
   gp << "set output '" << file << "'\n";
   gp << "set grid\n";
   gp << "set multiplot layout " << ny << "," << nx << "\n";
+  gp << "set yrange[0:1.2]\n";
 }
 
 void init(
