@@ -23,6 +23,7 @@ std::map<std::string, int> h5n(
       auto attr = h5d.openAttribute("dt");
       attr.read(attr.getDataType(), &dt);
     }
+    map["dt"] = dt;
 
     auto h5s = h5d.getSpace();
     const hsize_t two = 2, zero = 0;

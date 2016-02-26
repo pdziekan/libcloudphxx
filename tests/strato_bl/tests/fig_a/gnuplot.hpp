@@ -4,6 +4,31 @@
 #include <gnuplot-iostream.h>
 #include <map>
 
+
+void init_prof(
+  Gnuplot &gp, 
+  const std::string &file, 
+  const int &ny, const int &nx, 
+  std::map<std::string, int> n
+)
+{
+  boost::filesystem::create_directories(
+    boost::filesystem::path(file).parent_path()
+  );
+
+  gp << "set term svg dynamic enhanced fsize 13 size " << nx * 500 << "," << ny * 500 << "\n";
+  gp << "set size square\n";
+  gp << "set encoding utf8\n";
+  // progressive-rock connoisseur palette ;)
+//  gp << "dx = 6400./" << n["x"]-1 << "\n"; 
+//  gp << "dy = 1500./" << n["z"]-1 << "\n"; 
+//  gp << "set xlabel 'x [km]'\n";
+//  gp << "set ylabel 'z [km]'\n";
+  gp << "set output '" << file << "'\n";
+  gp << "set grid\n";
+  gp << "set multiplot layout " << ny << "," << nx << "\n";
+}
+
 void init(
   Gnuplot &gp, 
   const std::string &file, 
