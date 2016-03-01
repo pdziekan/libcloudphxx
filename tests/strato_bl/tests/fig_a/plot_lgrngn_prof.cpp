@@ -4,6 +4,14 @@
 #include "hdf5.hpp"
 #include <boost/tuple/tuple.hpp>
 
+using namespace blitz;
+
+double iscloudy(double x)
+{
+  return x > 20. ? 1. : 0.;
+}
+BZ_DECLARE_FUNCTION(iscloudy)
+
 int main(int ac, char** av)
 {
   if (ac != 2) error_macro("expecting 1 argument: dir containing out_lgrngn")
@@ -24,7 +32,7 @@ int main(int ac, char** av)
 
   Gnuplot gp;
   string file = h5 + ".plot/profiles.svg";
-  init_prof(gp, file, 3, 2, n); 
+  init_prof(gp, file, 3, 3, n); 
 
   blitz::Array<float, 2> rhod;
   // read density
@@ -57,7 +65,7 @@ int main(int ac, char** av)
     h5d.read(rhod.data(), H5::PredType::NATIVE_FLOAT, H5::DataSpace(2, ext), h5s);
   }
 
-  for (auto &plt : std::set<std::string>({"rtot", "rliq", "wvar", "w3rd", "prflux"}))
+  for (auto &plt : std::set<std::string>({"rtot", "rliq", "wvar", "w3rd", "prflux", "clfrac", "N_c"}))
   {
     blitz::firstIndex i;
     blitz::secondIndex j;
@@ -91,6 +99,31 @@ int main(int ac, char** av)
           res += snap;
         }
         gp << "set title 'total water r [g/kg] averaged over 2h-6h, w/o rw<0.5um'\n";
+      }
+      else if (plt == "N_c")
+      {
+	// cloud drops concentration [1/cm^3]
+        {
+          auto tmp = h5load(h5, "rw_rng000_mom0", at * n["outfreq"]);
+          blitz::Array<float, 2> snap(tmp);
+          snap *= rhod; // b4 it was specific moment
+          snap /= 1e6; // per cm^3
+          res += snap; 
+        }
+        gp << "set title 'cloud droplets ( 0.5um < r < 25um) concentration [1/cm^3]'\n";
+      }
+      else if (plt == "clfrac")
+      {
+	// cloud fraction (cloudy if N_c > 20/cm^3)
+        {
+          auto tmp = h5load(h5, "rw_rng000_mom0", at * n["outfreq"]);
+          blitz::Array<float, 2> snap(tmp);
+          snap *= rhod; // b4 it was specific moment
+          snap /= 1e6; // per cm^3
+          snap = iscloudy(snap);
+          res += snap; 
+        }
+        gp << "set title 'cloud fraction'\n";
       }
       else if (plt == "prflux")
       {
