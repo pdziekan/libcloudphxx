@@ -31,7 +31,7 @@ int main(int ac, char** av)
   int last_timestep = 21600. /  n["dt"] / n["outfreq"];
 
   Gnuplot gp;
-  string file = h5 + ".plot/profiles.svg";
+  string file = h5 + "_profiles.svg";
   init_prof(gp, file, 3, 3, n); 
 
   blitz::Array<float, 2> rhod;
