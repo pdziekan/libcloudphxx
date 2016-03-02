@@ -187,6 +187,9 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
     {   
       case (0): 
       {   
+        int nx = this->mem->grid_size[0].length(); //76
+        int ny = this->mem->grid_size[1].length(); //76
+        int nz = this->mem->grid_size[2].length(); //76
 // TODO: update rhs fails for non-serial libmpdata
         // buoyancy
         tmp1(ijk) = g * (Tht(ijk) - th_init(ijk)) / th_init(ijk);
@@ -206,9 +209,6 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
         // --- radiative heating ---
         // TODO: adapt it to trapezoidal integration
         {
-          int nx = this->mem->grid_size[0].length(); //76
-          int ny = this->mem->grid_size[1].length(); //76
-          int nz = this->mem->grid_size[2].length(); //76
 //          std::cout << "nx: " << nx << "nz: " << nz << std::endl;
 
           // index of first cell above inversion
@@ -301,14 +301,13 @@ this->mem->barrier();
           rhod(i, j, blitz::Range(0,0));                                                      // density
  
           // momentum flux
-          for(int x = i.first() ; x <= i.last(); ++x)
-          {
-            for(int y = j.first() ; y <= j.last(); ++y)
-            {
-              F(x, y, 0) = this->state(ix::u)(x, y, 0) < 0 ? 1 : -1;  // sign of u
-            }
-          }
-          rhs.at(ix::u)(i, j, blitz::Range(0,0)) += F(i, j, blitz::Range(0,0)) *  pow(setup::u_fric,2) /  this->dk;  
+          blitz::Array<real_t, 3> uMag(nx, ny);
+          uMag = sqrt(
+                   this->state(ix::u)(i, j, blitz::Range(0,0)) * this->state(ix::u)(i, j, blitz::Range(0,0)) +
+                   this->state(ix::v)(i, j, blitz::Range(0,0)) * this->state(ix::v)(i, j, blitz::Range(0,0))
+                 );
+          rhs.at(ix::u)(i, j, blitz::Range(0,0)) -= this->state(ix::u)(i, j, blitz::Range(0,0)) / uMag(i, j) *  pow(setup::u_fric,2) /  this->dk;  
+          rhs.at(ix::v)(i, j, blitz::Range(0,0)) -= this->state(ix::v)(i, j, blitz::Range(0,0)) / uMag(i, j) *  pow(setup::u_fric,2) /  this->dk;  
         }
         break;
       }   
