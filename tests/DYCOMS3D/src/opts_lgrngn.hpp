@@ -57,6 +57,7 @@ void setopts_micro(
       
   std::string backend_str = vm["backend"].as<std::string>();
   if (backend_str == "CUDA") rt_params.backend = libcloudphxx::lgrngn::CUDA;
+  else if (backend_str == "multi_CUDA") rt_params.backend = libcloudphxx::lgrngn::multi_CUDA;
   else if (backend_str == "OpenMP") rt_params.backend = libcloudphxx::lgrngn::OpenMP;
   else if (backend_str == "serial") rt_params.backend = libcloudphxx::lgrngn::serial;
 
