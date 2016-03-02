@@ -182,8 +182,8 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
 
     const real_t g = 9.8; 
 
+    // forcing
     switch (at) 
-
     {   
       case (0): 
       {   
