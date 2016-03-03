@@ -100,20 +100,30 @@ int main(int ac, char** av)
           res_prof(at) = blitz::mean(snap); 
         }
         catch(...) {;}
-      }/*
+      }
       else if (plt == "wvarmax")
       {
         // maximum variance of vertical velocity
-        auto tmp = h5load(h5, "w", at * n["outfreq"]);
-        blitz::Array<float, 2> snap(tmp);
-        blitz::Array<float, 1> mean(n["z"]);
-        mean = blitz::mean(snap(j,i), j); // mean w in horizontal at this moment
-        for(int ii = 0; ii < n["x"]; ++ii)
-          snap(ii,all) = snap(ii,all) - mean(j); // snap is now w - w_mean
-        snap = snap * snap; // 2nd power
-        mean = blitz::mean(snap(j,i), j); // mean variance of w in horizontal
-        res_prof(at) = blitz::max(mean);
-      }  */
+        try
+        {
+          auto tmp = h5load(h5, "w", at * n["outfreq"]);
+          blitz::Array<float, 3> snap(tmp);
+          std::cout << snap << std::endl;
+          blitz::Array<float, 2> mean2d(n["x"], n["z"]);
+          blitz::Array<float, 1> mean(n["z"]);
+          mean2d = blitz::mean(snap(i,k,j), k); // mean over second dimension (y)
+          mean = blitz::mean(mean2d(j, i), j); // mean over x
+          for(int ii = 0; ii < n["x"]; ++ii)
+            for(int jj = 0; jj < n["y"]; ++jj)
+              snap(ii, jj, all) = snap(ii, jj, all) - mean(all); // snap is now w - w_mean
+          snap = snap * snap; // 2nd power
+          // mean variance of w in horizontal
+          mean2d = blitz::mean(snap(i,k,j), k); // mean over second dimension (y)
+          mean = blitz::mean(mean2d(j, i), j); // mean over x and y
+          res_prof(at) = blitz::max(mean); // the max value
+        }
+        catch(...) {;}
+      }  
       else assert(false);
     } // time loop
 

@@ -198,7 +198,7 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
         rhs.at(ix::w)(ijk) += tmp2(ijk);
 
         // large-scale vertical wind
-        for(auto type : std::set<int>{ix::th, ix::rv, ix::u, ix::w})
+        for(auto type : std::set<int>{ix::th, ix::rv, ix::u, ix::v, ix::w})
         {
           tmp1(ijk) = this->state(type)(ijk);
           this->xchng_sclr(tmp1, i, j, k);
@@ -301,13 +301,13 @@ this->mem->barrier();
           rhod(i, j, blitz::Range(0,0));                                                      // density
  
           // momentum flux
-          blitz::Array<real_t, 3> uMag(nx, ny);
+          blitz::Array<real_t, 2> uMag((i.last() - i.first() + 1), ny);
           uMag = sqrt(
-                   this->state(ix::u)(i, j, blitz::Range(0,0)) * this->state(ix::u)(i, j, blitz::Range(0,0)) +
-                   this->state(ix::v)(i, j, blitz::Range(0,0)) * this->state(ix::v)(i, j, blitz::Range(0,0))
+                   this->state(ix::u)(i, j, 0) * this->state(ix::u)(i, j, 0) +
+                   this->state(ix::v)(i, j, 0) * this->state(ix::v)(i, j, 0)
                  );
-          rhs.at(ix::u)(i, j, blitz::Range(0,0)) -= this->state(ix::u)(i, j, blitz::Range(0,0)) / uMag(i, j) *  pow(setup::u_fric,2) /  this->dk;  
-          rhs.at(ix::v)(i, j, blitz::Range(0,0)) -= this->state(ix::v)(i, j, blitz::Range(0,0)) / uMag(i, j) *  pow(setup::u_fric,2) /  this->dk;  
+          rhs.at(ix::u)(i, j ,0) -= this->state(ix::u)(i, j, 0) / uMag(blitz::Range::all(), j) *  pow(setup::u_fric,2) /  this->dk;  
+          rhs.at(ix::v)(i, j, 0) -= this->state(ix::v)(i, j, 0) / uMag(blitz::Range::all(), j) *  pow(setup::u_fric,2) /  this->dk;  
         }
         break;
       }   
