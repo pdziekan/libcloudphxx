@@ -21,15 +21,16 @@ int main(int ac, char** av)
     h5  = dir + "out_lgrngn";
 
   auto n = h5n(h5);
+
   const double z_i = 795; // [m]
-/*
   const double dz = 5; // [m], ugly and what about borde cells with dz=2.5?
   const double dx = 50; // [m], ugly and what about borde cells?
-  const double dy = 1; // [m], ugly and what about borde cells?
-*/
+  const double dy = 50; // [m], ugly and what about borde cells?
+  const double D = 3.75e-6; //[1/s], ugly, large-scale horizontal wind divergence
+
   Gnuplot gp;
   string file = h5 + "_series.svg";
-  init_prof(gp, file, 1, 3, n); 
+  init_prof(gp, file, 2, 3, n); 
 
   blitz::Array<float, 3> rhod;
   // read density
@@ -68,9 +69,11 @@ int main(int ac, char** av)
   blitz::thirdIndex k;
   blitz::Array<float, 1> res_prof(n["t"]);
   blitz::Array<float, 1> res_pos(n["t"]);
+  blitz::Array<int, 2> k_i(n["x"], n["y"]); // index of the inversion cell
+  blitz::Array<float, 3> rtot(n["x"], n["y"], n["z"]); 
   blitz::Range all = blitz::Range::all();
 
-  for (auto &plt : std::set<std::string>({"wvarmax", "nc", "clfrac"}))
+  for (auto &plt : std::set<std::string>({"wvarmax", "nc", "clfrac", "lwp", "er"}))
   {
     res_prof = 0;
     res_pos = 0;
@@ -103,6 +106,56 @@ int main(int ac, char** av)
         }
         catch(...) {;}
       }
+      else if (plt == "lwp")
+      {   
+        // liquid water path
+        try
+        {
+          {
+            auto tmp = h5load(h5, "rw_rng000_mom3", at * n["outfreq"]) * 4./3 * 3.14 * 1e3 * 1e3;
+            blitz::Array<float, 3> snap(tmp); // cloud water mixing ratio [g/kg]
+            snap *= rhod; // cloud water per cubic metre (should be wet density...)
+            res_prof(at) = blitz::mean(snap); 
+          }
+          {
+            auto tmp = h5load(h5, "rw_rng001_mom3", at * n["outfreq"]) * 4./3 * 3.14 * 1e3 * 1e3;
+            blitz::Array<float, 3> snap(tmp); // rain water mixing ratio [g/kg]
+            snap *= rhod; // rain water per cubic metre (should be wet density...)
+            res_prof(at) += blitz::mean(snap); 
+          }
+        }
+        catch(...) {;}
+      }   
+      else if (plt == "er")
+      {   
+        //entrainment rate as in the 2009 Ackerman paper
+        // to store total mixingg ratio
+        try
+        {
+          {
+            auto tmp = h5load(h5, "rw_rng000_mom3", at * n["outfreq"]) * 4./3 * 3.14 * 1e3 * 1e3;
+            blitz::Array<float, 3> snap(tmp); // cloud water mixing ratio [g/kg]
+            rtot = snap;
+          }
+          {
+            auto tmp = h5load(h5, "rw_rng001_mom3", at * n["outfreq"]) * 4./3 * 3.14 * 1e3 * 1e3;
+            blitz::Array<float, 3> snap(tmp); // rain water mixing ratio [g/kg]
+            rtot += snap;
+          }
+          {
+            auto tmp = h5load(h5, "rv", at * n["outfreq"]) * 1e3;
+            blitz::Array<float, 3> snap(tmp); // vapor mixing ratio [g/kg]
+            rtot += snap;
+          }
+          k_i = 0;
+          k_i = blitz::first((rtot(i, j, k) < 8.), k); // doesnt find it properly, why?
+//          std::cout << "at: " <<  at << std::endl;
+//          std::cout <<  rtot << std::endl;
+//          std::cout <<  k_i << std::endl;
+          res_prof(at) = blitz::mean(k_i);
+        }
+        catch (...) {;}
+      }
       else if (plt == "wvarmax")
       {
         // maximum variance of vertical velocity
@@ -132,6 +185,20 @@ int main(int ac, char** av)
       gp << "set title 'average cloud drop conc [1/cm^3]'\n";
     else if (plt == "wvarmax")
       gp << "set title 'max variance of w [m^2 / s^2]'\n";
+    else if (plt == "lwp")
+    {
+      gp << "set title 'liquid water path [g / m^2]'\n";
+      res_prof *= dz * n["z"];
+    }
+    else if (plt == "er")
+    {
+      // forward difference, in cm
+      blitz::Range nolast = blitz::Range(0, n["t"]-2);
+      res_prof(nolast) = (res_prof(nolast+1) - res_prof(nolast)) * dz * 1e2 / (n["dt"] * n["outfreq"]) + D * res_prof(nolast) * dz * 1e2;
+      res_prof(n["t"]-1) = 0.;
+      gp << "set title 'entrainment rate [cm / s]'\n";
+    }
+
     gp << "plot '-' with line\n";
     gp.send1d(boost::make_tuple(res_pos, res_prof));
 
