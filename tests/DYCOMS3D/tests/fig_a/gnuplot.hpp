@@ -18,7 +18,7 @@ void init_prof(
 
   gp << "set term svg dynamic enhanced fsize 13 size " << nx * 500 << "," << ny * 500 << "\n";
   gp << "set size square\n";
-  gp << "set encoding utf8\n";
+//  gp << "set encoding utf8\n";
   // progressive-rock connoisseur palette ;)
 //  gp << "dx = 6400./" << n["x"]-1 << "\n"; 
 //  gp << "dy = 1500./" << n["z"]-1 << "\n"; 

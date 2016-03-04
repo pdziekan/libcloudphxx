@@ -108,7 +108,6 @@ int main(int ac, char** av)
         {
           auto tmp = h5load(h5, "w", at * n["outfreq"]);
           blitz::Array<float, 3> snap(tmp);
-          std::cout << snap << std::endl;
           blitz::Array<float, 2> mean2d(n["x"], n["z"]);
           blitz::Array<float, 1> mean(n["z"]);
           mean2d = blitz::mean(snap(i,k,j), k); // mean over second dimension (y)
