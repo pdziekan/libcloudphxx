@@ -148,10 +148,7 @@ int main(int ac, char** av)
             rtot += snap;
           }
           k_i = 0;
-          k_i = blitz::first((rtot(i, j, k) < 8.), k); // doesnt find it properly, why?
-//          std::cout << "at: " <<  at << std::endl;
-//          std::cout <<  rtot << std::endl;
-//          std::cout <<  k_i << std::endl;
+          k_i = blitz::first((rtot < 8.), k); 
           res_prof(at) = blitz::mean(k_i);
         }
         catch (...) {;}
