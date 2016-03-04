@@ -63,15 +63,17 @@ int main(int ac, char** av)
     h5d.read(rhod.data(), H5::PredType::NATIVE_FLOAT, H5::DataSpace(3, ext), h5s);
   }
 
+  blitz::firstIndex i;
+  blitz::secondIndex j;
+  blitz::thirdIndex k;
+  blitz::Array<float, 1> res_prof(n["t"]);
+  blitz::Array<float, 1> res_pos(n["t"]);
+  blitz::Range all = blitz::Range::all();
+
   for (auto &plt : std::set<std::string>({"wvarmax", "nc", "clfrac"}))
   {
-    blitz::firstIndex i;
-    blitz::secondIndex j;
-    blitz::thirdIndex k;
-    blitz::Array<float, 1> res_prof(n["t"]);
-    blitz::Array<float, 1> res_pos(n["t"]);
-    blitz::Range all = blitz::Range::all();
-
+    res_prof = 0;
+    res_pos = 0;
     for (int at = 0; at < n["t"]; ++at) // TODO: mark what time does it actually mean!
     {
       res_pos(at) = at * n["outfreq"] * n["dt"] / 3600.;
@@ -110,12 +112,7 @@ int main(int ac, char** av)
           blitz::Array<float, 3> snap(tmp);
           blitz::Array<float, 2> mean2d(n["x"], n["z"]);
           blitz::Array<float, 1> mean(n["z"]);
-          mean2d = blitz::mean(snap(i,k,j), k); // mean over second dimension (y)
-          mean = blitz::mean(mean2d(j, i), j); // mean over x
-          for(int ii = 0; ii < n["x"]; ++ii)
-            for(int jj = 0; jj < n["y"]; ++jj)
-              snap(ii, jj, all) = snap(ii, jj, all) - mean(all); // snap is now w - w_mean
-          snap = snap * snap; // 2nd power
+          snap = snap * snap; // 2nd power, w_mean = 0
           // mean variance of w in horizontal
           mean2d = blitz::mean(snap(i,k,j), k); // mean over second dimension (y)
           mean = blitz::mean(mean2d(j, i), j); // mean over x and y
