@@ -25,10 +25,11 @@ int main(int ac, char** av)
   const double dz = 5; // [m], ugly and what about borde cells with dz=2.5?
   const double dx = 50; // [m], ugly and what about borde cells?
   const double dy = 1; // [m], ugly and what about borde cells?
+  const double D = 3.75e-6; //[1/s], ugly, large-scale horizontal wind divergence
 
   Gnuplot gp;
   string file = h5 + "_series.svg";
-  init_prof(gp, file, 1, 3, n); 
+  init_prof(gp, file, 2, 3, n); 
 
   blitz::Array<float, 2> rhod;
   // read density
@@ -61,13 +62,16 @@ int main(int ac, char** av)
     h5d.read(rhod.data(), H5::PredType::NATIVE_FLOAT, H5::DataSpace(2, ext), h5s);
   }
 
-  for (auto &plt : std::set<std::string>({"wvarmax", "nc", "clfrac"}))
+  blitz::firstIndex i;
+  blitz::secondIndex j;
+  blitz::Array<float, 1> res_prof(n["t"]);
+  blitz::Array<float, 1> res_pos(n["t"]);
+  blitz::Range all = blitz::Range::all();
+
+  for (auto &plt : std::set<std::string>({"wvarmax", "nc", "clfrac", "lwp", "er"}))
   {
-    blitz::firstIndex i;
-    blitz::secondIndex j;
-    blitz::Array<float, 1> res_prof(n["t"]);
-    blitz::Array<float, 1> res_pos(n["t"]);
-    blitz::Range all = blitz::Range::all();
+    res_prof = 0;
+    res_pos = 0;
 
     for (int at = 0; at < n["t"]; ++at) // TODO: mark what time does it actually mean!
     {
@@ -87,18 +91,56 @@ int main(int ac, char** av)
 	// cloud droplet (0.5um < r < 25 um) concentration
         auto tmp = h5load(h5, "rw_rng000_mom0", at * n["outfreq"]);
         blitz::Array<float, 2> snap(tmp);
+        snap *= rhod; // b4 it was specific moment
         snap /= 1e6; // per cm^3
         res_prof(at) = blitz::mean(snap); 
       }
+      else if (plt == "lwp")
+      {
+	// liquid water path
+        {
+          auto tmp = h5load(h5, "rw_rng000_mom3", at * n["outfreq"]) * 4./3 * 3.14 * 1e3 * 1e3;
+          blitz::Array<float, 2> snap(tmp); // cloud water mixing ratio [g/kg]
+          snap *= rhod; // cloud water per cubic metre (should be wet density...)
+          res_prof(at) = blitz::mean(snap); 
+        }
+        {
+          auto tmp = h5load(h5, "rw_rng001_mom3", at * n["outfreq"]) * 4./3 * 3.14 * 1e3 * 1e3;
+          blitz::Array<float, 2> snap(tmp); // rain water mixing ratio [g/kg]
+          snap *= rhod; // rain water per cubic metre (should be wet density...)
+          res_prof(at) += blitz::mean(snap); 
+        }
+      }
+      else if (plt == "er")
+      {
+	//entrainment rate as in the 2009 Ackerman paper
+        // to store total mixingg ratio
+        blitz::Array<float, 2> rtot(n["x"], n["z"]); 
+        {
+          auto tmp = h5load(h5, "rw_rng000_mom3", at * n["outfreq"]) * 4./3 * 3.14 * 1e3 * 1e3;
+          blitz::Array<float, 2> snap(tmp); // cloud water mixing ratio [g/kg]
+          rtot = snap;
+        }
+        {
+          auto tmp = h5load(h5, "rw_rng001_mom3", at * n["outfreq"]) * 4./3 * 3.14 * 1e3 * 1e3;
+          blitz::Array<float, 2> snap(tmp); // rain water mixing ratio [g/kg]
+          rtot += snap;
+        }
+        {
+          auto tmp = h5load(h5, "rv", at * n["outfreq"]) * 1e3;
+          blitz::Array<float, 2> snap(tmp); // vapor mixing ratio [g/kg]
+          rtot += snap;
+        }
+        blitz::Array<int, 1> j_i(n["x"]); // index of the inversion cell
+        j_i = blitz::first(rtot < 8., j);
+        res_prof(at) = blitz::mean(j_i);
+      }
       else if (plt == "wvarmax")
       {
-        // maximum variance of vertical velocity
+        // maximum variance of vertical velocity, assume w_mean=0
         auto tmp = h5load(h5, "w", at * n["outfreq"]);
         blitz::Array<float, 2> snap(tmp);
         blitz::Array<float, 1> mean(n["z"]);
-        mean = blitz::mean(snap(j,i), j); // mean w in horizontal at this moment
-        for(int ii = 0; ii < n["x"]; ++ii)
-          snap(ii,all) = snap(ii,all) - mean(j); // snap is now w - w_mean
         snap = snap * snap; // 2nd power
         mean = blitz::mean(snap(j,i), j); // mean variance of w in horizontal
         res_prof(at) = blitz::max(mean);
@@ -115,6 +157,19 @@ int main(int ac, char** av)
       gp << "set title 'average cloud drop conc [1/cm^3]'\n";
     else if (plt == "wvarmax")
       gp << "set title 'max variance of w [m^2 / s^2]'\n";
+    else if (plt == "lwp")
+    {
+      gp << "set title 'liquid water path [g / m^2]'\n";
+      res_prof *= dz * n["z"];
+    }
+    else if (plt == "er")
+    {
+      // forward difference, in cm
+      blitz::Range nolast = blitz::Range(0, n["t"]-2);
+      res_prof(nolast) = (res_prof(nolast+1) - res_prof(nolast)) * dz * 1e2 / (n["dt"] * n["outfreq"]) + D * res_prof(nolast) * dz * 1e2;
+      res_prof(n["t"]-1) = 0.;
+      gp << "set title 'entrainment rate [cm / s]'\n";
+    }
     gp << "plot '-' with line\n";
     gp.send1d(boost::make_tuple(res_pos, res_prof));
 

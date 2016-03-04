@@ -80,9 +80,16 @@ int main(int ac, char** av)
       if (plt == "rliq")
       {
 	// liquid water content (cloud + rain, missing droplets with r<0.5um!)
-	auto tmp = h5load(h5, "rw_rng000_mom3", at * n["outfreq"]) * 4./3 * 3.14 * 1e3 * 1e3;
-        blitz::Array<float, 2> snap(tmp);
-        res += snap;
+        {
+          auto tmp = h5load(h5, "rw_rng000_mom3", at * n["outfreq"]) * 4./3 * 3.14 * 1e3 * 1e3;
+          blitz::Array<float, 2> snap(tmp);
+          res += snap; 
+        }
+        {
+          auto tmp = h5load(h5, "rw_rng001_mom3", at * n["outfreq"]) * 4./3 * 3.14 * 1e3 * 1e3;
+          blitz::Array<float, 2> snap(tmp);
+          res += snap; 
+        }
         gp << "set title 'liquid water r [g/kg] averaged over 2h-6h, w/o rw<0.5um'\n";
       }
       else if (plt == "rtot")
@@ -90,6 +97,11 @@ int main(int ac, char** av)
 	// total water content (vapor + cloud + rain, missing droplets with r<0.5um!)
         {
           auto tmp = h5load(h5, "rw_rng000_mom3", at * n["outfreq"]) * 4./3 * 3.14 * 1e3 * 1e3;
+          blitz::Array<float, 2> snap(tmp);
+          res += snap; 
+        }
+        {
+          auto tmp = h5load(h5, "rw_rng001_mom3", at * n["outfreq"]) * 4./3 * 3.14 * 1e3 * 1e3;
           blitz::Array<float, 2> snap(tmp);
           res += snap; 
         }
@@ -136,9 +148,20 @@ int main(int ac, char** av)
                      * 2264.76e3;      // latent heat of evaporation [J/kg]
           res += snap; 
         }
-	// add vertical velocity to precipitation flux (3rd mom * w)
+	// add vertical velocity to precipitation flux (3rd mom of cloud drops * w)
         { 
           auto tmp = h5load(h5, "rw_rng000_mom3", at * n["outfreq"]); // this time its a specific moment
+          blitz::Array<float, 2> snap(tmp);
+	  auto tmp2 = h5load(h5, "w", at * n["outfreq"]);
+          blitz::Array<float, 2> snap2(tmp2);
+          snap = (snap * snap2) *  4./3 * 3.14 * 1e3 // to get mass
+                     * rhod           // dry air density
+                     * 2264.76e3;      // latent heat of evaporation [J/kg]
+          res += snap; 
+        }
+	// add vertical velocity to precipitation flux (3rd mom of rain drops * w)
+        { 
+          auto tmp = h5load(h5, "rw_rng001_mom3", at * n["outfreq"]); // this time its a specific moment
           blitz::Array<float, 2> snap(tmp);
 	  auto tmp2 = h5load(h5, "w", at * n["outfreq"]);
           blitz::Array<float, 2> snap2(tmp2);
@@ -152,24 +175,18 @@ int main(int ac, char** av)
       }
       else if (plt == "wvar")
       {
-	// variance of vertical velocity
+	// variance of vertical velocity, w_mean=0
 	auto tmp = h5load(h5, "w", at * n["outfreq"]);
         blitz::Array<float, 2> snap(tmp);
-        res_prof = blitz::mean(snap(j,i), j); // mean w in horizontal at this moment
-        for(int ii = 0; ii < n["x"]; ++ii)
-          snap(ii,all) = snap(ii,all) - res_prof(j); // snap is now w - w_mean
         snap = snap * snap; // 2nd power
         res += snap;
         gp << "set title 'variance of w [m^2 / s^2]'\n";
       }
       else if (plt == "w3rd")
       {
-	// variance of vertical velocity
+	// 3rd mom of vertical velocity, w_mean=0
 	auto tmp = h5load(h5, "w", at * n["outfreq"]);
         blitz::Array<float, 2> snap(tmp);
-        res_prof = blitz::mean(snap(j,i), j); // mean w in horizontal at this moment
-        for(int ii = 0; ii < n["x"]; ++ii)
-          snap(ii,all) = snap(ii,all) - res_prof(j); // snap is now (w - w_mean)
         snap = snap * snap * snap; // 3rd power
         res += snap;
         gp << "set title '3rd mom of w [m^3 / s^3]'\n";
