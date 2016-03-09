@@ -86,7 +86,7 @@ struct ct_params_common : ct_params_default_t
 {
   using real_t = setup::real_t;
   enum { n_dims = 3 };
-  enum { opts = opts::nug | opts::iga | opts::fct }; 
+  enum { opts = /*opts::nug |*/ opts::iga | opts::fct };  // TODO: reenable nug once it works in 3D
   enum { rhs_scheme = solvers::euler_b /* solvers::trapez*/ }; // TODO: turn trapez back on
   enum { prs_scheme = solvers::cr };
 };
