@@ -31,15 +31,7 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
   // global arrays, shared among threads
   typename parent_t::arr_t &tmp1,
                            &tmp2,
-                           &r_l;  // these 3 are modified during simulation
-/*
-                           &rhod,
-                           &w_LS, 
-                           &th_init, // these 3 are set during init
-*/
-/*                           &F, // radiatvie heating
-                           &Q, // radiatvie heating hlpr
-                           &j_i; // inversion height index */
+                           &r_l;
   // helper methods
   void diag()
   {
@@ -139,10 +131,10 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
 
       // libmpdata++'s grid interpretation
       params.cloudph_opts_init.x0 = params.dx / 2;
-      params.cloudph_opts_init.y0 = params.dy / 2;
+      params.cloudph_opts_init.y0 = 0.;// params.dy / 2;
       params.cloudph_opts_init.z0 = params.dz / 2;
       params.cloudph_opts_init.x1 = (this->mem->grid_size[0].length() - .5) * params.dx;
-      params.cloudph_opts_init.y1 = (this->mem->grid_size[1].length() - .5) * params.dy;
+      params.cloudph_opts_init.y1 = (this->mem->grid_size[1].length() /*- .5*/) * params.dy;
       params.cloudph_opts_init.z1 = (this->mem->grid_size[2].length() - .5) * params.dz;
 
       prtcls.reset(libcloudphxx::lgrngn::factory<real_t>(
@@ -187,16 +179,16 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
     {   
       case (0): 
       {   
+
         int nx = this->mem->grid_size[0].length(); //76
         int ny = this->mem->grid_size[1].length(); //76
         int nz = this->mem->grid_size[2].length(); //76
-// TODO: update rhs fails for non-serial libmpdata
         // buoyancy
         tmp1(ijk) = g * (Tht(ijk) - th_init(ijk)) / th_init(ijk);
         this->xchng_sclr(tmp1, i, j, k); 
         tmp2(i, j, k) = 0.25 * (tmp1(i, j, k + 1) + 2 * tmp1(i, j, k) + tmp1(i, j, k - 1));
         rhs.at(ix::w)(ijk) += tmp2(ijk);
-
+/*
         // large-scale vertical wind
         for(auto type : std::set<int>{ix::th, ix::rv, ix::u, ix::v, ix::w})
         {
@@ -206,8 +198,10 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
           tmp1(i, j, k) = 0.25 * (tmp2(i, j, k + 1) + 2 * tmp2(i, j, k) + tmp2(i, j, k - 1));
           rhs.at(type)(ijk) += tmp1(ijk);
         }
+*/
         // --- radiative heating ---
         // TODO: adapt it to trapezoidal integration
+/*
         {
 //          std::cout << "nx: " << nx << "nz: " << nz << std::endl;
 
@@ -275,8 +269,9 @@ if(this->rank==rank)
 this->mem->barrier();
 }
 */
-        }
+//        }
         // --- surface fluxes ---
+/*
         {
           // sensible heat
           for(int x = i.first() ; x <= i.last(); ++x)
@@ -309,26 +304,19 @@ this->mem->barrier();
           rhs.at(ix::u)(i, j ,0) -= this->state(ix::u)(i, j, 0) / uMag(blitz::Range::all(), j) *  pow(setup::u_fric,2) /  this->dk;  
           rhs.at(ix::v)(i, j, 0) -= this->state(ix::v)(i, j, 0) / uMag(blitz::Range::all(), j) *  pow(setup::u_fric,2) /  this->dk;  
         }
+*/
         break;
       }   
-/*   
+/*
       case (1): 
       {   
 
         // buoyancy
         tmp1(ijk) = g * (Tht(ijk) + 0.5 * this->dt * rhs.at(ix::th)(ijk) - th_init(ijk)) / th_init(ijk);
-        this->xchng_sclr(tmp1, i, j); 
-        tmp2(i, j) = 0.25 * (tmp1(i, j + 1) + 2 * tmp1(i, j) + tmp1(i, j - 1));
+        this->xchng_sclr(tmp1, i, j, k); 
+        tmp2(i, j, k) = 0.25 * (tmp1(i, j, k + 1) + 2 * tmp1(i, j, k) + tmp1(i, j, k - 1));
         rhs.at(ix::w)(ijk) += tmp2(ijk);
 
-        // large-scale vertical wind
-        for(auto type : std::set<int>{ix::th, ix::rv, ix::u, ix::w})
-        {
-          tmp1(ijk) = this->state(type)(ijk) + 0.5 * this->dt * rhs.at(type)(ijk);
-          this->xchng_sclr(tmp1, i, j); 
-          tmp2(i, j) = - w_LS(i, j) * (tmp1(i, j + 1) - tmp1(i, j - 1)) / (2. * this->dj);
-          rhs.at(type)(ijk) += tmp2(ijk);
-        }
         break;
       }
 */
@@ -366,7 +354,7 @@ this->mem->barrier();
       int nz = this->mem->grid_size[2].length(); //76
       prtcls->diag_all();
       prtcls->diag_wet_mom(3);
-      auto rl = r_l(blitz::Range(0,nx-1), blitz::Range(0,ny-1), blitz::Range(0,nz-1)); // rl references the nohalo subdomain
+      auto rl = r_l(blitz::Range(0,nx-1), blitz::Range(0,ny-1), blitz::Range(0,nz-1)); 
       rl = blitz::Array<real_t,3>(prtcls->outbuf(), blitz::shape(nx, ny, nz), blitz::duplicateData); // copy in data from outbuf
       rl = rl * 4./3. * 1000. * 3.14159;
       rl = rl * rhod; 
@@ -499,7 +487,6 @@ this->mem->barrier();
     blitz::thirdIndex k;
     // prescribed density
     rhod = setup::rhod_fctr()(k * params.dz);
-//    std::cout << "rhod w setopts" << rhod << std::endl;
 
     // prescribed large-scale vertical wind
     w_LS = setup::w_LS_fctr()(k * params.dz);
@@ -507,16 +494,6 @@ this->mem->barrier();
     // prescribed initial temp profile
     th_init = setup::th_dry_fctr()(k * params.dz);
 
-/*    th_init.resize(this->mem->grid_size[0].length(), this->mem->grid_size[1].length());
-    rhod.resize(this->mem->grid_size[0].length(), this->mem->grid_size[1].length());
-    tmp1.resize(blitz::Range(-2, this->mem->grid_size[0].length() + 2), blitz::Range(-2, this->mem->grid_size[1].length() + 2));
-    tmp2.resize(blitz::Range(-2, this->mem->grid_size[0].length() + 2), blitz::Range(-2, this->mem->grid_size[1].length() + 2));
-    w_LS.resize(this->mem->grid_size[0].length(), this->mem->grid_size[1].length());
-    F.resize(this->mem->grid_size[0].length(), this->mem->grid_size[1].length());
-    Q.resize(this->mem->grid_size[0].length(), this->mem->grid_size[1].length());
-    r_l.resize(this->mem->grid_size[0].length(), this->mem->grid_size[1].length());
-    j_i.resize(this->mem->grid_size[0].length());
-*/
 
     // delaying any initialisation to ante_loop as rank() does not function within ctor! // TODO: not anymore!!!
     // TODO: equip rank() in libmpdata with an assert() checking if not in serial block

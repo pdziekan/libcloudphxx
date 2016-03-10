@@ -32,7 +32,7 @@ void run(int nx, int ny, int nz, int nt, const std::string &outdir, const int &o
   p.outfreq = outfreq;
   p.spinup = spinup;
   p.relax_th_rv = relax_th_rv;
-  p.prs_tol=1e-7;
+  p.prs_tol=1e-6;
   setopts_micro<solver_t>(p, nx, ny, nz, nt);
   //std::cout << "params.rhod po setopts micro " << p.rhod << " "  << *p.rhod << std::endl;
   setup::setopts(p, nx, ny, nz);
@@ -49,7 +49,8 @@ void run(int nx, int ny, int nz, int nt, const std::string &outdir, const int &o
     using concurr_t = concurr::serial<
       solver_t, 
       bcond::cyclic, bcond::cyclic,
-      bcond::cyclic, bcond::cyclic,
+      bcond::rigid,  bcond::rigid, 
+//      bcond::cyclic, bcond::cyclic,
       bcond::rigid,  bcond::rigid 
     >;
     slv.reset(new concurr_t(p));
@@ -62,7 +63,8 @@ void run(int nx, int ny, int nz, int nt, const std::string &outdir, const int &o
     using concurr_t = concurr::boost_thread<
       solver_t, 
       bcond::cyclic, bcond::cyclic,
-      bcond::cyclic, bcond::cyclic,
+      bcond::rigid,  bcond::rigid, 
+//      bcond::cyclic, bcond::cyclic,
       bcond::rigid,  bcond::rigid 
     >;
     slv.reset(new concurr_t(p));
@@ -86,7 +88,7 @@ struct ct_params_common : ct_params_default_t
 {
   using real_t = setup::real_t;
   enum { n_dims = 3 };
-  enum { opts = opts::nug | opts::iga | opts::fct }; 
+  enum { opts = /*opts::nug |*/ opts::iga | opts::fct }; // non-uniform G disabled since it doesnt work in 3D, TODO!
   enum { rhs_scheme = solvers::euler_b /* solvers::trapez*/ }; // TODO: turn trapez back on
   enum { prs_scheme = solvers::cr };
 };
@@ -154,43 +156,7 @@ int main(int argc, char** argv)
 
     // handling the "micro" option
     std::string micro = vm["micro"].as<std::string>();
-/*
-    if (micro == "blk_1m")
-    {
-      // libmpdata++'s compile-time parameters
-      if (relax_th_rv)
-      {
-        struct ct_params_t : ct_params_common
-        {
-  	  enum { n_eqns = 4 };
-          struct ix { enum {th, rv, rc, rr}; };
-        };
-        run<kin_cloud_2d_blk_1m<ct_params_t>>(nx, nz, nt, outdir, outfreq, spinup, adv_serial, relax_th_rv);
-      }
-      else
-      {
-        struct ct_params_t : ct_params_common
-        {
-          enum { n_eqns = 4 };
-          struct ix { enum {th, rv, rc, rr}; };
-          enum { hint_norhs = opts::bit(ix::th) | opts::bit(ix::rv) };
-        };
-        run<kin_cloud_2d_blk_1m<ct_params_t>>(nx, nz, nt, outdir, outfreq, spinup, adv_serial, relax_th_rv);
-      }
-    }
 
-    else
-    if (micro == "blk_2m")
-    {
-      struct ct_params_t : ct_params_common
-      {
-	enum { n_eqns = 6 };
-	struct ix { enum {th, rv, rc, rr, nc, nr}; }; 
-      };
-      run<kin_cloud_2d_blk_2m<ct_params_t>>(nx, nz, nt, outdir, outfreq, spinup, adv_serial, relax_th_rv);
-    }
-
-    else */
     if (micro == "lgrngn")
     {
       struct ct_params_t : ct_params_common

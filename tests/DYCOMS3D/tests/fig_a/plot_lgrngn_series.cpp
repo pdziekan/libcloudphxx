@@ -32,6 +32,7 @@ int main(int ac, char** av)
   string file = h5 + "_series.svg";
   init_prof(gp, file, 2, 3, n); 
 
+/*
   blitz::Array<float, 3> rhod;
   // read density
   {
@@ -63,6 +64,8 @@ int main(int ac, char** av)
     };  
     h5d.read(rhod.data(), H5::PredType::NATIVE_FLOAT, H5::DataSpace(3, ext), h5s);
   }
+*/
+  const int rhod = 1;
 
   blitz::firstIndex i;
   blitz::secondIndex j;
@@ -174,7 +177,7 @@ int main(int ac, char** av)
     } // time loop
 
     gp << "set yrange[*:*]\n";
-    gp << "set xrange[0:6]\n";
+    gp << "set xrange[0:0.3]\n";
 
     if (plt == "clfrac")
       gp << "set title 'average cloud fraction'\n";
@@ -197,6 +200,7 @@ int main(int ac, char** av)
     }
 
     gp << "plot '-' with line\n";
+    std::cout << plt << " " << res_pos << res_prof << std::endl;
     gp.send1d(boost::make_tuple(res_pos, res_prof));
 
 //    plot(gp, res);

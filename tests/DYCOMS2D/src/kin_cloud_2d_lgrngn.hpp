@@ -183,7 +183,6 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
     {   
       case (0): 
       {   
-// TODO: update rhs fails for non-serial libmpdata
         // buoyancy
         tmp1(ijk) = g * (Tht(ijk) - th_init(ijk)) / th_init(ijk);
         this->xchng_sclr(tmp1, i, j); 
@@ -470,7 +469,6 @@ this->mem->barrier();
     blitz::secondIndex j;
     // prescribed density
     rhod = setup::rhod_fctr()(j * params.dz);
-//    std::cout << "rhod w setopts" << rhod << std::endl;
 
     // prescribed large-scale vertical wind
     w_LS = setup::w_LS_fctr()(j * params.dz);
@@ -478,16 +476,6 @@ this->mem->barrier();
     // prescribed initial temp profile
     th_init = setup::th_dry_fctr()(j * params.dz);
 
-/*    th_init.resize(this->mem->grid_size[0].length(), this->mem->grid_size[1].length());
-    rhod.resize(this->mem->grid_size[0].length(), this->mem->grid_size[1].length());
-    tmp1.resize(blitz::Range(-2, this->mem->grid_size[0].length() + 2), blitz::Range(-2, this->mem->grid_size[1].length() + 2));
-    tmp2.resize(blitz::Range(-2, this->mem->grid_size[0].length() + 2), blitz::Range(-2, this->mem->grid_size[1].length() + 2));
-    w_LS.resize(this->mem->grid_size[0].length(), this->mem->grid_size[1].length());
-    F.resize(this->mem->grid_size[0].length(), this->mem->grid_size[1].length());
-    Q.resize(this->mem->grid_size[0].length(), this->mem->grid_size[1].length());
-    r_l.resize(this->mem->grid_size[0].length(), this->mem->grid_size[1].length());
-    j_i.resize(this->mem->grid_size[0].length());
-*/
 
     // delaying any initialisation to ante_loop as rank() does not function within ctor! // TODO: not anymore!!!
     // TODO: equip rank() in libmpdata with an assert() checking if not in serial block

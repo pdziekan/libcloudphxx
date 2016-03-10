@@ -32,7 +32,7 @@ void run(int nx, int nz, int nt, const std::string &outdir, const int &outfreq, 
   p.outfreq = outfreq;
   p.spinup = spinup;
   p.relax_th_rv = relax_th_rv;
-  p.prs_tol=1e-7;
+  p.prs_tol=1e-6;
   setopts_micro<solver_t>(p, nx, nz, nt);
   //std::cout << "params.rhod po setopts micro " << p.rhod << " "  << *p.rhod << std::endl;
   setup::setopts(p, nx, nz);
@@ -84,7 +84,7 @@ struct ct_params_common : ct_params_default_t
 {
   using real_t = setup::real_t;
   enum { n_dims = 2 };
-  enum { opts = opts::nug | opts::iga | opts::fct }; 
+  enum { opts = /*opts::nug |*/ opts::iga | opts::fct }; 
   enum { rhs_scheme = solvers::euler_b /* solvers::trapez*/ }; // TODO: turn trapez back on
   enum { prs_scheme = solvers::cr };
 };
@@ -150,43 +150,7 @@ int main(int argc, char** argv)
 
     // handling the "micro" option
     std::string micro = vm["micro"].as<std::string>();
-/*
-    if (micro == "blk_1m")
-    {
-      // libmpdata++'s compile-time parameters
-      if (relax_th_rv)
-      {
-        struct ct_params_t : ct_params_common
-        {
-  	  enum { n_eqns = 4 };
-          struct ix { enum {th, rv, rc, rr}; };
-        };
-        run<kin_cloud_2d_blk_1m<ct_params_t>>(nx, nz, nt, outdir, outfreq, spinup, adv_serial, relax_th_rv);
-      }
-      else
-      {
-        struct ct_params_t : ct_params_common
-        {
-          enum { n_eqns = 4 };
-          struct ix { enum {th, rv, rc, rr}; };
-          enum { hint_norhs = opts::bit(ix::th) | opts::bit(ix::rv) };
-        };
-        run<kin_cloud_2d_blk_1m<ct_params_t>>(nx, nz, nt, outdir, outfreq, spinup, adv_serial, relax_th_rv);
-      }
-    }
 
-    else
-    if (micro == "blk_2m")
-    {
-      struct ct_params_t : ct_params_common
-      {
-	enum { n_eqns = 6 };
-	struct ix { enum {th, rv, rc, rr, nc, nr}; }; 
-      };
-      run<kin_cloud_2d_blk_2m<ct_params_t>>(nx, nz, nt, outdir, outfreq, spinup, adv_serial, relax_th_rv);
-    }
-
-    else */
     if (micro == "lgrngn")
     {
       struct ct_params_t : ct_params_common

@@ -149,7 +149,7 @@ int main(int ac, char** av)
     } // time loop
 
     gp << "set yrange[*:*]\n";
-    gp << "set xrange[0:6]\n";
+//    gp << "set xrange[0:6]\n";
 
     if (plt == "clfrac")
       gp << "set title 'average cloud fraction'\n";

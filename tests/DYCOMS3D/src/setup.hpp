@@ -30,9 +30,9 @@ namespace setup
     p_0 = 101780 * si::pascals;
   const quantity<si::length, real_t> 
     z_0  = 0    * si::metres,
-    Z    = 1500 * si::metres, 
+    Z    = 1500 * si::metres, // DYCOMS: 1500
     X    = 6400 * si::metres, // DYCOMS: 6400
-    Y    = 6400 * si::metres; // DYCOMS: 6400
+    Y    = 1 * si::metres; // DYCOMS: 6400
   const real_t z_i  = 795; //initial inversion height
   const quantity<si::time, real_t>
     dt = real_t(1) * si::seconds;
@@ -161,7 +161,7 @@ namespace setup
   {
     params.dt = dt / si::seconds;
     params.dx = (X / si::metres) / (nx-1); 
-    params.dy = (Y / si::metres) / (ny-1); 
+    params.dy = (Y / si::metres) / (ny); 
     params.dz = (Z / si::metres) / (nz-1);
     params.di = params.dx;
     params.dj = params.dy;
@@ -214,7 +214,7 @@ namespace setup
       nz = solver.advectee().extent(z); 
     real_t 
       dx = (X / si::metres) / (nx-1), 
-      dy = (Y / si::metres) / (ny-1), 
+      dy = (Y / si::metres) / (ny), 
       dz = (Z / si::metres) / (nz-1); 
 
     // initial potential temperature & water vapour mixing ratio profiles
@@ -239,11 +239,13 @@ namespace setup
     solver.advectee(ix::rv) = r_t()(k * dz); 
 
     solver.advectee(ix::u) = setup::u()(k * dz);
-    solver.advectee(ix::v) = setup::v()(k * dz);
+//    solver.advectee(ix::v) = setup::v()(k * dz);
+    solver.advectee(ix::v) = 0;  
     solver.advectee(ix::w) = 0;  
 
     // density profile
-    solver.g_factor() = rhod_fctr()(k * dz);
+    // disabled, not working in 3D, TODO!
+//    solver.g_factor() = rhod_fctr()(k * dz);
   }
 
   // lognormal aerosol distribution

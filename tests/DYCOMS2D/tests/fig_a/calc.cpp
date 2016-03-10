@@ -33,19 +33,19 @@ int main(int ac, char** av)
   }
 
   string opts_common = 
-    "--outfreq=600 --nt=21600 --spinup=3600 --nx=128 --nz=300 --relax_th_rv=false"; // DYCOMS: 128x300
+    "--outfreq=20 --nt=200 --spinup=140 --nx=128 --nz=300 --relax_th_rv=false"; // DYCOMS: 128x300
   set<string> opts_micro({
 //    "--micro=blk_1m --outdir=out_blk_1m",
 //    "--micro=blk_2m --outdir=out_blk_2m",
-    "--adv_serial=false --async=true --micro=lgrngn --outdir=out_lgrngn --backend=CUDA --sd_conc=64 --sstp_cond=1 --sstp_coal=1"  
+    "--adv_serial=false --async=true --micro=lgrngn --outdir=out_lgrngn --backend=CUDA --sd_conc=40 --sstp_cond=1 --sstp_coal=1"  
       " --out_wet=\""
         ".5e-6:25e-6|0,1,2,3;" // FSSP
-        "25e-6:1|0,3;"         // "rain"
-        + bins_wet_str + // aerosol spectrum (wet)
-      "\""
-      " --out_dry=\""
-        + bins_dry_str + // aerosol spectrum (dry)
-      "\""
+        "25e-6:1|0,3;"       // "rain"
+//        + bins_wet_str + // aerosol spectrum (wet)
+        "\""
+//      " --out_dry=\""
+//        + bins_dry_str + // aerosol spectrum (dry)
+//        "\""
   });
 
   for (auto &opts_m : opts_micro)
