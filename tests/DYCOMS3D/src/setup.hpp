@@ -244,8 +244,7 @@ namespace setup
     solver.advectee(ix::w) = 0;  
 
     // density profile
-    // disabled, not working in 3D, TODO!
-//    solver.g_factor() = rhod_fctr()(k * dz);
+//    solver.g_factor() = rhod_fctr()(k * dz); // TODO: reenable g_factor (and nug option) once it works in 3D libmpdata
   }
 
   // lognormal aerosol distribution

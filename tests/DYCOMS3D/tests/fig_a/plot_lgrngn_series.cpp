@@ -32,9 +32,9 @@ int main(int ac, char** av)
   string file = h5 + "_series.svg";
   init_prof(gp, file, 2, 3, n); 
 
-/*
-  blitz::Array<float, 3> rhod;
   // read density
+  /*
+  blitz::Array<float, 3> rhod;
   {
     notice_macro("about to open file: " << h5)
     H5::H5File h5f(h5 + "/const.h5", H5F_ACC_RDONLY);
