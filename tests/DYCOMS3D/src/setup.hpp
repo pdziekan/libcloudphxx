@@ -218,7 +218,7 @@ namespace setup
       dz = (Z / si::metres) / (nz-1); 
 
     // initial potential temperature & water vapour mixing ratio profiles
-    solver.advectee(ix::th) = th_dry_fctr()(j * dz); 
+    solver.advectee(ix::th) = th_dry_fctr()(k * dz); 
     // randomly prtrb tht
     std::random_device rd;
     auto seed = rd();

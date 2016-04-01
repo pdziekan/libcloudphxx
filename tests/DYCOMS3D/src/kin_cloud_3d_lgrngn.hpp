@@ -188,7 +188,6 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
         this->xchng_sclr(tmp1, i, j, k); 
         tmp2(i, j, k) = 0.25 * (tmp1(i, j, k + 1) + 2 * tmp1(i, j, k) + tmp1(i, j, k - 1));
         rhs.at(ix::w)(ijk) += tmp2(ijk);
-/*
         // large-scale vertical wind
         for(auto type : std::set<int>{ix::th, ix::rv, ix::u, ix::v, ix::w})
         {
@@ -198,10 +197,8 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
           tmp1(i, j, k) = 0.25 * (tmp2(i, j, k + 1) + 2 * tmp2(i, j, k) + tmp2(i, j, k - 1));
           rhs.at(type)(ijk) += tmp1(ijk);
         }
-*/
         // --- radiative heating ---
         // TODO: adapt it to trapezoidal integration
-/*
         {
 //          std::cout << "nx: " << nx << "nz: " << nz << std::endl;
 
@@ -269,9 +266,8 @@ if(this->rank==rank)
 this->mem->barrier();
 }
 */
-//        }
+        }
         // --- surface fluxes ---
-/*
         {
           // sensible heat
           for(int x = i.first() ; x <= i.last(); ++x)
@@ -304,7 +300,6 @@ this->mem->barrier();
           rhs.at(ix::u)(i, j ,0) -= this->state(ix::u)(i, j, 0) / uMag(blitz::Range::all(), j) *  pow(setup::u_fric,2) /  this->dk;  
           rhs.at(ix::v)(i, j, 0) -= this->state(ix::v)(i, j, 0) / uMag(blitz::Range::all(), j) *  pow(setup::u_fric,2) /  this->dk;  
         }
-*/
         break;
       }   
 /*
