@@ -12,22 +12,22 @@ foreach(micro lgrngn)
   target_link_libraries(plot_${micro} ${Boost_LIBRARIES})
   target_include_directories(plot_${micro} PUBLIC ${Boost_INCLUDE_DIRS})
 endforeach()
-#
+
 #add_executable(plot_lgrngn_spec plot_lgrngn_spec.cpp)
 #add_test(plot_lgrngn_spec plot_lgrngn_spec ${CMAKE_BINARY_DIR})
 #target_link_libraries(plot_lgrngn_spec ${HDF5_LIBRARIES})
 #target_include_directories(plot_lgrngn_spec PUBLIC ${HDF5_INCLUDE_DIRS})
 #target_link_libraries(plot_lgrngn_spec ${Boost_LIBRARIES})
 #target_include_directories(plot_lgrngn_spec PUBLIC ${Boost_INCLUDE_DIRS})
-#
-#set(OUT_LGRNGN_DIR  ${CMAKE_BINARY_DIR}/tests/fig_a)
-#add_executable(plot_lgrngn_prof plot_lgrngn_prof.cpp)
-#add_test(plot_lgrngn_prof plot_lgrngn_prof ${OUT_LGRNGN_DIR})
-#target_link_libraries(plot_lgrngn_prof ${HDF5_LIBRARIES})
-#target_include_directories(plot_lgrngn_prof PUBLIC ${HDF5_INCLUDE_DIRS})
-#target_link_libraries(plot_lgrngn_prof ${Boost_LIBRARIES})
-#target_include_directories(plot_lgrngn_prof PUBLIC ${Boost_INCLUDE_DIRS})
-#
+
+set(OUT_LGRNGN_DIR  ${CMAKE_BINARY_DIR}/tests/fig_a)
+add_executable(plot_lgrngn_prof plot_lgrngn_prof.cpp)
+add_test(plot_lgrngn_prof plot_lgrngn_prof ${OUT_LGRNGN_DIR})
+target_link_libraries(plot_lgrngn_prof ${HDF5_LIBRARIES})
+target_include_directories(plot_lgrngn_prof PUBLIC ${HDF5_INCLUDE_DIRS})
+target_link_libraries(plot_lgrngn_prof ${Boost_LIBRARIES})
+target_include_directories(plot_lgrngn_prof PUBLIC ${Boost_INCLUDE_DIRS})
+
 #add_executable(plot_lgrngn_series plot_lgrngn_series.cpp)
 #add_test(plot_lgrngn_series plot_lgrngn_series ${OUT_LGRNGN_DIR})
 #target_link_libraries(plot_lgrngn_series ${HDF5_LIBRARIES})
