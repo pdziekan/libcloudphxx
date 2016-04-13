@@ -206,7 +206,7 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
           blitz::thirdIndex ki;
           blitz::Array<real_t, 3> tmp(rv(ijk).shape());
           tmp  = rv(ijk) + r_l(ijk);
-          k_i(i, j) = blitz::first( tmp< setup::q_i, ki) - rv.base(blitz::secondDim); // rv and r_l have same bases (first indices), subarrays (i.e. rv(ijk)) start with the same base as original arr (i.e. rv)!
+          k_i(i, j) = blitz::first( tmp< setup::q_i, ki) - rv.base(blitz::thirdDim); // rv and r_l have same bases (first indices), subarrays (i.e. rv(ijk)) start with the same base as original arr (i.e. rv)!
 
           // calc Eqs. 5 and 6 from Ackerman et al 2009
           // TODO: z-th cell will be accounted for twice (in each integral)...
