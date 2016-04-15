@@ -269,29 +269,39 @@ this->mem->barrier();
         }
         // --- surface fluxes ---
         {
+          // exponential decrease with height
+          blitz::Array<real_t, 3> hgt_fctr(nx, ny, nz);
+          real_t z_0 = setup::z_rlx / si::metres;
+          blitz::thirdIndex ki;
+          hgt_fctr = exp(- ki * this->dk / z_0) / z_0; 
           // sensible heat
           for(int x = i.first() ; x <= i.last(); ++x)
           {
             for(int y = j.first() ; y <= j.last(); ++y)
             {
-              F(x, y, 0) = setup::F_sens / (libcloudphxx::common::moist_air::c_p<real_t>(this->state(ix::rv)(x, y, 0)) * si::kilograms * si::kelvins / si::joules); // heating divided by specific heat capacity
-              F(x, y, 0) = F(x, y, 0) / (libcloudphxx::common::theta_dry::T<real_t>(Tht(x, y, 0) * si::kelvins, rhod(x, y, 0) * si::kilograms / si::metres  / si::metres / si::metres) / si::kelvins); // divide by temperature
+              for(int z = k.first() ; z <= k.last(); ++z)
+              {
+                F(x, y, z) = setup::F_sens / (libcloudphxx::common::moist_air::c_p<real_t>(this->state(ix::rv)(x, y, z)) * si::kilograms * si::kelvins / si::joules); // heating divided by specific heat capacity
+                F(x, y, z) = F(x, y, z) / (libcloudphxx::common::theta_dry::T<real_t>(Tht(x, y, z) * si::kelvins, rhod(x, y, z) * si::kilograms / si::metres  / si::metres / si::metres) / si::kelvins); // divide by temperature
+              }
             }
           }
           // heating[W/m^2] / cell height[m] / rhod[kg/m^3] / specific heat capacity of moist air [J/K/kg]
-          rhs.at(ix::th)(i, j, blitz::Range(0,0)) += F(i, j, blitz::Range(0,0)) *                                                       // heat in W/m^2 divided by spec heat capacity
-            Tht(i, j, blitz::Range(0,0)) /                                                                                           // times dry potential temp
+          F(i, j, k) *=                                                       // heat in W/m^2 divided by spec heat capacity
+            Tht(i, j, k) /                                                                                           // times dry potential temp
             this->dk /                                                                                                            // divide by cell height
-            rhod(i, j, blitz::Range(0,0));                                                                                           // divide by density
+            rhod(i, j, k);                                                                                          // divide by density
 
+          rhs.at(ix::th)(i, j, k) += F(i, j, k) * hgt_fctr(i, j, k); // apply height factor
           // latent heat
           // heating[W/m^2] / cell height[m] / rhod[kg/m^3] / latent heat of evaporation [J/kg]
-          rhs.at(ix::rv)(i, j, blitz::Range(0,0)) += setup::F_lat /                           // heating 
+          rhs.at(ix::rv)(i, j, k) += setup::F_lat /                           // heating 
           (libcloudphxx::common::const_cp::l_tri<real_t>() * si::kilograms / si::joules) / // latent heat of evaporation
           this->dk /                                                                       // cell height
-          rhod(i, j, blitz::Range(0,0));                                                      // density
+          rhod(i, j, k) *                                                     // density
+          hgt_fctr(i, j, k); 
  
-          // momentum flux
+          // momentum flux, applied only in the lowest cell
           blitz::Array<real_t, 2> uMag((i.last() - i.first() + 1), ny);
           uMag = sqrt(
                    this->state(ix::u)(i, j, 0) * this->state(ix::u)(i, j, 0) +

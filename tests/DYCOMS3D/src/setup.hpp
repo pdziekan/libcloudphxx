@@ -151,9 +151,9 @@ namespace setup
   // for blk_2m:
   const quantity<si::dimensionless, real_t> chem_b = .55; //ammonium sulphate //chem_b = 1.33; // sodium chloride
 
-  //th and rv relaxation time and height
+  //th, rv and surface fluxes relaxation time and height
   const quantity<si::time, real_t> tau_rlx = 300 * si::seconds;
-  const quantity<si::length, real_t> z_rlx = 200 * si::metres;
+  const quantity<si::length, real_t> z_rlx = 50 * si::metres;
 
   // function expecting a libmpdata solver parameters struct as argument
   template <class T>
