@@ -31,8 +31,10 @@ int main(int ac, char** av)
   string file = h5 + "_series.svg";
   init_prof(gp, file, 2, 3, n); 
 
-  blitz::Array<float, 2> rhod;
+//  blitz::Array<float, 2> rhod;
+  const double rhod=1.; //placeholder for real density table
   // read density
+/*
   {
     notice_macro("about to open file: " << h5)
     H5::H5File h5f(h5 + "/const.h5", H5F_ACC_RDONLY);
@@ -61,6 +63,7 @@ int main(int ac, char** av)
     };  
     h5d.read(rhod.data(), H5::PredType::NATIVE_FLOAT, H5::DataSpace(2, ext), h5s);
   }
+*/
 
   blitz::firstIndex i;
   blitz::secondIndex j;
