@@ -34,8 +34,10 @@ int main(int ac, char** av)
   string file = h5 + "_profiles.svg";
   init_prof(gp, file, 3, 3, n); 
 
-  blitz::Array<float, 2> rhod;
+  //blitz::Array<float, 2> rhod;
+  const double rhod=1; //placeholder for real density, if it varies in simulation
   // read density
+/*
   {
     notice_macro("about to open file: " << h5)
     H5::H5File h5f(h5 + "/const.h5", H5F_ACC_RDONLY);
@@ -64,6 +66,7 @@ int main(int ac, char** av)
     };  
     h5d.read(rhod.data(), H5::PredType::NATIVE_FLOAT, H5::DataSpace(2, ext), h5s);
   }
+*/
 
   for (auto &plt : std::set<std::string>({"rtot", "rliq", "wvar", "w3rd", "prflux", "clfrac", "N_c"}))
   {
