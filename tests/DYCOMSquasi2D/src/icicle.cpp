@@ -49,7 +49,7 @@ void run(int nx, int ny, int nz, int nt, const std::string &outdir, const int &o
     using concurr_t = concurr::serial<
       solver_t, 
       bcond::cyclic, bcond::cyclic,
-      bcond::cyclic, bcond::cyclic,
+      bcond::rigid,  bcond::rigid,
       bcond::rigid,  bcond::rigid 
     >;
     slv.reset(new concurr_t(p));
@@ -62,7 +62,7 @@ void run(int nx, int ny, int nz, int nt, const std::string &outdir, const int &o
     using concurr_t = concurr::boost_thread<
       solver_t, 
       bcond::cyclic, bcond::cyclic,
-      bcond::cyclic, bcond::cyclic,
+      bcond::rigid,  bcond::rigid,
       bcond::rigid,  bcond::rigid 
     >;
     slv.reset(new concurr_t(p));
