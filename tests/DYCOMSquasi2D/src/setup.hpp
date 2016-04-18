@@ -161,7 +161,7 @@ namespace setup
   {
     params.dt = dt / si::seconds;
     params.dx = (X / si::metres) / (nx-1); 
-    params.dy = (Y / si::metres) / (ny-1); 
+    params.dy = (Y / si::metres) / (ny); 
     params.dz = (Z / si::metres) / (nz-1);
     params.di = params.dx;
     params.dj = params.dy;
@@ -239,8 +239,8 @@ namespace setup
     solver.advectee(ix::rv) = r_t()(k * dz); 
 
     solver.advectee(ix::u) = setup::u()(k * dz);
-    solver.advectee(ix::v) = setup::v()(k * dz);
-//    solver.advectee(ix::v) = 0;  
+//    solver.advectee(ix::v) = setup::v()(k * dz);
+    solver.advectee(ix::v) = 0;  
     solver.advectee(ix::w) = 0;  
 
     // density profile
