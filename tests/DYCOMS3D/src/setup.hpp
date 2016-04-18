@@ -34,8 +34,6 @@ namespace setup
     X    = 6400 * si::metres, // DYCOMS: 6400
     Y    = 1 * si::metres; // DYCOMS: 6400
   const real_t z_i  = 795; //initial inversion height
-  const quantity<si::time, real_t>
-    dt = real_t(2) * si::seconds;
   const real_t heating_kappa = 85; // m^2/kg
   const real_t F_0 = 70; // w/m^2
   const real_t F_1 = 22; // w/m^2
@@ -159,7 +157,6 @@ namespace setup
   template <class T>
   void setopts(T &params, int nx, int ny, int nz)
   {
-    params.dt = dt / si::seconds;
     params.dx = (X / si::metres) / (nx-1); 
     params.dy = (Y / si::metres) / (ny-1); 
     params.dz = (Z / si::metres) / (nz-1);

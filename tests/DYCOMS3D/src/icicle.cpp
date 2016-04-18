@@ -21,7 +21,7 @@
 
 // model run logic - the same for any microphysics
 template <class solver_t>
-void run(int nx, int ny, int nz, int nt, const std::string &outdir, const int &outfreq, int spinup, bool serial, bool relax_th_rv)
+void run(int nx, int ny, int nz, int nt, setup::real_t dt, const std::string &outdir, const int &outfreq, int spinup, bool serial, bool relax_th_rv)
 {
   // instantiation of structure containing simulation parameters
   typename solver_t::rt_params_t p;
@@ -33,6 +33,7 @@ void run(int nx, int ny, int nz, int nt, const std::string &outdir, const int &o
   p.spinup = spinup;
   p.relax_th_rv = relax_th_rv;
   p.prs_tol=1e-6;
+  p.dt = dt;
   setopts_micro<solver_t>(p, nx, ny, nz, nt);
   //std::cout << "params.rhod po setopts micro " << p.rhod << " "  << *p.rhod << std::endl;
   setup::setopts(p, nx, ny, nz);
@@ -107,6 +108,7 @@ int main(int argc, char** argv)
       ("ny", po::value<int>()->default_value(76) , "grid cell count in horizontal")
       ("nz", po::value<int>()->default_value(76) , "grid cell count in vertical")
       ("nt", po::value<int>()->default_value(3600) , "timestep count")
+      ("dt", po::value<setup::real_t>()->required() , "timestep length")
       ("outdir", po::value<std::string>(), "output file name (netCDF-compatible HDF5)")
       ("outfreq", po::value<int>(), "output rate (timestep interval)")
       ("spinup", po::value<int>()->default_value(2400) , "number of initial timesteps during which rain formation is to be turned off")
@@ -145,6 +147,9 @@ int main(int argc, char** argv)
       nz = vm["nz"].as<int>(),
       nt = vm["nt"].as<int>(),
       spinup = vm["spinup"].as<int>();
+   
+    //handling timestep length
+    setup::real_t dt = vm["dt"].as<setup::real_t>();
 
     // handling serial-advection-forcing flag
     bool adv_serial = vm["adv_serial"].as<bool>();
@@ -165,7 +170,7 @@ int main(int argc, char** argv)
           vip_i=u, vip_j=v, vip_k=w, vip_den=-1
         }; };
       };
-      run<kin_cloud_3d_lgrngn<ct_params_t>>(nx, ny, nz, nt, outdir, outfreq, spinup, adv_serial, relax_th_rv);
+      run<kin_cloud_3d_lgrngn<ct_params_t>>(nx, ny, nz, nt, dt, outdir, outfreq, spinup, adv_serial, relax_th_rv);
     }
     else throw
       po::validation_error(
