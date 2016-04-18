@@ -33,6 +33,7 @@ int main(int ac, char** av)
   init_prof(gp, file, 2, 3, n); 
 
   // read density
+  const double rhod = 1.; // placeholder for variable density
   /*
   blitz::Array<float, 3> rhod;
   {
@@ -65,7 +66,6 @@ int main(int ac, char** av)
     h5d.read(rhod.data(), H5::PredType::NATIVE_FLOAT, H5::DataSpace(3, ext), h5s);
   }
 */
-  const int rhod = 1;
 
   blitz::firstIndex i;
   blitz::secondIndex j;
@@ -177,7 +177,7 @@ int main(int ac, char** av)
     } // time loop
 
     gp << "set yrange[*:*]\n";
-    gp << "set xrange[0:0.3]\n";
+    gp << "set xrange[*:*]\n";
 
     if (plt == "clfrac")
       gp << "set title 'average cloud fraction'\n";
