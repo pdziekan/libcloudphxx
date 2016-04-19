@@ -112,6 +112,7 @@ namespace setup
   };
 
   // density profile as a function of altitude
+  // hydrostatic
   struct rhod_fctr
   {
     real_t operator()(real_t z) const
@@ -211,7 +212,7 @@ namespace setup
       nz = solver.advectee().extent(z); 
     real_t 
       dx = (X / si::metres) / (nx-1), 
-      dy = (Y / si::metres) / (ny), 
+      dy = (Y / si::metres) / (ny-1), 
       dz = (Z / si::metres) / (nz-1); 
 
     // initial potential temperature & water vapour mixing ratio profiles
@@ -222,16 +223,26 @@ namespace setup
     std::mt19937 gen(seed);
     std::uniform_real_distribution<> dis(-0.1, 0.1);
 
+    blitz::Array<real_t, 3> prtrb(nx, ny, nz);
     for (int ii = 0; ii < nx; ++ii)
     {
       for (int jj = 0; jj < ny; ++jj)
       {
         for (int kk = 0; kk < nz; ++kk)
         {
-           solver.advectee(ix::th)(ii, jj, kk) += dis(gen);
+           prtrb(ii, jj, kk) = dis(gen);
         }
       }
     }
+    auto i_r = blitz::Range(0, nx - 1);
+    auto j_r = blitz::Range(0, ny - 1);
+    auto k_r = blitz::Range(0, nz - 1);
+
+    // enforce cyclic perturbation
+    prtrb(nx - 1, j_r, k_r) = prtrb(0, j_r, k_r);
+    prtrb(i_r, ny - 1, k_r) = prtrb(i_r, 0, k_r);
+
+    solver.advectee(ix::th)(i_r, j_r, k_r) += prtrb(i_r, j_r, k_r);
 
     solver.advectee(ix::rv) = r_t()(k * dz); 
 

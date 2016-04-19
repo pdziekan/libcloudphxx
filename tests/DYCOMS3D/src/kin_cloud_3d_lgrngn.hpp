@@ -155,6 +155,30 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
     // TODO: barrier?
   }
 
+/*
+  void vip_rhs_expl_calc()
+  {
+    real_t hscale = 1.;
+    real_t cdrag = 0.;
+    parent_t::vip_rhs_expl_calc();
+
+    for (int k = this->k.first(); k <= this->k.last(); ++k)
+    {
+      this->vip_rhs[0](this->i, this->j, k) += - cdrag / hscale * this->dt * sqrt(
+                                                pow2(this->state(ix::vip_i)(this->i, this->j, 0))
+                                              + pow2(this->state(ix::vip_j)(this->i, this->j, 0))
+                                              ) * this->state(ix::vip_i)(this->i, this->j, 0)
+                                                * exp(-this->dj * k / hscale);
+      
+      this->vip_rhs[1](this->i, this->j, k) += - cdrag / hscale * this->dt * sqrt(
+                                                pow2(this->state(ix::vip_i)(this->i, this->j, 0))
+                                              + pow2(this->state(ix::vip_j)(this->i, this->j, 0))
+                                              ) * this->state(ix::vip_j)(this->i, this->j, 0)
+                                                * exp(-this->dj * k / hscale);
+    }
+  }
+*/
+
   void update_rhs(
     arrvec_t<typename parent_t::arr_t> &rhs,
     const typename parent_t::real_t &dt,
@@ -179,16 +203,18 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
     {   
       case (0): 
       {   
-
         int nx = this->mem->grid_size[0].length(); //76
         int ny = this->mem->grid_size[1].length(); //76
         int nz = this->mem->grid_size[2].length(); //76
+        // temperature relaxation
+//        rhs.at(ix::tht)(ijk) += 0 - (*this->mem->vab_coeff)(ijk) * (Tht(ijk) - th_init(ijk));
         // buoyancy
-        tmp1(ijk) = g * (Tht(ijk) - th_init(ijk)) / th_init(ijk);
+        tmp1(ijk) = g * (Tht(ijk) - th_init(ijk)) / th_init(0, 0, 0);//th_init(ijk);
         this->xchng_sclr(tmp1, i, j, k); 
         tmp2(i, j, k) = 0.25 * (tmp1(i, j, k + 1) + 2 * tmp1(i, j, k) + tmp1(i, j, k - 1));
         rhs.at(ix::w)(ijk) += tmp2(ijk);
         // large-scale vertical wind
+        /*
         for(auto type : std::set<int>{ix::th, ix::rv, ix::u, ix::v, ix::w})
         {
           tmp1(ijk) = this->state(type)(ijk);
@@ -266,7 +292,7 @@ if(this->rank==rank)
 this->mem->barrier();
 }
 */
-        }
+/*        }
         // --- surface fluxes ---
         {
           // exponential decrease with height
@@ -310,21 +336,21 @@ this->mem->barrier();
           rhs.at(ix::u)(i, j ,0) -= this->state(ix::u)(i, j, 0) / uMag(blitz::Range::all(), j) *  pow(setup::u_fric,2) /  this->dk;  
           rhs.at(ix::v)(i, j, 0) -= this->state(ix::v)(i, j, 0) / uMag(blitz::Range::all(), j) *  pow(setup::u_fric,2) /  this->dk;  
         }
+*/
         break;
       }   
-/*
       case (1): 
       {   
-
+        // temperature relaxation
+//        rhs.at(ix::tht)(ijk) += (0 - (*this->mem->vab_coeff)(ijk) * (Tht(ijk) - th_init(ijk)))
+  //                              / (1.0 + 0.5 * (*this->mem->vab_coeff)(ijk) * this->dt);
         // buoyancy
-        tmp1(ijk) = g * (Tht(ijk) + 0.5 * this->dt * rhs.at(ix::th)(ijk) - th_init(ijk)) / th_init(ijk);
+        tmp1(ijk) = g * (Tht(ijk) + 0.5 * this->dt * rhs.at(ix::th)(ijk) - th_init(ijk)) / th_init(0,0,0);//th_init(ijk);
         this->xchng_sclr(tmp1, i, j, k); 
         tmp2(i, j, k) = 0.25 * (tmp1(i, j, k + 1) + 2 * tmp1(i, j, k) + tmp1(i, j, k - 1));
         rhs.at(ix::w)(ijk) += tmp2(ijk);
-
         break;
       }
-*/
     }  
   }
 
@@ -365,6 +391,7 @@ this->mem->barrier();
       rl = rl * rhod; 
       rl = rl * setup::heating_kappa;
 
+/*
       {
         using libmpdataxx::arakawa_c::h;
         // temporarily Cx & Cz are multiplied by rhod ...
@@ -388,6 +415,7 @@ this->mem->barrier();
         // ... and now dividing them by rhod (z=0 is located at k=1/2)
         {
           blitz::thirdIndex k;
+          // rhod is uniformly =1 in mpdata...
           Cx /= setup::rhod_fctr()(   k     * this->dk);
           Cy /= setup::rhod_fctr()(   k     * this->dk);
           Cz /= setup::rhod_fctr()((k - .5) * this->dk);
@@ -433,7 +461,7 @@ this->mem->barrier();
 #endif
           prtcls->step_async(params.cloudph_opts);
       }
-
+*/
       // performing diagnostics
       if (this->timestep % this->outfreq == 0) 
       { 
@@ -491,7 +519,7 @@ this->mem->barrier();
 
     blitz::thirdIndex k;
     // prescribed density
-    rhod = setup::rhod_fctr()(k * params.dz);
+    rhod = 1;//setup::rhod_fctr()(k * params.dz);
 
     // prescribed large-scale vertical wind
     w_LS = setup::w_LS_fctr()(k * params.dz);
