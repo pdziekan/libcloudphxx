@@ -23,9 +23,6 @@ int main(int ac, char** av)
   auto n = h5n(h5);
 
   const double z_i = 795; // [m]
-  const double dz = 5; // [m], ugly and what about borde cells with dz=2.5?
-  const double dx = 50; // [m], ugly and what about borde cells?
-  const double dy = 50; // [m], ugly and what about borde cells?
   const double D = 3.75e-6; //[1/s], ugly, large-scale horizontal wind divergence
 
   Gnuplot gp;
@@ -188,13 +185,13 @@ int main(int ac, char** av)
     else if (plt == "lwp")
     {
       gp << "set title 'liquid water path [g / m^2]'\n";
-      res_prof *= dz * n["z"];
+      res_prof *= n["dz"] * n["z"];
     }
     else if (plt == "er")
     {
       // forward difference, in cm
       blitz::Range nolast = blitz::Range(0, n["t"]-2);
-      res_prof(nolast) = (res_prof(nolast+1) - res_prof(nolast)) * dz * 1e2 / (n["dt"] * n["outfreq"]) + D * res_prof(nolast) * dz * 1e2;
+      res_prof(nolast) = (res_prof(nolast+1) - res_prof(nolast)) * n["dz"] * 1e2 / (n["dt"] * n["outfreq"]) + D * res_prof(nolast) * n["dz"] * 1e2;
       res_prof(n["t"]-1) = 0.;
       gp << "set title 'entrainment rate [cm / s]'\n";
     }

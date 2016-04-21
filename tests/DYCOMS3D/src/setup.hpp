@@ -32,7 +32,7 @@ namespace setup
     z_0  = 0    * si::metres,
     Z    = 1500 * si::metres, // DYCOMS: 1500
     X    = 6400 * si::metres, // DYCOMS: 6400
-    Y    = 1 * si::metres; // DYCOMS: 6400
+    Y    = 6400 * si::metres; // DYCOMS: 6400
   const real_t z_i  = 795; //initial inversion height
   const real_t heating_kappa = 85; // m^2/kg
   const real_t F_0 = 70; // w/m^2

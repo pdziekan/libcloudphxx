@@ -21,10 +21,8 @@ int main(int ac, char** av)
     h5  = dir + "out_lgrngn";
 
   auto n = h5n(h5);
+  printf("dx %lf dy %lf dz %lf\n", n["dx"], n["dy"], n["dz"]);
   const double z_i = 795; // [m]
-  const double dz = 5; // [m], ugly and what about borde cells with dz=2.5?
-  const double dx = 50; // [m], ugly and what about borde cells?
-  const double dy = 1; // [m], ugly and what about borde cells?
 
   // average profile between 2h and 6h (in paper its between 2h and 6h! - do longer sims)
   int first_timestep = 7200. / n["dt"] / n["outfreq"];
@@ -148,7 +146,7 @@ int main(int ac, char** av)
           auto tmp = h5load(h5, "precip_rate", at * n["outfreq"]);
           blitz::Array<float, 3> snap(tmp);
           snap = snap *  4./3 * 3.14 * 1e3 // to get mass
-                     / dx / dy / dz    // averaged over cell volume, TODO: make precip rate return specific moment? wouldnt need the dx and dy
+                     / n["dx"] / n["dy"] / n["dz"]    // averaged over cell volume, TODO: make precip rate return specific moment? wouldnt need the dx and dy
                      * 2264.76e3;      // latent heat of evaporation [J/kg]
           res += snap; 
         }
@@ -199,7 +197,7 @@ int main(int ac, char** av)
     } // time loop
     res /= last_timestep - first_timestep + 1;
     
-    res_pos = i * dz / z_i; 
+    res_pos = i * n["dz"] / z_i; 
     res_tmp = blitz::mean(res(i, k, j), k); // average in y
     res_prof = blitz::mean(res_tmp(j, i), j); // average in x
 

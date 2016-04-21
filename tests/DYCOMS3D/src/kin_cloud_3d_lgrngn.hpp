@@ -25,7 +25,7 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
 
   // member fields
   std::unique_ptr<libcloudphxx::lgrngn::particles_proto_t<real_t>> prtcls;
-  typename parent_t::arr_t rhod, w_LS, th_init, F;
+  typename parent_t::arr_t rhod, w_LS, th_init, rv_init, F;
   blitz::Array<real_t, 2> k_i;
 
   // global arrays, shared among threads
@@ -155,29 +155,26 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
     // TODO: barrier?
   }
 
-/*
   void vip_rhs_expl_calc()
   {
-    real_t hscale = 1.;
-    real_t cdrag = 0.;
     parent_t::vip_rhs_expl_calc();
+    real_t z_0 = setup::z_rlx / si::metres;
 
     for (int k = this->k.first(); k <= this->k.last(); ++k)
     {
-      this->vip_rhs[0](this->i, this->j, k) += - cdrag / hscale * this->dt * sqrt(
+      this->vip_rhs[0](this->i, this->j, k) += - pow(setup::u_fric,2) / z_0 * this->dt / sqrt(
                                                 pow2(this->state(ix::vip_i)(this->i, this->j, 0))
                                               + pow2(this->state(ix::vip_j)(this->i, this->j, 0))
                                               ) * this->state(ix::vip_i)(this->i, this->j, 0)
-                                                * exp(-this->dj * k / hscale);
+                                                * exp(-this->dk * k / hscale);
       
-      this->vip_rhs[1](this->i, this->j, k) += - cdrag / hscale * this->dt * sqrt(
+      this->vip_rhs[1](this->i, this->j, k) += - pow(setup::u_fric,2) / z_0 * this->dt / sqrt(
                                                 pow2(this->state(ix::vip_i)(this->i, this->j, 0))
                                               + pow2(this->state(ix::vip_j)(this->i, this->j, 0))
                                               ) * this->state(ix::vip_j)(this->i, this->j, 0)
-                                                * exp(-this->dj * k / hscale);
+                                                * exp(-this->dk * k / hscale);
     }
   }
-*/
 
   void update_rhs(
     arrvec_t<typename parent_t::arr_t> &rhs,
@@ -196,7 +193,7 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
     const auto &j = this->j;
     const auto &k = this->k;
 
-    const real_t g = 9.8; 
+    const real_t g = 9.81; 
 
     // forcing
     switch (at) 
@@ -209,12 +206,15 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
         // temperature relaxation
 //        rhs.at(ix::tht)(ijk) += 0 - (*this->mem->vab_coeff)(ijk) * (Tht(ijk) - th_init(ijk));
         // buoyancy
-        tmp1(ijk) = g * (Tht(ijk) - th_init(ijk)) / th_init(0, 0, 0);//th_init(ijk);
+
+        namespace moist_air = libcloudphxx::common::moist_air;
+        const real_t eps = moist_air::R_v<real_t>() / moist_air::R_d<real_t>() - 1.;
+        tmp1(ijk) = g * ((Tht(ijk) - th_init(ijk)) / th_init(0, 0, 0));// + eps * (rv - rv_init(ijk)));
+;//th_init(ijk);
         this->xchng_sclr(tmp1, i, j, k); 
         tmp2(i, j, k) = 0.25 * (tmp1(i, j, k + 1) + 2 * tmp1(i, j, k) + tmp1(i, j, k - 1));
         rhs.at(ix::w)(ijk) += tmp2(ijk);
         // large-scale vertical wind
-        /*
         for(auto type : std::set<int>{ix::th, ix::rv, ix::u, ix::v, ix::w})
         {
           tmp1(ijk) = this->state(type)(ijk);
@@ -292,7 +292,7 @@ if(this->rank==rank)
 this->mem->barrier();
 }
 */
-/*        }
+        }
         // --- surface fluxes ---
         {
           // exponential decrease with height
@@ -307,15 +307,14 @@ this->mem->barrier();
             {
               for(int z = k.first() ; z <= k.last(); ++z)
               {
-                F(x, y, z) = setup::F_sens / (libcloudphxx::common::moist_air::c_p<real_t>(this->state(ix::rv)(x, y, z)) * si::kilograms * si::kelvins / si::joules); // heating divided by specific heat capacity
-                F(x, y, z) = F(x, y, z) / (libcloudphxx::common::theta_dry::T<real_t>(Tht(x, y, z) * si::kelvins, rhod(x, y, z) * si::kilograms / si::metres  / si::metres / si::metres) / si::kelvins); // divide by temperature
+                F(x, y, z) = setup::F_sens / (libcloudphxx::common::moist_air::c_p<real_t>(this->state(ix::rv)(x, y, 0)) * si::kilograms * si::kelvins / si::joules); // heating divided by specific heat capacity
+                F(x, y, z) = F(x, y, z) / (libcloudphxx::common::theta_dry::T<real_t>(Tht(x, y, 0) * si::kelvins, rhod(x, y, 0) * si::kilograms / si::metres  / si::metres / si::metres) / si::kelvins); // divide by temperature
               }
             }
           }
           // heating[W/m^2] / cell height[m] / rhod[kg/m^3] / specific heat capacity of moist air [J/K/kg]
           F(i, j, k) *=                                                       // heat in W/m^2 divided by spec heat capacity
             Tht(i, j, k) /                                                                                           // times dry potential temp
-            this->dk /                                                                                                            // divide by cell height
             rhod(i, j, k);                                                                                          // divide by density
 
           rhs.at(ix::th)(i, j, k) += F(i, j, k) * hgt_fctr(i, j, k); // apply height factor
@@ -323,24 +322,14 @@ this->mem->barrier();
           // heating[W/m^2] / cell height[m] / rhod[kg/m^3] / latent heat of evaporation [J/kg]
           rhs.at(ix::rv)(i, j, k) += setup::F_lat /                           // heating 
           (libcloudphxx::common::const_cp::l_tri<real_t>() * si::kilograms / si::joules) / // latent heat of evaporation
-          this->dk /                                                                       // cell height
           rhod(i, j, k) *                                                     // density
           hgt_fctr(i, j, k); 
- 
-          // momentum flux, applied only in the lowest cell
-          blitz::Array<real_t, 2> uMag((i.last() - i.first() + 1), ny);
-          uMag = sqrt(
-                   this->state(ix::u)(i, j, 0) * this->state(ix::u)(i, j, 0) +
-                   this->state(ix::v)(i, j, 0) * this->state(ix::v)(i, j, 0)
-                 );
-          rhs.at(ix::u)(i, j ,0) -= this->state(ix::u)(i, j, 0) / uMag(blitz::Range::all(), j) *  pow(setup::u_fric,2) /  this->dk;  
-          rhs.at(ix::v)(i, j, 0) -= this->state(ix::v)(i, j, 0) / uMag(blitz::Range::all(), j) *  pow(setup::u_fric,2) /  this->dk;  
         }
-*/
         break;
       }   
       case (1): 
       {   
+/*
         // temperature relaxation
 //        rhs.at(ix::tht)(ijk) += (0 - (*this->mem->vab_coeff)(ijk) * (Tht(ijk) - th_init(ijk)))
   //                              / (1.0 + 0.5 * (*this->mem->vab_coeff)(ijk) * this->dt);
@@ -349,6 +338,7 @@ this->mem->barrier();
         this->xchng_sclr(tmp1, i, j, k); 
         tmp2(i, j, k) = 0.25 * (tmp1(i, j, k + 1) + 2 * tmp1(i, j, k) + tmp1(i, j, k - 1));
         rhs.at(ix::w)(ijk) += tmp2(ijk);
+*/
         break;
       }
     }  
@@ -391,7 +381,6 @@ this->mem->barrier();
       rl = rl * rhod; 
       rl = rl * setup::heating_kappa;
 
-/*
       {
         using libmpdataxx::arakawa_c::h;
         // temporarily Cx & Cz are multiplied by rhod ...
@@ -437,7 +426,6 @@ this->mem->barrier();
         using libcloudphxx::lgrngn::particles_t;
         using libcloudphxx::lgrngn::CUDA;
         using libcloudphxx::lgrngn::multi_CUDA;
-
 #if defined(STD_FUTURE_WORKS)
         if (params.async)
         {
@@ -461,7 +449,6 @@ this->mem->barrier();
 #endif
           prtcls->step_async(params.cloudph_opts);
       }
-*/
       // performing diagnostics
       if (this->timestep % this->outfreq == 0) 
       { 
@@ -514,6 +501,7 @@ this->mem->barrier();
     rhod.resize(nx,ny,nz);
     w_LS.resize(nx,ny,nz);
     th_init.resize(nx,ny,nz);
+    rv_init.resize(nx,ny,nz);
     F.resize(nx,ny,nz);
     k_i.resize(nx, ny);
 
@@ -527,6 +515,8 @@ this->mem->barrier();
     // prescribed initial temp profile
     th_init = setup::th_dry_fctr()(k * params.dz);
 
+    // prescribed initial rv profile
+    rv_init = 0.; // initially the reference state is not known, will be saved after spinup
 
     // delaying any initialisation to ante_loop as rank() does not function within ctor! // TODO: not anymore!!!
     // TODO: equip rank() in libmpdata with an assert() checking if not in serial block

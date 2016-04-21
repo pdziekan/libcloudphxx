@@ -9,7 +9,7 @@ void init_prof(
   Gnuplot &gp, 
   const std::string &file, 
   const int &ny, const int &nx, 
-  std::map<std::string, int> n
+  std::map<std::string, double> n
 )
 {
   boost::filesystem::create_directories(
@@ -34,7 +34,7 @@ void init(
   Gnuplot &gp, 
   const std::string &file, 
   const int &ny, const int &nx, 
-  std::map<std::string, int> n
+  std::map<std::string, double> n
 )
 {
   boost::filesystem::create_directories(

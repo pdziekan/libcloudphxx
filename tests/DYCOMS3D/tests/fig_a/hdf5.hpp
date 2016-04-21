@@ -4,13 +4,13 @@
 #include <H5Cpp.h>
 #include <map>
 
-std::map<std::string, int> h5n(
+std::map<std::string, double> h5n(
   const string &file
 )
 {
   H5::H5File h5f(file + "/const.h5", H5F_ACC_RDONLY);
   hsize_t n[3];
-  std::map<std::string, int> map;
+  std::map<std::string, double> map;
 
   h5f.openDataSet("T").getSpace().getSimpleExtentDims(n, NULL);
   map["t"] = n[0];
@@ -37,6 +37,37 @@ std::map<std::string, int> h5n(
   map["x"] = n[0]-1;
   map["y"] = n[1]-1;
   map["z"] = n[2]-1;
+
+  // read dx,dy,dz
+  H5::DataSet h5d = h5f.openDataSet("X");
+  H5::DataSpace h5s = h5d.getSpace();
+
+  if (h5s.getSimpleExtentNdims() != 3) 
+    error_macro("need 3 dimensions")
+
+  enum {x,y,z};
+  h5s.getSimpleExtentDims(n, NULL);
+
+  blitz::Array<float, 3> tmp(n[x], n[y], n[z]);
+
+  hsize_t 
+    cnt[3] = { n[x], n[y], n[z] }, 
+    off[3] = { 0,    0,    0    };
+  h5s.selectHyperslab( H5S_SELECT_SET, cnt, off);
+
+  hsize_t ext[3] = {
+    hsize_t(tmp.extent(0)), 
+    hsize_t(tmp.extent(1)), 
+    hsize_t(tmp.extent(2))
+  };
+  h5d.read(tmp.data(), H5::PredType::NATIVE_FLOAT, H5::DataSpace(3, ext), h5s);
+  map["dx"] = tmp(1,0,0) - tmp(0,0,0);
+  h5d = h5f.openDataSet("Y");
+  h5d.read(tmp.data(), H5::PredType::NATIVE_FLOAT, H5::DataSpace(3, ext), h5s);
+  map["dy"] = tmp(0,1,0) - tmp(0,0,0);
+  h5d = h5f.openDataSet("Z");
+  h5d.read(tmp.data(), H5::PredType::NATIVE_FLOAT, H5::DataSpace(3, ext), h5s);
+  map["dz"] = tmp(0,0,1) - tmp(0,0,0);
 
   return map;
 }
