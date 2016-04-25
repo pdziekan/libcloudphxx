@@ -41,7 +41,7 @@ endif()
 
 ############################################################################################
 # CUDA
-find_package(CUDA QUIET)
+find_package(CUDA)
 if (NOT CUDA_FOUND)
   message(STATUS "CUDA not found. 
 
@@ -109,7 +109,7 @@ if (CUDA_FOUND)
         -Xcompiler=-Ofast,-march=native,-DNDEBUG,-fopenmp")
   else()
     set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -g -DTHRUST_DEBUG -lineinfo
-        \"-DBOOST_NOINLINE=__attribute__((noinline))\" -Xcompiler=-fopenmp,-g")  
+        \"-DBOOST_NOINLINE=__attribute__((noinline))\" -Xcompiler=-fopenmp,-g,-rdynamic")  
 
 # do not use -G flag on travis since it causes build to fail; probably due to memory shortage
     if(NOT DEFINED ENV{TRAVIS})
