@@ -9,6 +9,7 @@
 
 #include "opts_common.hpp"
 #include "kin_cloud_3d_lgrngn.hpp"
+#include "forcings.hpp"
 
 // string parsing
 #include <boost/spirit/include/qi.hpp>    

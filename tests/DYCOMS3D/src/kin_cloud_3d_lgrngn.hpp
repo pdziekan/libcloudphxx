@@ -31,7 +31,9 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
   // global arrays, shared among threads
   typename parent_t::arr_t &tmp1,
                            &tmp2,
-                           &r_l;
+                           &r_l,
+                           &alpha,   // 'explicit' rhs part - does not depend on the value at n+1
+                           &beta;    // 'implicit' rhs part - coefficient of the value at n+1
   // helper methods
   void diag()
   {
@@ -176,6 +178,12 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
     }
   }
 
+  void buoyancy(const blitz::Array<real_t, 3> &th);
+  void radiation(const blitz::Array<real_t, 3> &rv);
+  void surf_sens();
+  void surf_latent();
+  void subsidence(const int&);
+
   void update_rhs(
     arrvec_t<typename parent_t::arr_t> &rhs,
     const typename parent_t::real_t &dt,
@@ -186,159 +194,144 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
     parent_t::update_rhs(rhs, dt, at);
     using ix = typename ct_params_t::ix;
 
-    const auto &Tht = this->state(ix::th); 
-    const auto &rv = this->state(ix::rv); 
     const auto &ijk = this->ijk;
     const auto &i = this->i;
     const auto &j = this->j;
     const auto &k = this->k;
 
-    const real_t g = 9.81; 
 
     // forcing
     switch (at) 
     {   
+      // for eulerian integration or used to init trapezoidal integration
       case (0): 
       {   
-        int nx = this->mem->grid_size[0].length(); //76
-        int ny = this->mem->grid_size[1].length(); //76
-        int nz = this->mem->grid_size[2].length(); //76
-        // temperature relaxation
-//        rhs.at(ix::tht)(ijk) += 0 - (*this->mem->vab_coeff)(ijk) * (Tht(ijk) - th_init(ijk));
-        // buoyancy
-
-        namespace moist_air = libcloudphxx::common::moist_air;
-        const real_t eps = moist_air::R_v<real_t>() / moist_air::R_d<real_t>() - 1.;
-        tmp1(ijk) = g * ((Tht(ijk) - th_init(ijk)) / th_init(0, 0, 0));// + eps * (rv - rv_init(ijk)));
-;//th_init(ijk);
-        this->xchng_sclr(tmp1, i, j, k); 
-        tmp2(i, j, k) = 0.25 * (tmp1(i, j, k + 1) + 2 * tmp1(i, j, k) + tmp1(i, j, k - 1));
-        rhs.at(ix::w)(ijk) += tmp2(ijk);
+        // ---- water vapor sources ----
+        // surface flux
+        surf_latent();
+        alpha(i, j, k) = F(i, j, k);
         // large-scale vertical wind
-        for(auto type : std::set<int>{ix::th, ix::rv, ix::u, ix::v, ix::w})
+        subsidence(ix::rv);
+        alpha(ijk) += tmp1(ijk);
+        // TODO: add absorber and nudging to alpha
+        //beta(ijk) = 0.;
+        // TODO: add absorber and nudging to beta
+        rhs.at(ix::rv)(ijk) += alpha(ijk); // TODO: once beta is non-zero, make it alpha + beta * rv
+        
+        // ---- potential temp sources ----
+        // -- heating --
+        // surface flux
+        surf_sens();
+        alpha(i, j, k) = F(i, j, k);
+        // radiation
+        radiation(this->state(ix::rv));
+        alpha(i, j, k) += F(i, j, k);
+        // change of theta[K/s] = heating[W/m^3] * theta[K] / T[K] / c_p[J/K/kg] / rhod[kg/m^3]
+        for(int x = i.first() ; x <= i.last(); ++x)
         {
-          tmp1(ijk) = this->state(type)(ijk);
-          this->xchng_sclr(tmp1, i, j, k);
-          tmp2(i, j, k) = - w_LS(i, j, k) * (tmp1(i, j, k + 1) - tmp1(i, j, k - 1)) / (2. * this->dk); // use built-in blitz stencil?
-          tmp1(i, j, k) = 0.25 * (tmp2(i, j, k + 1) + 2 * tmp2(i, j, k) + tmp2(i, j, k - 1));
+          for(int y = j.first() ; y <= j.last(); ++y)
+          {
+            for(int z = k.first() ; z <= k.last(); ++z)
+            {
+              alpha(x, y, z) = alpha(x, y, z) * this->state(ix::th)(x, y, z) / rhod(x, y, z) / 
+                           (libcloudphxx::common::moist_air::c_p<real_t>(this->state(ix::rv)(x, y, z)) * si::kilograms * si::kelvins / si::joules) / 
+                           (libcloudphxx::common::theta_dry::T<real_t>(this->state(ix::th)(x, y, z) * si::kelvins, rhod(x, y, z) * si::kilograms / si::metres  / si::metres / si::metres) / si::kelvins);
+            }
+          }
+        }
+      
+        // large-scale vertical wind
+        subsidence(ix::th);
+        alpha(ijk) += tmp1(ijk);
+        // TODO: add absorber and nudging to alpha
+        //beta(ijk) = 0.;
+        // TODO: add absorber and nudging to beta
+        rhs.at(ix::rv)(ijk) += alpha(ijk); // TODO: once beta is non-zero, make it alpha + beta * rv
+
+
+        // vertical velocity sources
+        // buoyancy
+        buoyancy(this->state(ix::th));
+        alpha(ijk) = tmp2(ijk);
+        // large-scale vertical wind
+        subsidence(ix::w);
+        alpha(ijk) += tmp1(ijk);
+        rhs.at(ix::w)(ijk) += alpha(ijk);
+
+        // horizontal velocity sources 
+        // large-scale vertical wind
+        for(auto type : std::set<int>{ix::u, ix::v})
+        {
+          subsidence(type);
           rhs.at(type)(ijk) += tmp1(ijk);
-        }
-        // --- radiative heating ---
-        // TODO: adapt it to trapezoidal integration
-        {
-//          std::cout << "nx: " << nx << "nz: " << nz << std::endl;
-
-          // index of first cell above inversion
-          blitz::thirdIndex ki;
-          blitz::Array<real_t, 3> tmp(rv(ijk).shape());
-          tmp  = rv(ijk) + r_l(ijk);
-          k_i(i, j) = blitz::first( tmp< setup::q_i, ki) - rv.base(blitz::thirdDim); // rv and r_l have same bases (first indices), subarrays (i.e. rv(ijk)) start with the same base as original arr (i.e. rv)!
-
-          // calc Eqs. 5 and 6 from Ackerman et al 2009
-          // TODO: z-th cell will be accounted for twice (in each integral)...
-          for(int x = i.first() ; x <= i.last(); ++x) // 0..75 || 0..37 38..75 || ...
-          {
-            for(int y = 0 ; y < ny; ++y)
-            {
-              for(int z = 0 ; z < nz; ++z)
-              {
-                F(x, y, z) =  setup::F_0 * exp(- (nz - z) * this->dk *  blitz::sum(r_l(x, y, blitz::Range(z, nz-1))));
-                F(x, y, z) += setup::F_1 * exp(- ((z) - 0) * this->dk * blitz::sum(r_l(x, y, blitz::Range(0, z))));
-
-                if(z > k_i(x, y) )
-                {
-                  real_t z_d = (z - k_i(x, y)) * this->dk;
-                  F(x, y, z) += setup::c_p * setup::rho_i * setup::D * (0.25 * pow(z_d, 4./3) + k_i(x, y) * this->dk * pow(z_d, 1./3)); 
-                }
-
-                F(x, y, z) = F(x, y, z) / (libcloudphxx::common::moist_air::c_p<real_t>(rv(x, y, z)) * si::kilograms * si::kelvins / si::joules); // divide by specific heat capacity
-                F(x, y, z) = F(x, y, z) / (libcloudphxx::common::theta_dry::T<real_t>(Tht(x, y, z) * si::kelvins, rhod(x, y, z) * si::kilograms / si::metres  / si::metres / si::metres) / si::kelvins); // divide by temperature
-              }
-            }
-          }
-          F(ijk) = F(ijk) / this->dk / rhod(ijk); // heating[W/m^2] / cell height[m] / rhod[kg/m^3] / specific heat capacity of moist air [J/K/kg]
-          // Eq. 3.33 from Curry and Webster
-          blitz::Range notopbot(1, nz-2);
-          tmp1(i, j, notopbot) -= Tht(i, j, notopbot) *                          // theta dry
-                             (F(i, j, notopbot+1) - F(i, j, notopbot-1)) / 2.;   // gradient of heat flux 
-          tmp1(i, j, k.last()) -= Tht(i, j, k.last()) *                          // theta dry
-                               (F(i, j, k.last()) - F(i, j, k.last()-1));       // gradient of heat flux 
-          tmp1(i, j, 0) -= Tht(i, j, 0) *                                        // theta dry
-                        (F(i, j, 1) - F(i, j, 0));                              // gradient of heat flux 
-          this->xchng_sclr(tmp1, i, j, k);
-          tmp2(i, j, k) = 0.25 * (tmp1(i, j, k + 1) + 2 * tmp1(i, j, k) + tmp1(i, j, k - 1));
-          rhs.at(ix::th)(ijk) += tmp2(ijk);
-// debug output
-/*
-for(int rank=0;rank<4;++rank)
-{
-if(this->rank==rank)
-{
-          std::cout << "rv " << rv << std::endl;
-          std::cout << "rv(ijk) " << rv(ijk) << std::endl;
-          std::cout << "rl " << r_l << std::endl;
-          std::cout << "rl(ijk) " << r_l(ijk) << std::endl;
-          std::cout << "rhod(ijk) " << rhod(ijk) << std::endl;
-          std::cout << "F(ijk) " << F(ijk) << std::endl;
-          std::cout << "rhs(th) " << rhs.at(ix::th) << std::endl;
-          std::cout << "th " << Tht << std::endl;
-//          std::cout << "first " << blitz::first( (rv + r_l ) < setup::q_i, ji) << std::endl;
-          std::cout << "ji " << j_i(i) << std::endl;
-          std::cout << this->rank << " " << i.first() << " " << i.last() << std::endl;
-          std::cout << this->rank << " " << j.first() << " " << j.last() << std::endl;
-          std::cout << this->rank << " " << ijk.lbound(0) << " " << ijk.ubound(0) << std::endl;
-          std::cout << this->rank << " " << ijk.lbound(1) << " " << ijk.ubound(1) << std::endl;
-}
-this->mem->barrier();
-}
-*/
-        }
-        // --- surface fluxes ---
-        {
-          // exponential decrease with height
-          blitz::Array<real_t, 3> hgt_fctr(nx, ny, nz);
-          real_t z_0 = setup::z_rlx / si::metres;
-          blitz::thirdIndex ki;
-          hgt_fctr = exp(- ki * this->dk / z_0) / z_0; 
-          // sensible heat
-          for(int x = i.first() ; x <= i.last(); ++x)
-          {
-            for(int y = j.first() ; y <= j.last(); ++y)
-            {
-              for(int z = k.first() ; z <= k.last(); ++z)
-              {
-                F(x, y, z) = setup::F_sens / (libcloudphxx::common::moist_air::c_p<real_t>(this->state(ix::rv)(x, y, 0)) * si::kilograms * si::kelvins / si::joules); // heating divided by specific heat capacity
-                F(x, y, z) = F(x, y, z) / (libcloudphxx::common::theta_dry::T<real_t>(Tht(x, y, 0) * si::kelvins, rhod(x, y, 0) * si::kilograms / si::metres  / si::metres / si::metres) / si::kelvins); // divide by temperature
-              }
-            }
-          }
-          // heating[W/m^2] / cell height[m] / rhod[kg/m^3] / specific heat capacity of moist air [J/K/kg]
-          F(i, j, k) *=                                                       // heat in W/m^2 divided by spec heat capacity
-            Tht(i, j, k) /                                                                                           // times dry potential temp
-            rhod(i, j, k);                                                                                          // divide by density
-
-          rhs.at(ix::th)(i, j, k) += F(i, j, k) * hgt_fctr(i, j, k); // apply height factor
-          // latent heat
-          // heating[W/m^2] / cell height[m] / rhod[kg/m^3] / latent heat of evaporation [J/kg]
-          rhs.at(ix::rv)(i, j, k) += setup::F_lat /                           // heating 
-          (libcloudphxx::common::const_cp::l_tri<real_t>() * si::kilograms / si::joules) / // latent heat of evaporation
-          rhod(i, j, k) *                                                     // density
-          hgt_fctr(i, j, k); 
         }
         break;
       }   
       case (1): 
+      // trapezoidal rhs^n+1
       {   
-/*
-        // temperature relaxation
-//        rhs.at(ix::tht)(ijk) += (0 - (*this->mem->vab_coeff)(ijk) * (Tht(ijk) - th_init(ijk)))
-  //                              / (1.0 + 0.5 * (*this->mem->vab_coeff)(ijk) * this->dt);
+        // ---- water vapor sources ----
+        // surface flux
+        surf_latent();
+        alpha(i, j, k) = F(i, j, k);
+        // large-scale vertical wind
+        subsidence(ix::rv);
+        alpha(ijk) += tmp1(ijk);
+        // TODO: add absorber and nudging to alpha
+        //beta(ijk) = 0.;
+        // TODO: add absorber and nudging to beta
+        rhs.at(ix::rv)(ijk) += alpha(ijk); // TODO: once beta is non-zero, make it (alpha + beta * rv) / (1 - 0.5 * this->dt * beta)
+        
+        // ---- potential temp sources ----
+        // -- heating --
+        // surface flux
+        surf_sens();
+        alpha(i, j, k) = F(i, j, k);
+        // temporarily use beta to store the rv^n+1 estimate
+        beta(ijk) = this->state(ix::rv) + 0.5 * this->dt * rhs.at(ix::rv);
+        // radiation
+        radiation(beta);
+        alpha(i, j, k) += F(i, j, k);
+        // change of theta[K/s] = heating[W/m^3] * theta[K] / T[K] / c_p[J/K/kg] / rhod[kg/m^3]
+        for(int x = i.first() ; x <= i.last(); ++x)
+        {
+          for(int y = j.first() ; y <= j.last(); ++y)
+          {
+            for(int z = k.first() ; z <= k.last(); ++z)
+            {
+              alpha(x, y, z) = alpha(x, y, z) * this->state(ix::th)(x, y, z) / rhod(x, y, z) / 
+                           (libcloudphxx::common::moist_air::c_p<real_t>(beta(x, y, z)) * si::kilograms * si::kelvins / si::joules) / 
+                           (libcloudphxx::common::theta_dry::T<real_t>(this->state(ix::th)(x, y, z) * si::kelvins, rhod(x, y, z) * si::kilograms / si::metres  / si::metres / si::metres) / si::kelvins);
+            }
+          }
+        }
+      
+        // large-scale vertical wind
+        subsidence(ix::th);
+        alpha(ijk) += tmp1(ijk);
+        // TODO: add absorber and nudging to alpha
+        //beta(ijk) = 0.;
+        // TODO: add absorber and nudging to beta
+        rhs.at(ix::rv)(ijk) += alpha(ijk); // TODO: once beta is non-zero, make it  (alpha + beta * rv) / (1 - 0.5 * this->dt * beta)
+
+        // vertical velocity sources
+        // temporarily use beta to store the th^n+1 estimate
+        beta(ijk) = this->state(ix::th) + 0.5 * this->dt * rhs.at(ix::th);
         // buoyancy
-        tmp1(ijk) = g * (Tht(ijk) + 0.5 * this->dt * rhs.at(ix::th)(ijk) - th_init(ijk)) / th_init(0,0,0);//th_init(ijk);
-        this->xchng_sclr(tmp1, i, j, k); 
-        tmp2(i, j, k) = 0.25 * (tmp1(i, j, k + 1) + 2 * tmp1(i, j, k) + tmp1(i, j, k - 1));
-        rhs.at(ix::w)(ijk) += tmp2(ijk);
-*/
+        buoyancy(beta);
+        alpha(ijk) = tmp2(ijk);
+        // large-scale vertical wind
+        subsidence(ix::w);
+        alpha(ijk) += tmp1(ijk);
+        rhs.at(ix::w)(ijk) += alpha(ijk);
+
+        // horizontal velocity sources 
+        // large-scale vertical wind
+        for(auto type : std::set<int>{ix::u, ix::v})
+        {
+          subsidence(type);
+          rhs.at(type)(ijk) += tmp1(ijk);
+        }
         break;
       }
     }  
@@ -405,9 +398,9 @@ this->mem->barrier();
         {
           blitz::thirdIndex k;
           // rhod is uniformly =1 in mpdata...
-          Cx /= setup::rhod_fctr()(   k     * this->dk);
-          Cy /= setup::rhod_fctr()(   k     * this->dk);
-          Cz /= setup::rhod_fctr()((k - .5) * this->dk);
+          Cx /= rhod;//setup::rhod_fctr()(   k     * this->dk);
+          Cy /= rhod;//setup::rhod_fctr()(   k     * this->dk);
+          Cz /= rhod;//setup::rhod_fctr()((k - .5) * this->dk);
         }
         // running synchronous stuff
         prtcls->step_sync(
@@ -493,7 +486,9 @@ this->mem->barrier();
     params(p),
     tmp1(args.mem->tmp[__FILE__][0][0]),
     tmp2(args.mem->tmp[__FILE__][0][1]),
-    r_l(args.mem->tmp[__FILE__][0][2])
+    r_l(args.mem->tmp[__FILE__][0][2]),
+    alpha(args.mem->tmp[__FILE__][0][3]),
+    beta(args.mem->tmp[__FILE__][0][4])
   {
     int nx = this->mem->grid_size[0].length();
     int ny = this->mem->grid_size[1].length();
@@ -525,6 +520,6 @@ this->mem->barrier();
   static void alloc(typename parent_t::mem_t *mem, const int &n_iters)
   {
     parent_t::alloc(mem, n_iters);
-    parent_t::alloc_tmp_sclr(mem, __FILE__, 3); // tmp1, tmp2, r_l
+    parent_t::alloc_tmp_sclr(mem, __FILE__, 5); // tmp1, tmp2, r_l, alpha, beta
   }
 };
