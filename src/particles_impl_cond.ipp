@@ -139,7 +139,7 @@ namespace libcloudphxx
 
           const real_t rd2 = pow(thrust::get<6>(tpl), real_t(2./3));
           
-          const int mlt = 2; // arbitrary!
+          const int mlt = 1; // arbitrary!
  
           const real_t 
             a = max(rd2, rw2_old + min(real_t(0), mlt * drw2)),
