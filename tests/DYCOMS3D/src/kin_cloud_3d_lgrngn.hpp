@@ -412,6 +412,8 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
           make_arrinfo(Cy), // ix::u ?
           make_arrinfo(Cz) // ix:w ?
         );
+        // artificially remove negative rv...
+        this->mem->advectee(ix::rv) = where(this->mem->advectee(ix::rv) < 0., 0., this->mem->advectee(ix::rv));
       } 
 
       // running asynchronous stuff
