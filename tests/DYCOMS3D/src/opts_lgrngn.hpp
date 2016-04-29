@@ -44,6 +44,7 @@ void setopts_micro(
     ("chem_dsl", po::value<bool>()->default_value(rt_params.cloudph_opts.chem_dsl) , "dissolving trace gases (1=on, 0=off)")
     ("chem_dsc", po::value<bool>()->default_value(rt_params.cloudph_opts.chem_dsc) , "dissociation           (1=on, 0=off)")
     ("chem_rct", po::value<bool>()->default_value(rt_params.cloudph_opts.chem_rct) , "aqueous chemistry      (1=on, 0=off)")
+    ("dev_count", po::value<int>()->default_value(0), "no. of CUDA devices")
     // free parameters
     ("sstp_cond", po::value<int>()->default_value(rt_params.cloudph_opts_init.sstp_cond), "no. of substeps for condensation")
     ("sstp_coal", po::value<int>()->default_value(rt_params.cloudph_opts_init.sstp_coal), "no. of substeps for coalescence")
@@ -103,6 +104,7 @@ void setopts_micro(
   rt_params.cloudph_opts.chem_dsc = vm["chem_dsc"].as<bool>();
   rt_params.cloudph_opts.chem_rct = vm["chem_rct"].as<bool>();
 
+  rt_params.cloudph_opts_init.dev_count = vm["dev_count"].as<int>();
   // free parameters
   rt_params.cloudph_opts_init.sstp_cond = vm["sstp_cond"].as<int>();
   rt_params.cloudph_opts_init.sstp_coal = vm["sstp_coal"].as<int>();
