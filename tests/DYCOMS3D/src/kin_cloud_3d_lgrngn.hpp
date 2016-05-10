@@ -246,7 +246,7 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
         // TODO: add absorber and nudging to alpha
         //beta(ijk) = 0.;
         // TODO: add absorber and nudging to beta
-        rhs.at(ix::rv)(ijk) += alpha(ijk); // TODO: once beta is non-zero, make it alpha + beta * rv
+        rhs.at(ix::th)(ijk) += alpha(ijk); // TODO: once beta is non-zero, make it alpha + beta * rv
 
 
         // vertical velocity sources
@@ -312,7 +312,7 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
         // TODO: add absorber and nudging to alpha
         //beta(ijk) = 0.;
         // TODO: add absorber and nudging to beta
-        rhs.at(ix::rv)(ijk) += alpha(ijk); // TODO: once beta is non-zero, make it  (alpha + beta * rv) / (1 - 0.5 * this->dt * beta)
+        rhs.at(ix::th)(ijk) += alpha(ijk); // TODO: once beta is non-zero, make it  (alpha + beta * th) / (1 - 0.5 * this->dt * beta)
 
         // vertical velocity sources
         // temporarily use beta to store the th^n+1 estimate
@@ -398,9 +398,9 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
         {
           blitz::thirdIndex k;
           // rhod is uniformly =1 in mpdata...
-          Cx /= rhod;//setup::rhod_fctr()(   k     * this->dk);
-          Cy /= rhod;//setup::rhod_fctr()(   k     * this->dk);
-          Cz /= rhod;//setup::rhod_fctr()((k - .5) * this->dk);
+          Cx /= setup::rhod_fctr()(   k     * this->dk);
+          Cy /= setup::rhod_fctr()(   k     * this->dk);
+          Cz /= setup::rhod_fctr()((k - .5) * this->dk);
         }
         // running synchronous stuff
         prtcls->step_sync(

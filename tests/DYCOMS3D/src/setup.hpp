@@ -248,7 +248,6 @@ namespace setup
 
     solver.advectee(ix::u) = setup::u()(k * dz);
     solver.advectee(ix::v) = setup::v()(k * dz);
-//    solver.advectee(ix::v) = 0;  
     solver.advectee(ix::w) = 0;  
 
     // density profile
