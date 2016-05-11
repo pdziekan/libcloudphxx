@@ -1,6 +1,7 @@
 #include <iostream>
 #include <exception>
 #include <libcloudph++/lgrngn/factory.hpp>
+#include "detail/multi_gpu_utils.hpp"
 
 namespace libcloudphxx
 {
