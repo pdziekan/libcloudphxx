@@ -397,7 +397,6 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
         // ... and now dividing them by rhod (z=0 is located at k=1/2)
         {
           blitz::thirdIndex k;
-          // rhod is uniformly =1 in mpdata...
           Cx /= setup::rhod_fctr()(   k     * this->dk);
           Cy /= setup::rhod_fctr()(   k     * this->dk);
           Cz /= setup::rhod_fctr()((k - .5) * this->dk);
@@ -504,7 +503,7 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
 
     blitz::thirdIndex k;
     // prescribed density
-    rhod = 1;//setup::rhod_fctr()(k * params.dz);
+    rhod = setup::rhod_fctr()(k * params.dz);
 
     // prescribed large-scale vertical wind
     w_LS = setup::w_LS_fctr()(k * params.dz);
