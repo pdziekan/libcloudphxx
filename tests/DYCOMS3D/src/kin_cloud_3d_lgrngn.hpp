@@ -144,8 +144,6 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
         params.cloudph_opts_init
       ));
 
-//  std::cout << "call init" << std::endl;
-//  std::cout << "rhod " << rhod << std::endl;
 	prtcls->init(
 	  make_arrinfo(this->mem->advectee(ix::th)),
 	  make_arrinfo(this->mem->advectee(ix::rv)),
@@ -190,7 +188,6 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
     const int &at 
   )   
   {   
-//  std::cout << "call updatre rhs" << std::endl;
     parent_t::update_rhs(rhs, dt, at);
     using ix = typename ct_params_t::ix;
 
@@ -288,7 +285,7 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
         surf_sens();
         alpha(i, j, k) = F(i, j, k);
         // temporarily use beta to store the rv^n+1 estimate
-        beta(ijk) = this->state(ix::rv) + 0.5 * this->dt * rhs.at(ix::rv);
+        beta(ijk) = this->state(ix::rv)(ijk) + 0.5 * this->dt * rhs.at(ix::rv)(ijk);
         // radiation
         radiation(beta);
         alpha(i, j, k) += F(i, j, k);
@@ -316,7 +313,7 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
 
         // vertical velocity sources
         // temporarily use beta to store the th^n+1 estimate
-        beta(ijk) = this->state(ix::th) + 0.5 * this->dt * rhs.at(ix::th);
+        beta(ijk) = this->state(ix::th)(ijk) + 0.5 * this->dt * rhs.at(ix::th)(ijk);
         // buoyancy
         buoyancy(beta);
         alpha(ijk) = tmp2(ijk);
@@ -500,6 +497,7 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
     rv_init.resize(nx,ny,nz);
     F.resize(nx,ny,nz);
     k_i.resize(nx, ny);
+    r_l = 0.;
 
     blitz::thirdIndex k;
     // prescribed density

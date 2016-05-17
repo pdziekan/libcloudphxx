@@ -10,7 +10,7 @@ if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
   # ignore CMake defaults
   set(CMAKE_CXX_FLAGS_RELEASE "")
 else()
-  set(CMAKE_CXX_FLAGS_DEBUG ${libmpdataxx_CXX_FLAGS_DEBUG})
+  set(CMAKE_CXX_FLAGS_DEBUG "${libmpdataxx_CXX_FLAGS_DEBUG} -O1")
 endif()
 
 # std::future

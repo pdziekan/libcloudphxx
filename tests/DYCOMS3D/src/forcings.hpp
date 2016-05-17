@@ -64,8 +64,9 @@ void kin_cloud_3d_lgrngn<ct_params_t>::radiation(const blitz::Array<real_t, 3> &
   tmp1(i, j, 0)        = (F(i, j, 1) - F(i, j, 0)) / this->dk;                
 
   // smoothing
-  this->xchng_sclr(tmp1, i, j, k);
-  F(i, j, k) = 0.25 * (tmp1(i, j, k + 1) + 2 * tmp1(i, j, k) + tmp1(i, j, k - 1));
+//  this->xchng_sclr(tmp1, i, j, k);
+//  F(i, j, k) = 0.25 * (tmp1(i, j, k + 1) + 2 * tmp1(i, j, k) + tmp1(i, j, k - 1));
+  F(i, j, k) = tmp1(i, j, k);
 }
 
 template <class ct_params_t>
@@ -119,8 +120,15 @@ void kin_cloud_3d_lgrngn<ct_params_t>::subsidence(const int &type) // large-scal
   const auto &i = this->i;
   const auto &j = this->j;
   const auto &k = this->k;
-  tmp1(ijk) = this->state(type)(ijk);
-  this->xchng_sclr(tmp1, i, j, k);
-  tmp2(i, j, k) = - w_LS(i, j, k) * (tmp1(i, j, k + 1) - tmp1(i, j, k - 1)) / (2. * this->dk); // use built-in blitz stencil?
-  tmp1(i, j, k) = 0.25 * (tmp2(i, j, k + 1) + 2 * tmp2(i, j, k) + tmp2(i, j, k - 1));
+//  tmp1(ijk) = this->state(type)(ijk);
+//  this->xchng_sclr(tmp1, i, j, k);
+//  tmp2(i, j, k) = - w_LS(i, j, k) * (tmp1(i, j, k + 1) - tmp1(i, j, k - 1)) / (2. * this->dk); // use built-in blitz stencil?
+//  tmp1(i, j, k) = 0.25 * (tmp2(i, j, k + 1) + 2 * tmp2(i, j, k) + tmp2(i, j, k - 1));
+
+  tmp2(ijk) = this->state(type)(ijk);
+  int nz = this->mem->grid_size[2].length(); 
+  blitz::Range notopbot(1, nz-2);
+  tmp1(i, j, notopbot) = - w_LS(i, j, notopbot+1) * (tmp2(i, j, notopbot+1) - tmp2(i, j, notopbot-1)) / 2./ this->dk;
+  tmp1(i, j, k.last()) = - w_LS(i, j, k.last()) * (tmp2(i, j, k.last()) - tmp2(i, j, k.last()-1)) / this->dk;   
+  tmp1(i, j, 0)        = - w_LS(i, j, 0) * (tmp2(i, j, 1) - tmp2(i, j, 0)) / this->dk;                
 }
