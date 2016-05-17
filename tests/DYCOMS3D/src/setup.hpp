@@ -39,6 +39,7 @@ namespace setup
   const real_t F_1 = 22; // w/m^2
   const real_t q_i = 8e-3; // kg/kg
   const real_t c_p = 1004; // J / kg / K
+  const real_t z_abs = 1200; // [m] height above which absorber works
 
   const real_t D = 3.75e-6; // large-scale wind horizontal divergence [1/s]
   const real_t rho_i = 1.12; // kg/m^3
@@ -251,6 +252,12 @@ namespace setup
     solver.advectee(ix::u)(i_r, j_r, k_r)= setup::u()(k * dz);
     solver.advectee(ix::v)(i_r, j_r, k_r) = setup::v()(k * dz);
     solver.advectee(ix::w) = 0;  
+   
+    // absorbers
+    solver.vab_coefficient() = where(k * dz >= z_abs, 1. / 1020 * (k * dz - z_abs) / (Z / si::metres - z_abs), 0);
+    solver.vab_relaxed_state(0) = solver.advectee(ix::u);
+    solver.vab_relaxed_state(1) = solver.advectee(ix::v);
+    solver.vab_relaxed_state(2) = 0;
 
     // density profile
     solver.g_factor() = rhod_fctr()(k * dz); // TODO: reenable g_factor (and nug option) once it works in 3D libmpdata

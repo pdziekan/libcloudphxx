@@ -210,10 +210,12 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
         // large-scale vertical wind
         subsidence(ix::rv);
         alpha(ijk) += tmp1(ijk);
-        // TODO: add absorber and nudging to alpha
-        //beta(ijk) = 0.;
-        // TODO: add absorber and nudging to beta
-        rhs.at(ix::rv)(ijk) += alpha(ijk); // TODO: once beta is non-zero, make it alpha + beta * rv
+        // absorber
+        alpha(ijk) += (*this->mem->vab_coeff)(ijk) * rv_e(ijk); 
+        // TODO: add nudging to alpha
+        beta(ijk) = - (*this->mem->vab_coeff)(ijk); 
+        // TODO: add nudging to beta
+        rhs.at(ix::rv)(ijk) += alpha(ijk) + beta(ijk) * this->state(ix::rv)(ijk); 
         
         // ---- potential temp sources ----
         // -- heating --
@@ -240,10 +242,12 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
         // large-scale vertical wind
         subsidence(ix::th);
         alpha(ijk) += tmp1(ijk);
-        // TODO: add absorber and nudging to alpha
-        //beta(ijk) = 0.;
-        // TODO: add absorber and nudging to beta
-        rhs.at(ix::th)(ijk) += alpha(ijk); // TODO: once beta is non-zero, make it alpha + beta * rv
+        // absorber
+        alpha(ijk) += (*this->mem->vab_coeff)(ijk) * th_e(ijk); 
+        // TODO: add nudging to alpha
+        beta(ijk) = - (*this->mem->vab_coeff)(ijk); 
+        // TODO: add nudging to beta
+        rhs.at(ix::th)(ijk) += alpha(ijk) + beta(ijk) * this->state(ix::th)(ijk); 
 
 
         // vertical velocity sources
@@ -274,10 +278,12 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
         // large-scale vertical wind
         subsidence(ix::rv);
         alpha(ijk) += tmp1(ijk);
-        // TODO: add absorber and nudging to alpha
-        //beta(ijk) = 0.;
-        // TODO: add absorber and nudging to beta
-        rhs.at(ix::rv)(ijk) += alpha(ijk); // TODO: once beta is non-zero, make it (alpha + beta * rv) / (1 - 0.5 * this->dt * beta)
+        // absorber
+        alpha(ijk) += (*this->mem->vab_coeff)(ijk) * rv_e(ijk); 
+        // TODO: add nudging to alpha
+        beta(ijk) = - (*this->mem->vab_coeff)(ijk); 
+        // TODO: add nudging to beta
+        rhs.at(ix::rv)(ijk) += (alpha(ijk) + beta(ijk) * this->state(ix::rv)(ijk)) / (1. - 0.5 * this->dt * beta(ijk)); 
         
         // ---- potential temp sources ----
         // -- heating --
@@ -306,10 +312,12 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
         // large-scale vertical wind
         subsidence(ix::th);
         alpha(ijk) += tmp1(ijk);
-        // TODO: add absorber and nudging to alpha
-        //beta(ijk) = 0.;
-        // TODO: add absorber and nudging to beta
-        rhs.at(ix::th)(ijk) += alpha(ijk); // TODO: once beta is non-zero, make it  (alpha + beta * th) / (1 - 0.5 * this->dt * beta)
+        // absorber
+        alpha(ijk) += (*this->mem->vab_coeff)(ijk) * th_e(ijk); 
+        // TODO: add nudging to alpha
+        beta(ijk) = - (*this->mem->vab_coeff)(ijk); 
+        // TODO: add nudging to beta
+        rhs.at(ix::th)(ijk) += (alpha(ijk) + beta(ijk) * this->state(ix::th)(ijk)) / (1. - 0.5 * this->dt * beta(ijk)); 
 
         // vertical velocity sources
         // temporarily use beta to store the th^n+1 estimate
