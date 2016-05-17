@@ -196,6 +196,9 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
     const auto &j = this->j;
     const auto &k = this->k;
 
+    blitz::firstIndex fi;
+    blitz::secondIndex si;
+
 
     // forcing
     switch (at) 
@@ -211,7 +214,7 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
         subsidence(ix::rv);
         alpha(ijk) += tmp1(ijk);
         // absorber
-        alpha(ijk) += (*this->mem->vab_coeff)(ijk) * rv_e(ijk); 
+        alpha(ijk) += (*this->mem->vab_coeff)(ijk) * this->rv_eq(ijk); 
         // TODO: add nudging to alpha
         beta(ijk) = - (*this->mem->vab_coeff)(ijk); 
         // TODO: add nudging to beta
@@ -243,7 +246,7 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
         subsidence(ix::th);
         alpha(ijk) += tmp1(ijk);
         // absorber
-        alpha(ijk) += (*this->mem->vab_coeff)(ijk) * th_e(ijk); 
+        alpha(ijk) += (*this->mem->vab_coeff)(ijk) * this->th_eq(ijk); 
         // TODO: add nudging to alpha
         beta(ijk) = - (*this->mem->vab_coeff)(ijk); 
         // TODO: add nudging to beta
@@ -279,7 +282,7 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
         subsidence(ix::rv);
         alpha(ijk) += tmp1(ijk);
         // absorber
-        alpha(ijk) += (*this->mem->vab_coeff)(ijk) * rv_e(ijk); 
+        alpha(ijk) += (*this->mem->vab_coeff)(ijk) * this->rv_eq(ijk); 
         // TODO: add nudging to alpha
         beta(ijk) = - (*this->mem->vab_coeff)(ijk); 
         // TODO: add nudging to beta
@@ -313,7 +316,7 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
         subsidence(ix::th);
         alpha(ijk) += tmp1(ijk);
         // absorber
-        alpha(ijk) += (*this->mem->vab_coeff)(ijk) * th_e(ijk); 
+        alpha(ijk) += (*this->mem->vab_coeff)(ijk) * this->th_eq(ijk); 
         // TODO: add nudging to alpha
         beta(ijk) = - (*this->mem->vab_coeff)(ijk); 
         // TODO: add nudging to beta

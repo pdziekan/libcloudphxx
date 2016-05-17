@@ -20,7 +20,7 @@ class kin_cloud_3d_common : public
 
   // relaxation stuff
   bool relax_th_rv;
-  blitz::Array<typename ct_params_t::real_t, 1> th_eq, rv_eq;
+  blitz::Array<typename ct_params_t::real_t, 3> th_eq, rv_eq;
   
   // spinup stuff
   virtual bool get_rain() = 0;
@@ -30,8 +30,9 @@ class kin_cloud_3d_common : public
   {
     if (get_rain() == false) 
     {
+      ;
       // spinup and relaxation do not make sense without autoconversion  (TODO: issue a warning?)
-      spinup = relax_th_rv = 0;      
+      // spinup = relax_th_rv = 0;      
     }
     if (spinup > 0) set_rain(false);
 
@@ -47,16 +48,16 @@ class kin_cloud_3d_common : public
     }
 
     using ix = typename ct_params_t::ix;
-    if(relax_th_rv && spinup == this->timestep)
+    if(spinup == this->timestep)
     {
       // save horizontal means of th and rv after spinup
       // they will be the relaxation goals
       // TODO: when calculating mean, do not include first or last point (which is the same in cyclic boundaries);
       //       right now it is accounted for twice, but the concurrency-aware sum cannot exclude single point
-      for (int j = this->j.first(); j <= this->j.last(); ++j)
+      for (int k = this->k.first(); k <= this->k.last(); ++k)
       {  
-        th_eq(j) = this->mem->sum(this->state(ix::th), this->i, rng_t(j, j), false)  /  (this->mem->grid_size[0].length());
-        rv_eq(j) = this->mem->sum(this->state(ix::rv), this->i, rng_t(j, j), false)  /  (this->mem->grid_size[0].length());
+        th_eq(this->i, this->j, k) = this->mem->sum(this->state(ix::th), this->i, this->j, rng_t(k, k), false)  /  (this->mem->grid_size[0].length() * this->mem->grid_size[1].length());
+        rv_eq(this->i, this->j, k) = this->mem->sum(this->state(ix::rv), this->i, this->j, rng_t(k, k), false)  /  (this->mem->grid_size[0].length() * this->mem->grid_size[1].length());
       }
     }
 
@@ -74,32 +75,32 @@ class kin_cloud_3d_common : public
     using ix = typename ct_params_t::ix;
 
     // relaxation terms; added only after spinup, when get_rain returns true
-    if(relax_th_rv && get_rain())
-    {
-      // computed level-wise
-      for (int j = this->j.first(); j <= this->j.last(); ++j)
-      {  
-        const auto tau = setup::tau_rlx / si::seconds * exp(j * dz / setup::z_rlx * si::metres);
-
-        for(auto a: std::list<int>({ix::th, ix::rv}))
-        {
-          const auto &psi = this->state(a);
-          // relax horizontal mean
-          /*
-          const auto psi_mean = this->mem->sum(psi, this->i, rng_t(j, j), false)  /  (this->mem->grid_size[0].length());
-          if(a == ix::th)
-            rhs.at(a)(this->i, j) =  (th_eq(j) - psi_mean) / tau;
-          else
-            rhs.at(a)(this->i, j) =  (rv_eq(j) - psi_mean) / tau;
-          */
-          // relax each cell 
-          if(a == ix::th)
-            rhs.at(a)(this->i, j) +=  (th_eq(j) - psi(this->i, j)) / tau;
-          else
-            rhs.at(a)(this->i, j) +=  (rv_eq(j) - psi(this->i, j)) / tau;
-        }
-      }
-    }
+//    if(relax_th_rv && get_rain())
+//    {
+//      // computed level-wise
+//      for (int j = this->j.first(); j <= this->j.last(); ++j)
+//      {  
+//        const auto tau = setup::tau_rlx / si::seconds * exp(j * dz / setup::z_rlx * si::metres);
+//
+//        for(auto a: std::list<int>({ix::th, ix::rv}))
+//        {
+//          const auto &psi = this->state(a);
+//          // relax horizontal mean
+//          /*
+//          const auto psi_mean = this->mem->sum(psi, this->i, rng_t(j, j), false)  /  (this->mem->grid_size[0].length());
+//          if(a == ix::th)
+//            rhs.at(a)(this->i, j) =  (th_eq(j) - psi_mean) / tau;
+//          else
+//            rhs.at(a)(this->i, j) =  (rv_eq(j) - psi_mean) / tau;
+//          */
+//          // relax each cell 
+//          if(a == ix::th)
+//            rhs.at(a)(this->i, j) +=  (th_eq(j) - psi(this->i, j)) / tau;
+//          else
+//            rhs.at(a)(this->i, j) +=  (rv_eq(j) - psi(this->i, j)) / tau;
+//        }
+//      }
+//    }
   }
 
   public:
@@ -122,8 +123,12 @@ class kin_cloud_3d_common : public
     dz(p.dz),
     spinup(p.spinup),
     relax_th_rv(p.relax_th_rv),
-    th_eq(this->mem->grid_size[1].length()),
-    rv_eq(this->mem->grid_size[1].length())
+    th_eq(this->mem->grid_size[0].length(),
+          this->mem->grid_size[1].length(),
+          this->mem->grid_size[2].length()),
+    rv_eq(this->mem->grid_size[0].length(),
+          this->mem->grid_size[1].length(),
+          this->mem->grid_size[2].length())
   {
     assert(dx != 0);
     assert(dy != 0);
