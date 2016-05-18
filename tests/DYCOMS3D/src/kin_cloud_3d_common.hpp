@@ -34,7 +34,14 @@ class kin_cloud_3d_common : public
       // spinup and relaxation do not make sense without autoconversion  (TODO: issue a warning?)
       // spinup = relax_th_rv = 0;      
     }
-    if (spinup > 0) set_rain(false);
+    if (spinup > 0)
+    {
+      blitz::thirdIndex k;
+      th_eq = setup::th_dry_fctr()(k * dz);
+      rv_eq = setup::r_t()(k * dz);
+
+      set_rain(false);
+    }
 
     parent_t::hook_ante_loop(nt); 
   }
