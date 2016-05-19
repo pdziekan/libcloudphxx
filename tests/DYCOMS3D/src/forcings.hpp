@@ -59,9 +59,9 @@ void kin_cloud_3d_lgrngn<ct_params_t>::radiation(const blitz::Array<real_t, 3> &
   // Eq. 3.33 from Curry and Webster
   // calculate divergence of heat flux
   blitz::Range notopbot(1, nz-2);
-  tmp1(i, j, notopbot) = (F(i, j, notopbot+1) - F(i, j, notopbot-1)) / 2./ this->dk;
-  tmp1(i, j, k.last()) = (F(i, j, k.last()) - F(i, j, k.last()-1)) / this->dk;   
-  tmp1(i, j, 0)        = (F(i, j, 1) - F(i, j, 0)) / this->dk;                
+  tmp1(i, j, notopbot) = - (F(i, j, notopbot+1) - F(i, j, notopbot-1)) / 2./ this->dk;
+  tmp1(i, j, k.last()) = - (F(i, j, k.last()) - F(i, j, k.last()-1)) / this->dk;   
+  tmp1(i, j, 0)        = - (F(i, j, 1) - F(i, j, 0)) / this->dk;                
 
   // smoothing
 //  this->xchng_sclr(tmp1, i, j, k);
