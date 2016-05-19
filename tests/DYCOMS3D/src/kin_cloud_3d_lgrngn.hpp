@@ -25,6 +25,9 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
 
   // member fields
   std::unique_ptr<libcloudphxx::lgrngn::particles_proto_t<real_t>> prtcls;
+  real_t prec_vol;
+  std::ofstream f_prec;
+
   typename parent_t::arr_t rhod, w_LS, th_init, rv_init, F;
   blitz::Array<real_t, 2> k_i;
 
@@ -47,6 +50,10 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
     prtcls->diag_all();
     prtcls->diag_precip_rate();
     this->record_aux("precip_rate", prtcls->outbuf());
+   
+    // recording total precipitation volume through the lower boundary
+    f_prec << this->timestep << " "  << prec_vol << "\n";
+    prec_vol = 0.; 
    
     // recording requested statistical moments
     {
@@ -149,6 +156,11 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
 	  make_arrinfo(this->mem->advectee(ix::rv)),
 	  make_arrinfo(rhod)
 	); 
+
+      // open file for output of precitpitation volume
+      f_prec.open(this->outdir+"/prec_vol.dat");
+      prec_vol = 0.;
+
       // writing diagnostic data for the initial condition
       diag();
     }
@@ -366,7 +378,7 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
         ((this->timestep - 1) % this->outfreq != 0) // ... and not after diag call
       ) {
         assert(ftr.valid());
-        ftr.get();
+        prec_vol += ftr.get();
       } else assert(!ftr.valid()); 
 #endif
 
@@ -449,7 +461,7 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
           assert(ftr.valid());
         } else 
 #endif
-          prtcls->step_async(params.cloudph_opts);
+          prec_vol += prtcls->step_async(params.cloudph_opts);
       }
       // performing diagnostics
       if (this->timestep % this->outfreq == 0) 
@@ -458,7 +470,7 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
         if (params.async)
         {
           assert(ftr.valid());
-          ftr.get();
+          prec_vol += ftr.get();
         }
 #endif
         diag();
