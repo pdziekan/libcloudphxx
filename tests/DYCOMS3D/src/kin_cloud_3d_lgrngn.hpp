@@ -28,13 +28,13 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
   real_t prec_vol;
   std::ofstream f_prec;
 
-  typename parent_t::arr_t rhod, w_LS, th_init, rv_init, F;
-  blitz::Array<real_t, 2> k_i;
+  typename parent_t::arr_t rhod, w_LS, th_init, rv_init, hgt_fctr; // TODO: store them in rt_params, here only reference thread's subarrays; also they are just 1D profiles, no need to store whole 3D arrays
+  blitz::Array<real_t, 2> k_i; // TODO: make it's size in x direction smaller to match thread's domain
 
-  // global arrays, shared among threads
+  // global arrays, shared among threads, TODO: in fact no need to share them?
   typename parent_t::arr_t &tmp1,
-                           &tmp2,
                            &r_l,
+                           &F,       // forcings helper
                            &alpha,   // 'explicit' rhs part - does not depend on the value at n+1
                            &beta;    // 'implicit' rhs part - coefficient of the value at n+1
   // helper methods
@@ -221,10 +221,10 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
         // ---- water vapor sources ----
         // surface flux
         surf_latent();
-        alpha(i, j, k) = F(i, j, k);
+        alpha(ijk) = F(ijk);
         // large-scale vertical wind
         subsidence(ix::rv);
-        alpha(ijk) += tmp1(ijk);
+        alpha(ijk) += F(ijk);
         // absorber
         alpha(ijk) += (*this->mem->vab_coeff)(ijk) * this->rv_eq(ijk); 
         // TODO: add nudging to alpha
@@ -236,10 +236,10 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
         // -- heating --
         // surface flux
         surf_sens();
-        alpha(i, j, k) = F(i, j, k);
+        alpha(ijk) = F(ijk);
         // radiation
         radiation(this->state(ix::rv));
-        alpha(i, j, k) += F(i, j, k);
+        alpha(ijk) += F(ijk);
         // change of theta[K/s] = heating[W/m^3] * theta[K] / T[K] / c_p[J/K/kg] / rhod[kg/m^3]
         for(int x = i.first() ; x <= i.last(); ++x)
         {
@@ -256,7 +256,7 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
       
         // large-scale vertical wind
         subsidence(ix::th);
-        alpha(ijk) += tmp1(ijk);
+        alpha(ijk) += F(ijk);
         // absorber
         alpha(ijk) += (*this->mem->vab_coeff)(ijk) * this->th_eq(ijk); 
         // TODO: add nudging to alpha
@@ -268,10 +268,10 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
         // vertical velocity sources
         // buoyancy
         buoyancy(this->state(ix::th));
-        alpha(ijk) = tmp2(ijk);
+        alpha(ijk) = F(ijk);
         // large-scale vertical wind
         subsidence(ix::w);
-        alpha(ijk) += tmp1(ijk);
+        alpha(ijk) += F(ijk);
         rhs.at(ix::w)(ijk) += alpha(ijk);
 
         // horizontal velocity sources 
@@ -279,7 +279,7 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
         for(auto type : std::set<int>{ix::u, ix::v})
         {
           subsidence(type);
-          rhs.at(type)(ijk) += tmp1(ijk);
+          rhs.at(type)(ijk) += F(ijk);
         }
         break;
       }   
@@ -289,10 +289,10 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
         // ---- water vapor sources ----
         // surface flux
         surf_latent();
-        alpha(i, j, k) = F(i, j, k);
+        alpha(ijk) = F(ijk);
         // large-scale vertical wind
         subsidence(ix::rv);
-        alpha(ijk) += tmp1(ijk);
+        alpha(ijk) += F(ijk);
         // absorber
         alpha(ijk) += (*this->mem->vab_coeff)(ijk) * this->rv_eq(ijk); 
         // TODO: add nudging to alpha
@@ -304,12 +304,12 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
         // -- heating --
         // surface flux
         surf_sens();
-        alpha(i, j, k) = F(i, j, k);
+        alpha(ijk) = F(ijk);
         // temporarily use beta to store the rv^n+1 estimate
         beta(ijk) = this->state(ix::rv)(ijk) + 0.5 * this->dt * rhs.at(ix::rv)(ijk);
         // radiation
         radiation(beta);
-        alpha(i, j, k) += F(i, j, k);
+        alpha(ijk) += F(ijk);
         // change of theta[K/s] = heating[W/m^3] * theta[K] / T[K] / c_p[J/K/kg] / rhod[kg/m^3]
         for(int x = i.first() ; x <= i.last(); ++x)
         {
@@ -326,7 +326,7 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
       
         // large-scale vertical wind
         subsidence(ix::th);
-        alpha(ijk) += tmp1(ijk);
+        alpha(ijk) += F(ijk);
         // absorber
         alpha(ijk) += (*this->mem->vab_coeff)(ijk) * this->th_eq(ijk); 
         // TODO: add nudging to alpha
@@ -339,10 +339,10 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
         beta(ijk) = this->state(ix::th)(ijk) + 0.5 * this->dt * rhs.at(ix::th)(ijk);
         // buoyancy
         buoyancy(beta);
-        alpha(ijk) = tmp2(ijk);
+        alpha(ijk) = F(ijk);
         // large-scale vertical wind
         subsidence(ix::w);
-        alpha(ijk) += tmp1(ijk);
+        alpha(ijk) += F(ijk);
         rhs.at(ix::w)(ijk) += alpha(ijk);
 
         // horizontal velocity sources 
@@ -350,7 +350,7 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
         for(auto type : std::set<int>{ix::u, ix::v})
         {
           subsidence(type);
-          rhs.at(type)(ijk) += tmp1(ijk);
+          rhs.at(type)(ijk) += F(ijk);
         }
         break;
       }
@@ -506,19 +506,19 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
     parent_t(args, p),
     params(p),
     tmp1(args.mem->tmp[__FILE__][0][0]),
-    tmp2(args.mem->tmp[__FILE__][0][1]),
     r_l(args.mem->tmp[__FILE__][0][2]),
     alpha(args.mem->tmp[__FILE__][0][3]),
-    beta(args.mem->tmp[__FILE__][0][4])
+    beta(args.mem->tmp[__FILE__][0][4]),
+    F(args.mem->tmp[__FILE__][0][1])
   {
     int nx = this->mem->grid_size[0].length();
     int ny = this->mem->grid_size[1].length();
     int nz = this->mem->grid_size[2].length();
     rhod.resize(nx,ny,nz);
-    w_LS.resize(nx,ny,nz);
     th_init.resize(nx,ny,nz);
+    w_LS.resize(nx,ny,nz);
     rv_init.resize(nx,ny,nz);
-    F.resize(nx,ny,nz);
+    hgt_fctr.resize(nx,ny,nz);
     k_i.resize(nx, ny);
     r_l = 0.;
 
@@ -535,6 +535,10 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
     // prescribed initial rv profile
     rv_init = 0.; // initially the reference state is not known, will be saved after spinup
 
+    // exponential decay with height
+    real_t z_0 = setup::z_rlx / si::metres;
+    hgt_fctr = exp(- k * params.dz / z_0) / z_0;
+
     // delaying any initialisation to ante_loop as rank() does not function within ctor! // TODO: not anymore!!!
     // TODO: equip rank() in libmpdata with an assert() checking if not in serial block
   }  
@@ -542,6 +546,6 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
   static void alloc(typename parent_t::mem_t *mem, const int &n_iters)
   {
     parent_t::alloc(mem, n_iters);
-    parent_t::alloc_tmp_sclr(mem, __FILE__, 5); // tmp1, tmp2, r_l, alpha, beta
+    parent_t::alloc_tmp_sclr(mem, __FILE__, 6); // tmp1, tmp2, r_l, alpha, beta, F
   }
 };
