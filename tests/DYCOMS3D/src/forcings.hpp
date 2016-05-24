@@ -33,6 +33,7 @@ void kin_cloud_3d_lgrngn<ct_params_t>::radiation(const blitz::Array<real_t, 3> &
   blitz::thirdIndex ki;
   tmp1(ijk)  = rv(ijk) + r_l(ijk);
   k_i(i, j) = blitz::first( tmp1 < setup::q_i, ki); 
+  tmp1(ijk) = 0;
 
   // calc Eqs. 5 and 6 from Ackerman et al 2009
   // TODO: z-th cell will be accounted for twice (in each integral)...
@@ -42,13 +43,19 @@ void kin_cloud_3d_lgrngn<ct_params_t>::radiation(const blitz::Array<real_t, 3> &
     {
       for(int z = 0 ; z < nz; ++z)
       {
-        tmp1(x, y, z) =  setup::F_0 * exp(- (nz - z) * this->dk *  blitz::sum(r_l(x, y, blitz::Range(z, nz-1))));
-        tmp1(x, y, z) += setup::F_1 * exp(- ((z) - 0) * this->dk * blitz::sum(r_l(x, y, blitz::Range(0, z))));
+        real_t sum = r_l(x, y, z) / 2.;
+        if(z < nz-1) sum += blitz::sum(r_l(x, y, blitz::Range(z+1, nz-1)));
+        tmp1(x, y, z) += setup::F_0 * exp(- (nz - z) * this->dk * sum); 
 
-        if(z > k_i(x, y) )
+        sum = r_l(x, y, z) / 2.;
+        if(z > 0) sum += blitz::sum(r_l(x, y, blitz::Range(0, z-1)));
+        tmp1(x, y, z) += setup::F_1 * exp(- ((z) - 0) * this->dk * sum);
+
+        if(z >= k_i(x, y) )
         {
-          real_t z_d = (z - k_i(x, y)) * this->dk;
-          tmp1(x, y, z) += setup::c_p * setup::rho_i * setup::D * (0.25 * pow(z_d, 4./3) + k_i(x, y) * this->dk * pow(z_d, 1./3)); 
+          real_t z_i = (-0.5 + k_i(x,y)) * this->dk;
+          real_t z_d = z * this->dk - z_i;
+          tmp1(x, y, z) += setup::c_p * setup::rho_i * setup::D * (0.25 * pow(z_d, 4./3) + z_i * pow(z_d, 1./3)); 
         }
       }
     }
