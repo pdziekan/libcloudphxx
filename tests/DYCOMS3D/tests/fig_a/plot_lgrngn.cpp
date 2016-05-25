@@ -19,7 +19,7 @@ int main(int ac, char** av)
 
   for (int at = 0; at < n["t"]; ++at) // TODO: mark what time does it actually mean!
   {
-    for (auto &plt : std::set<std::string>({"rl", "rr", "nc", "nr", "ef", "na", "th", "rv", "u", "v", "w"}))
+    for (auto &plt : std::set<std::string>({"rl", "rr", "nc", "nr", "ef", "na", "th", "rv", "u", "v", "w", "sd_conc"}))
     {
       Gnuplot gp;
       init(gp, h5 + ".plot/" + plt + "/" + zeropad(at * n["outfreq"]) + ".svg", 1, 1, n); 
@@ -145,6 +145,15 @@ int main(int ac, char** av)
       {   
         // cloud particle concentration
         auto tmp = h5load(h5, "w", at * n["outfreq"]);
+        blitz::Array<float, 3> snap(tmp);
+        blitz::Array<float, 2> mean(n["x"], n["z"]);
+        mean = blitz::mean(snap(i, k, j), k); // average over 2nd dim
+        plot(gp, mean);
+      }   
+      else if (plt == "sd_conc")
+      {   
+        // cloud particle concentration
+        auto tmp = h5load(h5, "sd_conc", at * n["outfreq"]);
         blitz::Array<float, 3> snap(tmp);
         blitz::Array<float, 2> mean(n["x"], n["z"]);
         mean = blitz::mean(snap(i, k, j), k); // average over 2nd dim
