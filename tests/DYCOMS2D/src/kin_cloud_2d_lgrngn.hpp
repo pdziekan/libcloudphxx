@@ -181,6 +181,9 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
 
   void buoyancy(const blitz::Array<real_t, 2> &th);
   void radiation(const blitz::Array<real_t, 2> &rv);
+  void rv_src();
+  void th_src(const blitz::Array<real_t, 2> &rv);
+  void w_src(const blitz::Array<real_t, 2> &th);
   void surf_sens();
   void surf_latent();
   void subsidence(const int&);
@@ -195,12 +198,6 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
     using ix = typename ct_params_t::ix;
 
     const auto &ijk = this->ijk;
-    const auto &i = this->i;
-    const auto &j = this->j;
-
-    blitz::firstIndex fi;
-    blitz::secondIndex si;
-
 
     // forcing
     switch (at) 
@@ -209,57 +206,15 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
       case (0): 
       {   
         // ---- water vapor sources ----
-        // surface flux
-        surf_latent();
-        alpha(ijk) = F(ijk);
-        // large-scale vertical wind
-        subsidence(ix::rv);
-        alpha(ijk) += F(ijk);
-        // absorber
-        alpha(ijk) += (*this->mem->vab_coeff)(ijk) * this->rv_eq(ijk); 
-        // TODO: add nudging to alpha
-        beta(ijk) = - (*this->mem->vab_coeff)(ijk); 
-        // TODO: add nudging to beta
+        rv_src();
         rhs.at(ix::rv)(ijk) += alpha(ijk) + beta(ijk) * this->state(ix::rv)(ijk); 
         
         // ---- potential temp sources ----
-        // -- heating --
-        // surface flux
-        surf_sens();
-        alpha(ijk) = F(ijk);
-        // radiation
-        radiation(this->state(ix::rv));
-        alpha(ijk) += F(ijk);
-        // change of theta[K/s] = heating[W/m^3] * theta[K] / T[K] / c_p[J/K/kg] / rhod[kg/m^3]
-        for(int x = i.first() ; x <= i.last(); ++x)
-        {
-            for(int z = j.first() ; z <= j.last(); ++z)
-            {
-              alpha(x, z) = alpha(x, z) * this->state(ix::th)(x, z) / rhod(x, z) / 
-                           (libcloudphxx::common::moist_air::c_p<real_t>(this->state(ix::rv)(x, z)) * si::kilograms * si::kelvins / si::joules) / 
-                           (libcloudphxx::common::theta_dry::T<real_t>(this->state(ix::th)(x, z) * si::kelvins, rhod(x, z) * si::kilograms / si::metres  / si::metres / si::metres) / si::kelvins);
-            }
-          }
-        }
-      
-        // large-scale vertical wind
-        subsidence(ix::th);
-        alpha(ijk) += F(ijk);
-        // absorber
-        alpha(ijk) += (*this->mem->vab_coeff)(ijk) * this->th_eq(ijk); 
-        // TODO: add nudging to alpha
-        beta(ijk) = - (*this->mem->vab_coeff)(ijk); 
-        // TODO: add nudging to beta
+        th_src(this->state(ix::rv));
         rhs.at(ix::th)(ijk) += alpha(ijk) + beta(ijk) * this->state(ix::th)(ijk); 
 
-
         // vertical velocity sources
-        // buoyancy
-        buoyancy(this->state(ix::th));
-        alpha(ijk) = F(ijk);
-        // large-scale vertical wind
-        subsidence(ix::w);
-        alpha(ijk) += F(ijk);
+        w_src(this->state(ix::th));
         rhs.at(ix::w)(ijk) += alpha(ijk);
 
         // horizontal velocity sources 
@@ -275,59 +230,18 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
       // trapezoidal rhs^n+1
       {   
         // ---- water vapor sources ----
-        // surface flux
-        surf_latent();
-        alpha(ijk) = F(ijk);
-        // large-scale vertical wind
-        subsidence(ix::rv);
-        alpha(ijk) += F(ijk);
-        // absorber
-        alpha(ijk) += (*this->mem->vab_coeff)(ijk) * this->rv_eq(ijk); 
-        // TODO: add nudging to alpha
-        beta(ijk) = - (*this->mem->vab_coeff)(ijk); 
-        // TODO: add nudging to beta
+        rv_src();
         rhs.at(ix::rv)(ijk) += (alpha(ijk) + beta(ijk) * this->state(ix::rv)(ijk)) / (1. - 0.5 * this->dt * beta(ijk)); 
         
         // ---- potential temp sources ----
-        // -- heating --
-        // surface flux
-        surf_sens();
-        alpha(ijk) = F(ijk);
-        // temporarily use beta to store the rv^n+1 estimate
         beta(ijk) = this->state(ix::rv)(ijk) + 0.5 * this->dt * rhs.at(ix::rv)(ijk);
-        // radiation
-        radiation(beta);
-        alpha(ijk) += F(ijk);
-        // change of theta[K/s] = heating[W/m^3] * theta[K] / T[K] / c_p[J/K/kg] / rhod[kg/m^3]
-        for(int x = i.first() ; x <= i.last(); ++x)
-        {
-          for(int z = j.first() ; z <= j.last(); ++z)
-          {
-            alpha(x, z) = alpha(x, z) * this->state(ix::th)(x, z) / rhod(x, z) / 
-                         (libcloudphxx::common::moist_air::c_p<real_t>(beta(x, z)) * si::kilograms * si::kelvins / si::joules) / 
-                         (libcloudphxx::common::theta_dry::T<real_t>(this->state(ix::th)(x, z) * si::kelvins, rhod(x, z) * si::kilograms / si::metres  / si::metres / si::metres) / si::kelvins);
-          }
-        }
-      
-        // large-scale vertical wind
-        subsidence(ix::th);
-        alpha(ijk) += F(ijk);
-        // absorber
-        alpha(ijk) += (*this->mem->vab_coeff)(ijk) * this->th_eq(ijk); 
-        // TODO: add nudging to alpha
-        beta(ijk) = - (*this->mem->vab_coeff)(ijk); 
-        // TODO: add nudging to beta
+        th_src(beta);
         rhs.at(ix::th)(ijk) += (alpha(ijk) + beta(ijk) * this->state(ix::th)(ijk)) / (1. - 0.5 * this->dt * beta(ijk)); 
 
         // vertical velocity sources
         // temporarily use beta to store the th^n+1 estimate
         beta(ijk) = this->state(ix::th)(ijk) + 0.5 * this->dt * rhs.at(ix::th)(ijk);
-        // buoyancy
-        buoyancy(beta);
-        alpha(ijk) = F(ijk);
-        // large-scale vertical wind
-        subsidence(ix::w);
-        alpha(ijk) += F(ijk);
+        w_src(beta);
         rhs.at(ix::w)(ijk) += alpha(ijk);
 
         // horizontal velocity sources 
