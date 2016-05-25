@@ -2,7 +2,7 @@
 #include "forcings.hpp"
 
 template <class ct_params_t>
-void kin_cloud_2d_lgrngn<ct_params_t>::rv_src()
+void kin_cloud_3d_lgrngn<ct_params_t>::rv_src()
 {
   const auto &ijk = this->ijk;
   // surface flux
@@ -20,11 +20,12 @@ void kin_cloud_2d_lgrngn<ct_params_t>::rv_src()
 
 
 template <class ct_params_t>
-void kin_cloud_2d_lgrngn<ct_params_t>::th_src(const blitz::Array<real_t, 2> &rv)
+void kin_cloud_3d_lgrngn<ct_params_t>::th_src(const blitz::Array<real_t, 3> &rv)
 {
   const auto &ijk = this->ijk;
   const auto &i = this->i;
   const auto &j = this->j;
+  const auto &k = this->k;
   // -- heating --
   // surface flux
   surf_sens();
@@ -35,13 +36,17 @@ void kin_cloud_2d_lgrngn<ct_params_t>::th_src(const blitz::Array<real_t, 2> &rv)
   // change of theta[K/s] = heating[W/m^3] * theta[K] / T[K] / c_p[J/K/kg] / rhod[kg/m^3]
   for(int x = i.first() ; x <= i.last(); ++x)
   {
-      for(int z = j.first() ; z <= j.last(); ++z)
+    for(int y = j.first() ; y <= j.last(); ++y)
+    {
+      for(int z = k.first() ; z <= k.last(); ++z)
       {
-        alpha(x, z) = alpha(x, z) * this->state(ix::th)(x, z) / rhod(x, z) /
-                     (libcloudphxx::common::moist_air::c_p<real_t>(this->state(ix::rv)(x, z)) * si::kilograms * si::kelvins / si::joules) /
-                     (libcloudphxx::common::theta_dry::T<real_t>(this->state(ix::th)(x, z) * si::kelvins, rhod(x, z) * si::kilograms / si::metres  / si::metres / si::metres) / si::kelvins);
+        alpha(x, y, z) = alpha(x, y, z) * this->state(ix::th)(x, y, z) / rhod(x, y, z) /
+                     (libcloudphxx::common::moist_air::c_p<real_t>(rv(x, y, z)) * si::kilograms * si::kelvins / si::joules) /
+                     (libcloudphxx::common::theta_dry::T<real_t>(this->state(ix::th)(x, y, z) * si::kelvins, rhod(x, y, z) * si::kilograms / si::metres  / si::metres / si::metres) / si::kelvins);
       }
+    }
   }
+
   // large-scale vertical wind
   subsidence(ix::th);
   alpha(ijk) += F(ijk);
@@ -53,7 +58,7 @@ void kin_cloud_2d_lgrngn<ct_params_t>::th_src(const blitz::Array<real_t, 2> &rv)
 }
 
 template <class ct_params_t>
-void kin_cloud_2d_lgrngn<ct_params_t>::w_src(const blitz::Array<real_t, 2> &th)
+void kin_cloud_3d_lgrngn<ct_params_t>::w_src(const blitz::Array<real_t, 3> &th)
 {
   const auto &ijk = this->ijk;
   // buoyancy
