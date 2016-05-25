@@ -30,9 +30,7 @@ int main(int ac, char** av)
   init_prof(gp, file, 2, 3, n); 
 
   // read density
-  const double rhod = 1.; // placeholder for variable density
-  /*
-  blitz::Array<float, 3> rhod;
+  blitz::Array<float, 2> rhod;
   {
     notice_macro("about to open file: " << h5)
     H5::H5File h5f(h5 + "/const.h5", H5F_ACC_RDONLY);
@@ -41,36 +39,33 @@ int main(int ac, char** av)
     H5::DataSet h5d = h5f.openDataSet("G");
     H5::DataSpace h5s = h5d.getSpace();
   
-    if (h5s.getSimpleExtentNdims() != 3)  
-      error_macro("need 3 dimensions")
+    if (h5s.getSimpleExtentNdims() != 2)  
+      error_macro("need 2 dimensions")
   
-    hsize_t n[3];
-    enum {x, y, z}; 
+    hsize_t n[2];
+    enum {x, z}; 
     h5s.getSimpleExtentDims(n, NULL);
   
-    rhod.resize(n[x], n[y], n[z]);
+    rhod.resize(n[x], n[z]);
   
     hsize_t 
-      cnt[3] = { n[x], n[y], n[z] },  
-      off[3] = { 0,    0, 0    };  
+      cnt[3] = { n[x], n[z] },  
+      off[3] = { 0,    0    };  
     h5s.selectHyperslab( H5S_SELECT_SET, cnt, off);
   
-    hsize_t ext[3] = { 
+    hsize_t ext[2] = { 
       hsize_t(rhod.extent(0)), 
-      hsize_t(rhod.extent(1)), 
-      hsize_t(rhod.extent(2))
+      hsize_t(rhod.extent(1)) 
     };  
-    h5d.read(rhod.data(), H5::PredType::NATIVE_FLOAT, H5::DataSpace(3, ext), h5s);
+    h5d.read(rhod.data(), H5::PredType::NATIVE_FLOAT, H5::DataSpace(2, ext), h5s);
   }
-*/
 
   blitz::firstIndex i;
   blitz::secondIndex j;
-  blitz::thirdIndex k;
   blitz::Array<float, 1> res_prof(n["t"]);
   blitz::Array<float, 1> res_pos(n["t"]);
-  blitz::Array<int, 2> k_i(n["x"], n["y"]); // index of the inversion cell
-  blitz::Array<float, 3> rtot(n["x"], n["y"], n["z"]); 
+  blitz::Array<int, 1> k_i(n["x"]); // index of the inversion cell
+  blitz::Array<float, 2> rtot(n["x"],  n["z"]); 
   blitz::Range all = blitz::Range::all();
 
   for (auto &plt : std::set<std::string>({"wvarmax", "nc", "clfrac", "lwp", "er"}))
@@ -86,7 +81,7 @@ int main(int ac, char** av)
         {
           // cloud fraction (cloudy if N_c > 20/cm^3)
           auto tmp = h5load(h5, "rw_rng000_mom0", at * n["outfreq"]);
-          blitz::Array<float, 3> snap(tmp);
+          blitz::Array<float, 2> snap(tmp);
           snap *= rhod; // b4 it was specific moment
           snap /= 1e6; // per cm^3
           snap = iscloudy(snap);
@@ -100,7 +95,7 @@ int main(int ac, char** av)
         try
         {
           auto tmp = h5load(h5, "rw_rng000_mom0", at * n["outfreq"]);
-          blitz::Array<float, 3> snap(tmp);
+          blitz::Array<float, 2> snap(tmp);
           snap /= 1e6; // per cm^3
           res_prof(at) = blitz::mean(snap); 
         }
@@ -113,13 +108,13 @@ int main(int ac, char** av)
         {
           {
             auto tmp = h5load(h5, "rw_rng000_mom3", at * n["outfreq"]) * 4./3 * 3.14 * 1e3 * 1e3;
-            blitz::Array<float, 3> snap(tmp); // cloud water mixing ratio [g/kg]
+            blitz::Array<float, 2> snap(tmp); // cloud water mixing ratio [g/kg]
             snap *= rhod; // cloud water per cubic metre (should be wet density...)
             res_prof(at) = blitz::mean(snap); 
           }
           {
             auto tmp = h5load(h5, "rw_rng001_mom3", at * n["outfreq"]) * 4./3 * 3.14 * 1e3 * 1e3;
-            blitz::Array<float, 3> snap(tmp); // rain water mixing ratio [g/kg]
+            blitz::Array<float, 2> snap(tmp); // rain water mixing ratio [g/kg]
             snap *= rhod; // rain water per cubic metre (should be wet density...)
             res_prof(at) += blitz::mean(snap); 
           }
@@ -134,21 +129,21 @@ int main(int ac, char** av)
         {
           {
             auto tmp = h5load(h5, "rw_rng000_mom3", at * n["outfreq"]) * 4./3 * 3.14 * 1e3 * 1e3;
-            blitz::Array<float, 3> snap(tmp); // cloud water mixing ratio [g/kg]
+            blitz::Array<float, 2> snap(tmp); // cloud water mixing ratio [g/kg]
             rtot = snap;
           }
           {
             auto tmp = h5load(h5, "rw_rng001_mom3", at * n["outfreq"]) * 4./3 * 3.14 * 1e3 * 1e3;
-            blitz::Array<float, 3> snap(tmp); // rain water mixing ratio [g/kg]
+            blitz::Array<float, 2> snap(tmp); // rain water mixing ratio [g/kg]
             rtot += snap;
           }
           {
             auto tmp = h5load(h5, "rv", at * n["outfreq"]) * 1e3;
-            blitz::Array<float, 3> snap(tmp); // vapor mixing ratio [g/kg]
+            blitz::Array<float, 2> snap(tmp); // vapor mixing ratio [g/kg]
             rtot += snap;
           }
           k_i = 0;
-          k_i = blitz::first((rtot < 8.), k); 
+          k_i = blitz::first((rtot < 8.), j); 
           res_prof(at) = blitz::mean(k_i);
         }
         catch (...) {;}
@@ -159,13 +154,11 @@ int main(int ac, char** av)
         try
         {
           auto tmp = h5load(h5, "w", at * n["outfreq"]);
-          blitz::Array<float, 3> snap(tmp);
-          blitz::Array<float, 2> mean2d(n["x"], n["z"]);
+          blitz::Array<float, 2> snap(tmp);
           blitz::Array<float, 1> mean(n["z"]);
           snap = snap * snap; // 2nd power, w_mean = 0
           // mean variance of w in horizontal
-          mean2d = blitz::mean(snap(i,k,j), k); // mean over second dimension (y)
-          mean = blitz::mean(mean2d(j, i), j); // mean over x and y
+          mean = blitz::mean(snap(j, i), j); // mean over x and y
           res_prof(at) = blitz::max(mean); // the max value
         }
         catch(...) {;}
