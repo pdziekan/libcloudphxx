@@ -132,6 +132,15 @@ int main(int ac, char** av)
         mean = blitz::mean(snap(i, k, j), k); // average over 2nd dim
         plot(gp, mean);
       }   
+      else if (plt == "v")
+      {   
+        // cloud particle concentration
+        auto tmp = h5load(h5, "v", at * n["outfreq"]);
+        blitz::Array<float, 3> snap(tmp);
+        blitz::Array<float, 2> mean(n["x"], n["z"]);
+        mean = blitz::mean(snap(i, k, j), k); // average over 2nd dim
+        plot(gp, mean);
+      }   
       else if (plt == "w")
       {   
         // cloud particle concentration
