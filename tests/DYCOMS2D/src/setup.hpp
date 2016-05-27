@@ -157,7 +157,7 @@ namespace setup
 
   // function expecting a libmpdata solver parameters struct as argument
   template <class T>
-  void setopts(T &params, int nx, int ny, int nz)
+  void setopts(T &params, int nx, int nz)
   {
     params.dx = (X / si::metres) / (nx-1); 
     params.dz = (Z / si::metres) / (nz-1);
@@ -206,7 +206,7 @@ namespace setup
     // dx, dy ensuring 1500x1500 domain
     int 
       nx = solver.advectee().extent(x), 
-      nz = solver.advectee().extent(y); 
+      nz = solver.advectee().extent(z); 
     real_t 
       dx = (X / si::metres) / (nx-1), 
       dz = (Z / si::metres) / (nz-1); 

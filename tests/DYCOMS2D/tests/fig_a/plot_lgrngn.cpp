@@ -18,7 +18,7 @@ int main(int ac, char** av)
 
   for (int at = 0; at < n["t"]; ++at) // TODO: mark what time does it actually mean!
   {
-    for (auto &plt : std::set<std::string>({"rl", "rr", "nc", "nr", "ef", "na", "th", "rv", "u", "v", "w", "sd_conc"}))
+    for (auto &plt : std::set<std::string>({"rl", "rr", "nc", "nr", "ef", "na", "th", "rv", "u", "w", "sd_conc"}))
     {
       Gnuplot gp;
       init(gp, h5 + ".plot/" + plt + "/" + zeropad(at * n["outfreq"]) + ".svg", 1, 1, n); 
@@ -105,12 +105,6 @@ int main(int ac, char** av)
       {   
         // cloud particle concentration
         auto tmp = h5load(h5, "u", at * n["outfreq"]);
-        plot(gp, tmp);
-      }   
-      else if (plt == "v")
-      {   
-        // cloud particle concentration
-        auto tmp = h5load(h5, "v", at * n["outfreq"]);
         plot(gp, tmp);
       }   
       else if (plt == "w")
