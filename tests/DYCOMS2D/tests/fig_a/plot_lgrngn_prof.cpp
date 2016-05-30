@@ -142,7 +142,7 @@ int main(int ac, char** av)
           auto tmp = h5load(h5, "precip_rate", at * n["outfreq"]);
           blitz::Array<float, 2> snap(tmp);
           snap = snap *  4./3 * 3.14 * 1e3 // to get mass
-                     / n["dx"] / n["dy"] / n["dz"]    // averaged over cell volume, TODO: make precip rate return specific moment? wouldnt need the dx and dy
+                     / n["dx"] / n["dz"]    // averaged over cell volume, TODO: make precip rate return specific moment? wouldnt need the dx and dy
                      * 2264.76e3;      // latent heat of evaporation [J/kg]
           res += snap; 
         }
