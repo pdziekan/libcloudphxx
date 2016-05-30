@@ -145,6 +145,14 @@ namespace setup
     n1_stp = real_t(125e6) / si::cubic_metres,
     n2_stp = real_t(65e6) / si::cubic_metres;
 
+  //aerosol lognormal dist. for GCCN from Jorgen Jensen
+  const quantity<si::length, real_t>
+    mean_rd3 = real_t(.283e-6) * si::metres;
+  const quantity<si::dimensionless, real_t>
+    sdev_rd3 = real_t(2.235);
+  const quantity<power_typeof_helper<si::length, static_rational<-3>>::type, real_t>
+    n3_stp = real_t(2.216e6) / si::cubic_metres;
+
   //aerosol chemical composition parameters (needed for activation)
   // for lgrngn:
   const quantity<si::dimensionless, real_t> kappa = .61; // CCN-derived value from Table 1 in Petters and Kreidenweis 2007
@@ -265,5 +273,23 @@ namespace setup
 
     log_dry_radii *do_clone() const 
     { return new log_dry_radii( *this ); }
+  };
+
+  // lognormal aerosol distribution with GCCN
+  template <typename T>
+  struct log_dry_radii_gccn : public libcloudphxx::common::unary_function<T>
+  {
+    T funval(const T lnrd) const
+    {
+      return T((
+          lognormal::n_e(mean_rd1, sdev_rd1, n1_stp, quantity<si::dimensionless, real_t>(lnrd)) +
+          lognormal::n_e(mean_rd2, sdev_rd2, n2_stp, quantity<si::dimensionless, real_t>(lnrd)) +
+          lognormal::n_e(mean_rd3, sdev_rd3, n3_stp, quantity<si::dimensionless, real_t>(lnrd)) 
+        ) * si::cubic_metres
+      );
+    }
+
+    log_dry_radii_gccn *do_clone() const 
+    { return new log_dry_radii_gccn( *this ); }
   };
 };
