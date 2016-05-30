@@ -68,10 +68,11 @@ int main(int ac, char** av)
   blitz::Array<float, 2> rtot(n["x"],  n["z"]); 
   blitz::Range all = blitz::Range::all();
 
-  for (auto &plt : std::set<std::string>({"wvarmax", "nc", "clfrac", "lwp", "er"}))
+  for (auto &plt : std::set<std::string>({"wvarmax", "nc", "clfrac", "lwp", "er", "surf_precip"}))
   {
     res_prof = 0;
     res_pos = 0;
+    std::ifstream f_precip(h5 + "/prec_vol.dat");
     for (int at = 0; at < n["t"]; ++at) // TODO: mark what time does it actually mean!
     {
       res_pos(at) = at * n["outfreq"] * n["dt"] / 3600.;
@@ -98,6 +99,19 @@ int main(int ac, char** av)
           blitz::Array<float, 2> snap(tmp);
           snap /= 1e6; // per cm^3
           res_prof(at) = blitz::mean(snap); 
+        }
+        catch(...) {;}
+      }
+      else if (plt == "surf_precip")
+      {
+        // surface precipitation [mm/day]
+        try
+        {
+          std::string row;
+          std::getline(f_precip, row);
+          double prec_vol;
+          sscanf(row.c_str(), "%*d %lf", &prec_vol);
+          res_prof(at) = prec_vol / double(n["dx"]) / (double(n["outfreq"]) * n["dt"] / 3600. / 24.) * 1e3; 
         }
         catch(...) {;}
       }
@@ -175,6 +189,8 @@ int main(int ac, char** av)
       gp << "set title 'average cloud drop conc [1/cm^3]'\n";
     else if (plt == "wvarmax")
       gp << "set title 'max variance of w [m^2 / s^2]'\n";
+    else if (plt == "surf_precip")
+      gp << "set title 'surface precipitation [mm/d]'\n";
     else if (plt == "lwp")
     {
       gp << "set title 'liquid water path [g / m^2]'\n";
