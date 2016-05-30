@@ -22,7 +22,7 @@
 template <class solver_t>
 void setopts_micro(
   typename solver_t::rt_params_t &rt_params, 
-  int nx, int nz, int nt,
+  int nx, int nz, int nt, bool gccn,
   typename std::enable_if<std::is_same<
     decltype(solver_t::rt_params_t::cloudph_opts),
     libcloudphxx::lgrngn::opts_t<typename solver_t::real_t>
@@ -75,13 +75,23 @@ void setopts_micro(
   else
     rt_params.cloudph_opts_init.n_sd_max = nx *  nz * rt_params.cloudph_opts_init.sd_conc;
  
-  boost::assign::ptr_map_insert<
-    setup::log_dry_radii<thrust_real_t> // value type
-  >(
-    rt_params.cloudph_opts_init.dry_distros // map
-  )(
-    setup::kappa // key
-  );
+  if(!gccn)
+    boost::assign::ptr_map_insert<
+      setup::log_dry_radii<thrust_real_t> // value type
+    >(
+      rt_params.cloudph_opts_init.dry_distros // map
+    )(
+      setup::kappa // key
+    );
+  else
+    boost::assign::ptr_map_insert<
+      setup::log_dry_radii_gccn<thrust_real_t> // value type
+    >(
+      rt_params.cloudph_opts_init.dry_distros // map
+    )(
+      setup::kappa // key
+    );
+
 
   // output variables
   rt_params.outvars = {
