@@ -21,7 +21,7 @@
 
 // model run logic - the same for any microphysics
 template <class solver_t>
-void run(int nx, int nz, int nt, setup::real_t dt, const std::string &outdir, const int &outfreq, int spinup, bool serial, bool relax_th_rv, bool gccn)
+void run(int nx, int nz, int nt, setup::real_t dt, const std::string &outdir, const int &outfreq, int spinup, bool serial, bool relax_th_rv, bool gccn, bool onishi, setup::real_t eps, setup::real_t ReL)
 {
   // instantiation of structure containing simulation parameters
   typename solver_t::rt_params_t p;
@@ -34,7 +34,7 @@ void run(int nx, int nz, int nt, setup::real_t dt, const std::string &outdir, co
   p.relax_th_rv = relax_th_rv;
   p.prs_tol=1e-6;
   p.dt = dt;
-  setopts_micro<solver_t>(p, nx, nz, nt, gccn);
+  setopts_micro<solver_t>(p, nx, nz, nt, gccn, onishi, eps, ReL);
   //std::cout << "params.rhod po setopts micro " << p.rhod << " "  << *p.rhod << std::endl;
   setup::setopts(p, nx, nz);
 
@@ -113,6 +113,9 @@ int main(int argc, char** argv)
       ("adv_serial", po::value<bool>()->default_value(false), "force advection to be computed on single thread")
       ("relax_th_rv", po::value<bool>()->default_value(true) , "relaxation of th and rv")
       ("gccn", po::value<bool>()->default_value(false) , "add GCCNs")
+      ("onishi", po::value<bool>()->default_value(false) , "use the turbulent onishi kernel")
+      ("eps", po::value<setup::real_t>()->default_value(0.01) , "turb dissip rate (for onishi kernel) [m^2/s^3]")
+      ("ReL", po::value<setup::real_t>()->default_value(5000) , "taylor-microscale reynolds number (onishi kernel)")
       ("help", "produce a help message (see also --micro X --help)")
     ;
     po::variables_map vm;
@@ -158,6 +161,15 @@ int main(int argc, char** argv)
     // handling GCCN flag
     bool gccn = vm["gccn"].as<bool>();
 
+    // handling onishi flag
+    bool onishi = vm["onishi"].as<bool>();
+   
+    //handling epsilon
+    setup::real_t eps = vm["eps"].as<setup::real_t>();
+   
+    //handling Re lambda
+    setup::real_t ReL = vm["ReL"].as<setup::real_t>();
+
     // handling the "micro" option
     std::string micro = vm["micro"].as<std::string>();
 
@@ -171,7 +183,7 @@ int main(int argc, char** argv)
           vip_i=u, vip_j=w, vip_den=-1
         }; };
       };
-      run<kin_cloud_2d_lgrngn<ct_params_t>>(nx, nz, nt, dt, outdir, outfreq, spinup, adv_serial, relax_th_rv, gccn);
+      run<kin_cloud_2d_lgrngn<ct_params_t>>(nx, nz, nt, dt, outdir, outfreq, spinup, adv_serial, relax_th_rv, gccn, onishi, eps, ReL);
     }
     else throw
       po::validation_error(

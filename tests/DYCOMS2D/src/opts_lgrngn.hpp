@@ -22,7 +22,7 @@
 template <class solver_t>
 void setopts_micro(
   typename solver_t::rt_params_t &rt_params, 
-  int nx, int nz, int nt, bool gccn,
+  int nx, int nz, int nt, bool gccn, bool onishi, setup::real_t eps, setup::real_t ReL,
   typename std::enable_if<std::is_same<
     decltype(solver_t::rt_params_t::cloudph_opts),
     libcloudphxx::lgrngn::opts_t<typename solver_t::real_t>
@@ -122,7 +122,14 @@ void setopts_micro(
   rt_params.cloudph_opts_init.sstp_chem = vm["sstp_chem"].as<int>();
 
   // coalescence kernel choice
-  rt_params.cloudph_opts_init.kernel = libcloudphxx::lgrngn::kernel_t::hall_davis_no_waals;
+  if(!onishi)
+    rt_params.cloudph_opts_init.kernel = libcloudphxx::lgrngn::kernel_t::hall_davis_no_waals;
+  else
+  {
+    rt_params.cloudph_opts_init.kernel = libcloudphxx::lgrngn::kernel_t::onishi_hall_davis_no_waals;
+    rt_params.cloudph_opts_init.kernel_parameters.push_back(eps);
+    rt_params.cloudph_opts_init.kernel_parameters.push_back(ReL);
+  }
   // terminal velocity choice
   rt_params.cloudph_opts_init.terminal_velocity = libcloudphxx::lgrngn::vt_t::beard77fast;
 
