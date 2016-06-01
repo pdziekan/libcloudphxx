@@ -27,7 +27,7 @@ int main(int ac, char** av)
 
   Gnuplot gp;
   string file = h5 + "_series.svg";
-  init_prof(gp, file, 2, 3, n); 
+  init_prof(gp, file, 3, 3, n); 
 
   // read density
   blitz::Array<float, 2> rhod;
@@ -68,7 +68,7 @@ int main(int ac, char** av)
   blitz::Array<float, 2> rtot(n["x"],  n["z"]); 
   blitz::Range all = blitz::Range::all();
 
-  for (auto &plt : std::set<std::string>({"wvarmax", "nc", "clfrac", "lwp", "er", "surf_precip"}))
+  for (auto &plt : std::set<std::string>({"wvarmax", "nc", "clfrac", "lwp", "er", "surf_precip", "mass_dry"}))
   {
     res_prof = 0;
     res_pos = 0;
@@ -99,6 +99,19 @@ int main(int ac, char** av)
           blitz::Array<float, 2> snap(tmp);
           snap /= 1e6; // per cm^3
           res_prof(at) = blitz::mean(snap); 
+        }
+        catch(...) {;}
+      }
+      else if (plt == "mass_dry")
+      {
+	// total dry mass
+        double rho_dry = 1769; //[kg/m^3] - density of ammonium sulfate from wikipedia
+        try
+        {
+          auto tmp = h5load(h5, "rd_rng000_mom3", at * n["outfreq"]) * 4./3. * 3.14 * rho_dry * 1e3;
+          blitz::Array<float, 2> snap(tmp);
+          snap *= rhod * n["dx"] * n["dz"]; // turn mixing ratio in g/kg to total mass in g
+          res_prof(at) = blitz::sum(snap); 
         }
         catch(...) {;}
       }
@@ -191,6 +204,8 @@ int main(int ac, char** av)
       gp << "set title 'max variance of w [m^2 / s^2]'\n";
     else if (plt == "surf_precip")
       gp << "set title 'surface precipitation [mm/d]'\n";
+    else if (plt == "mass_dry")
+      gp << "set title 'total dry mass [g]'\n";
     else if (plt == "lwp")
     {
       gp << "set title 'liquid water path [g / m^2]'\n";

@@ -18,7 +18,7 @@ int main(int ac, char** av)
 
   for (int at = 0; at < n["t"]; ++at) // TODO: mark what time does it actually mean!
   {
-    for (auto &plt : std::set<std::string>({"rl", "rr", "nc", "nr", "ef", "na", "th", "rv", "u", "w", "sd_conc"}))
+    for (auto &plt : std::set<std::string>({"rl", "rr", "nc", "nr", "ef", "na", "th", "rv", "u", "w", "sd_conc", "r_dry"}))
     {
       Gnuplot gp;
       init(gp, h5 + ".plot/" + plt + "/" + zeropad(at * n["outfreq"]) + ".svg", 1, 1, n); 
@@ -49,6 +49,18 @@ int main(int ac, char** av)
 	gp << "set title 'cloud droplet spec. conc. [mg^{-1}]'\n";
 //	gp << "set cbrange [0:150]\n";
 	plot(gp, tmp);
+      }
+      else if (plt == "r_dry")
+      {
+        // dry mass content
+        // assume ammonium sulfate density of 1769 kg / m^3 (c.f. wikipedia)
+        double rho_dry = 1769;
+	auto tmp = h5load(h5, "rd_rng000_mom3", at * n["outfreq"]) * 4./3 * 3.14 * 1e9 * rho_dry;
+	gp << "set logscale cb\n";
+	gp << "set title 'dry mass mixing ratio [ug/kg]'\n";
+//	gp << "set cbrange [1e-2:1]\n";
+	plot(gp, tmp);
+	gp << "unset logscale cb\n";
       }
       else if (plt == "nr")
       {
