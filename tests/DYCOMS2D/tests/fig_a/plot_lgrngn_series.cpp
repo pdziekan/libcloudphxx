@@ -219,6 +219,8 @@ int main(int ac, char** av)
       gp << "set title 'max variance of w [m^2 / s^2]'\n";
     else if (plt == "surf_precip")
       gp << "set title 'surface precipitation [mm/d]'\n";
+    else if (plt == "acc_precip")
+      gp << "set title 'accumulated surface precipitation [mm]'\n";
     else if (plt == "mass_dry")
       gp << "set title 'total dry mass [g]'\n";
     else if (plt == "lwp")
