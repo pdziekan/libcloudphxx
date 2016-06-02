@@ -2,6 +2,8 @@
 #include "bins.hpp"
 #include "gnuplot.hpp"
 #include "hdf5.hpp"
+#include <unordered_set>
+#include <iomanip> 
 
 int main(int ac, char** av)
 {
@@ -18,7 +20,7 @@ int main(int ac, char** av)
 
   for (int at = 0; at < n["t"]; ++at) // TODO: mark what time does it actually mean!
   {
-    for (auto &plt : std::set<std::string>({"rl", "rr", "nc", "nr", "ef", "na", "th", "rv", "u", "w", "sd_conc"}))
+    for (auto &plt : std::unordered_set<std::string>({"rl", "rr", "nc", "nr", "ef", "na", "th", "rv", "u", "w", "sd_conc", "r_dry"}))
     {
       Gnuplot gp;
       init(gp, h5 + ".plot/" + plt + "/" + zeropad(at * n["outfreq"]) + ".svg", 1, 1, n); 
@@ -28,7 +30,8 @@ int main(int ac, char** av)
 	// cloud water content
 	//                                                         rho_w  kg2g
 	auto tmp = h5load(h5, "rw_rng000_mom3", at * n["outfreq"]) * 4./3 * 3.14 * 1e3 * 1e3;
-	gp << "set title 'cloud water mixing ratio [g/kg]'\n";
+        std::string title = "cloud water mixing ratio [g/kg]";
+	gp << "set title '" + title + " t = " << std::fixed << std::setprecision(2) << (double(at) * n["outfreq"] * n["dt"] / 60.) << "min'\n";
 	plot(gp, tmp);
       }
       else if (plt == "rr")
@@ -37,7 +40,8 @@ int main(int ac, char** av)
 	//                                                         rho_w  kg2g
 	auto tmp = h5load(h5, "rw_rng001_mom3", at * n["outfreq"]) * 4./3 * 3.14 * 1e3 * 1e3;
 	gp << "set logscale cb\n";
-	gp << "set title 'rain water mixing ratio [g/kg]'\n";
+ 	std::string title = "rain water mixing ratio [g/kg]";
+	gp << "set title '" + title + " t = " << std::fixed << std::setprecision(2) << (double(at) * n["outfreq"] * n["dt"] / 60.) << "min'\n";
 //	gp << "set cbrange [1e-2:1]\n";
 	plot(gp, tmp);
 	gp << "unset logscale cb\n";
@@ -46,15 +50,30 @@ int main(int ac, char** av)
       {
 	// cloud particle concentration
 	auto tmp = 1e-6 * h5load(h5, "rw_rng000_mom0", at * n["outfreq"]);
-	gp << "set title 'cloud droplet spec. conc. [mg^{-1}]'\n";
+	std::string title ="cloud droplet spec. conc. [mg^{-1}]";
+	gp << "set title '" + title + " t = " << std::fixed << std::setprecision(2) << (double(at) * n["outfreq"] * n["dt"] / 60.) << "min'\n";
 //	gp << "set cbrange [0:150]\n";
 	plot(gp, tmp);
+      }
+      else if (plt == "r_dry")
+      {
+        // dry mass content
+        // assume ammonium sulfate density of 1769 kg / m^3 (c.f. wikipedia)
+        double rho_dry = 1769;
+	auto tmp = h5load(h5, "rd_rng000_mom3", at * n["outfreq"]) * 4./3 * 3.14 * 1e9 * rho_dry;
+	gp << "set logscale cb\n";
+	std::string title ="dry mass mixing ratio [ug/kg]";
+	gp << "set title '" + title + " t = " << std::fixed << std::setprecision(2) << (double(at) * n["outfreq"] * n["dt"] / 60.) << "min'\n";
+//	gp << "set cbrange [1e-2:1]\n";
+	plot(gp, tmp);
+	gp << "unset logscale cb\n";
       }
       else if (plt == "nr")
       {
 	// rain particle concentration
 	auto tmp = 1e-6 * h5load(h5, "rw_rng001_mom0", at * n["outfreq"]);
-	gp << "set title 'rain drop spec. conc. [mg^{-1}]'\n";
+	std::string title = "rain drop spec. conc. [mg^{-1}]";
+	gp << "set title '" + title + " t = " << std::fixed << std::setprecision(2) << (double(at) * n["outfreq"] * n["dt"] / 60.) << "min'\n";
 //	gp << "set cbrange [.01:10]\n";
 	gp << "set logscale cb\n";
 	plot(gp, tmp);
@@ -64,7 +83,8 @@ int main(int ac, char** av)
       {
 	// effective radius
 	auto tmp = h5load(h5, "rw_rng000_mom3", at * n["outfreq"]) / h5load(h5, "rw_rng000_mom2", at * n["outfreq"]) * 1e6;
-	gp << "set title 'cloud droplet effective radius [μm]'\n"; 
+	std::string title = "cloud droplet effective radius [μm]"; 
+	gp << "set title '" + title + " t = " << std::fixed << std::setprecision(2) << (double(at) * n["outfreq"] * n["dt"] / 60.) << "min'\n";
 //	gp << "set cbrange [1:20]\n";
 	plot(gp, tmp);
       }
@@ -91,31 +111,36 @@ int main(int ac, char** av)
 */
       else if (plt == "rv")
       {   
-        // cloud particle concentration
+	std::string title = "water vapour mixing ratio [g/kg]"; 
+	gp << "set title '" + title + " t = " << std::fixed << std::setprecision(2) << (double(at) * n["outfreq"] * n["dt"] / 60.) << "min'\n";
         auto tmp = h5load(h5, "rv", at * n["outfreq"]);
         plot(gp, tmp);
       }   
       else if (plt == "th")
       {   
-        // cloud particle concentration
+	std::string title = "dry air potential temperature [K]"; 
+	gp << "set title '" + title + " t = " << std::fixed << std::setprecision(2) << (double(at) * n["outfreq"] * n["dt"] / 60.) << "min'\n";
         auto tmp = h5load(h5, "th", at * n["outfreq"]);
         plot(gp, tmp);
       }   
       else if (plt == "u")
       {   
-        // cloud particle concentration
+	std::string title = "velocity in x [m/s]"; 
+	gp << "set title '" + title + " t = " << std::fixed << std::setprecision(2) << (double(at) * n["outfreq"] * n["dt"] / 60.) << "min'\n";
         auto tmp = h5load(h5, "u", at * n["outfreq"]);
         plot(gp, tmp);
       }   
       else if (plt == "w")
       {   
-        // cloud particle concentration
+	std::string title = "velocity in z [m/s]"; 
+	gp << "set title '" + title + " t = " << std::fixed << std::setprecision(2) << (double(at) * n["outfreq"] * n["dt"] / 60.) << "min'\n";
         auto tmp = h5load(h5, "w", at * n["outfreq"]);
         plot(gp, tmp);
       }   
       else if (plt == "sd_conc")
       {   
-        // cloud particle concentration
+	std::string title = "number of super-droplets"; 
+	gp << "set title '" + title + " t = " << std::fixed << std::setprecision(2) << (double(at) * n["outfreq"] * n["dt"] / 60.) << "min'\n";
         auto tmp = h5load(h5, "sd_conc", at * n["outfreq"]);
         plot(gp, tmp);
       }   

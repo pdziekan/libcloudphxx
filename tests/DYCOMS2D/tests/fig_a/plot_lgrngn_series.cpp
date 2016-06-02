@@ -27,7 +27,7 @@ int main(int ac, char** av)
 
   Gnuplot gp;
   string file = h5 + "_series.svg";
-  init_prof(gp, file, 2, 3, n); 
+  init_prof(gp, file, 3, 3, n); 
 
   // read density
   blitz::Array<float, 2> rhod;
@@ -68,14 +68,20 @@ int main(int ac, char** av)
   blitz::Array<float, 2> rtot(n["x"],  n["z"]); 
   blitz::Range all = blitz::Range::all();
 
-  for (auto &plt : std::set<std::string>({"wvarmax", "nc", "clfrac", "lwp", "er", "surf_precip"}))
+  std::ifstream f_precip(h5 + "/prec_vol.dat");
+  std::string row;
+  double prec_vol;
+
+  for (auto &plt : std::set<std::string>({"wvarmax", "nc", "clfrac", "lwp", "er", "surf_precip", "mass_dry", "acc_precip"}))
   {
     res_prof = 0;
     res_pos = 0;
-    std::ifstream f_precip(h5 + "/prec_vol.dat");
     for (int at = 0; at < n["t"]; ++at) // TODO: mark what time does it actually mean!
     {
       res_pos(at) = at * n["outfreq"] * n["dt"] / 3600.;
+      // read in precipitation volume
+      std::getline(f_precip, row);
+      sscanf(row.c_str(), "%*d %lf", &prec_vol);
       if (plt == "clfrac")
       {
         try
@@ -102,19 +108,37 @@ int main(int ac, char** av)
         }
         catch(...) {;}
       }
+      else if (plt == "mass_dry")
+      {
+	// total dry mass
+        double rho_dry = 1769; //[kg/m^3] - density of ammonium sulfate from wikipedia
+        try
+        {
+          auto tmp = h5load(h5, "rd_rng000_mom3", at * n["outfreq"]) * 4./3. * 3.14 * rho_dry * 1e3;
+          blitz::Array<float, 2> snap(tmp);
+          snap *= rhod * n["dx"] * n["dz"]; // turn mixing ratio in g/kg to total mass in g
+          res_prof(at) = blitz::sum(snap); 
+        }
+        catch(...) {;}
+      }
       else if (plt == "surf_precip")
       {
         // surface precipitation [mm/day]
         try
         {
-          std::string row;
-          std::getline(f_precip, row);
-          double prec_vol;
-          sscanf(row.c_str(), "%*d %lf", &prec_vol);
-          std::cout << row << std::endl;
-          std::cout << prec_vol << std::endl;
           res_prof(at) = prec_vol / double(n["dx"]) / (double(n["outfreq"]) * n["dt"] / 3600. / 24.) * 1e3; 
-          std::cout << res_prof(at) << std::endl;
+        }
+        catch(...) {;}
+      }
+      else if (plt == "acc_precip")
+      {
+        // accumulated surface precipitation [mm]
+        try
+        {
+          if(at==0)
+            res_prof(at) = prec_vol / double(n["dx"]) * 1e3; 
+          else
+            res_prof(at) = res_prof(at-1) + prec_vol / double(n["dx"]) * 1e3; 
         }
         catch(...) {;}
       }
@@ -194,6 +218,8 @@ int main(int ac, char** av)
       gp << "set title 'max variance of w [m^2 / s^2]'\n";
     else if (plt == "surf_precip")
       gp << "set title 'surface precipitation [mm/d]'\n";
+    else if (plt == "mass_dry")
+      gp << "set title 'total dry mass [g]'\n";
     else if (plt == "lwp")
     {
       gp << "set title 'liquid water path [g / m^2]'\n";
