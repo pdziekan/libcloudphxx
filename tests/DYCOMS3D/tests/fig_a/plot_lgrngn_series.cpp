@@ -27,7 +27,7 @@ int main(int ac, char** av)
 
   Gnuplot gp;
   string file = h5 + "_series.svg";
-  init_prof(gp, file, 2, 3, n); 
+  init_prof(gp, file, 3, 3, n); 
 
   // read density
   blitz::Array<float, 3> rhod;
@@ -70,13 +70,21 @@ int main(int ac, char** av)
   blitz::Array<float, 3> rtot(n["x"], n["y"], n["z"]); 
   blitz::Range all = blitz::Range::all();
 
-  for (auto &plt : std::set<std::string>({"wvarmax", "nc", "clfrac", "lwp", "er"}))
+  for (auto &plt : std::set<std::string>({"wvarmax", "nc", "clfrac", "lwp", "er", "surf_precip", "acc_precip"}))
   {
     res_prof = 0;
     res_pos = 0;
+
+    std::ifstream f_precip(h5 + "/prec_vol.dat");
+    std::string row;
+    double prec_vol;
     for (int at = 0; at < n["t"]; ++at) // TODO: mark what time does it actually mean!
     {
       res_pos(at) = at * n["outfreq"] * n["dt"] / 3600.;
+      // read in precipitation volume
+      std::getline(f_precip, row);
+      sscanf(row.c_str(), "%*d %lf", &prec_vol);
+
       if (plt == "clfrac")
       {
         try
@@ -90,6 +98,28 @@ int main(int ac, char** av)
           res_prof(at) = blitz::mean(snap); 
         }
         catch(...){;}
+      }
+      else if (plt == "surf_precip")
+      {
+        // surface precipitation [mm/day]
+        try
+        {
+          res_prof(at) = prec_vol / (double(n["dx"]) * double(n["dy"]) * rhod.extent(0) * rhod.extent(1)) / (double(n["outfreq"]) * n["dt"] / 3600. / 24.) * 1e3;
+        }
+        catch(...) {;}
+      }
+      else if (plt == "acc_precip")
+      {
+        // accumulated surface precipitation [mm]
+        try
+        {
+          double surf_area = double(n["dx"]) * double(n["dy"]) * rhod.extent(0) * rhod.extent(1);
+          if(at==0)
+            res_prof(at) = prec_vol / surf_area * 1e3;
+          else
+            res_prof(at) = res_prof(at-1) + prec_vol / surf_area * 1e3;
+        }
+        catch(...) {;}
       }
       else if (plt == "nc")
       {
@@ -179,6 +209,10 @@ int main(int ac, char** av)
       gp << "set title 'average cloud drop conc [1/cm^3]'\n";
     else if (plt == "wvarmax")
       gp << "set title 'max variance of w [m^2 / s^2]'\n";
+    else if (plt == "surf_precip")
+      gp << "set title 'surface precipitation [mm/d]'\n";
+    else if (plt == "acc_precip")
+      gp << "set title 'accumulated precipitation [mm]'\n";
     else if (plt == "lwp")
     {
       gp << "set title 'liquid water path [g / m^2]'\n";
