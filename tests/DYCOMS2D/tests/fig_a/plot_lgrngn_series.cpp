@@ -127,7 +127,7 @@ int main(int ac, char** av)
         // surface precipitation [mm/day]
         try
         {
-          res_prof(at) = prec_vol / double(n["dx"]) / (double(n["outfreq"]) * n["dt"] / 3600. / 24.) * 1e3; 
+          res_prof(at) = prec_vol / (double(n["dx"]) * rhod.extent(0)) / (double(n["outfreq"]) * n["dt"] / 3600. / 24.) * 1e3; 
         }
         catch(...) {;}
       }
@@ -137,7 +137,7 @@ int main(int ac, char** av)
         try
         {
           if(at==0)
-            res_prof(at) = prec_vol / double(n["dx"]) * 1e3; 
+            res_prof(at) = prec_vol / (double(n["dx"]) * rhod.extent(0)) * 1e3; 
           else
             res_prof(at) = res_prof(at-1) + prec_vol / double(n["dx"]) * 1e3; 
         }
