@@ -68,14 +68,15 @@ int main(int ac, char** av)
   blitz::Array<float, 2> rtot(n["x"],  n["z"]); 
   blitz::Range all = blitz::Range::all();
 
-  std::ifstream f_precip(h5 + "/prec_vol.dat");
-  std::string row;
-  double prec_vol;
-
   for (auto &plt : std::set<std::string>({"wvarmax", "nc", "clfrac", "lwp", "er", "surf_precip", "mass_dry", "acc_precip"}))
   {
     res_prof = 0;
     res_pos = 0;
+
+    std::ifstream f_precip(h5 + "/prec_vol.dat");
+    std::string row;
+    double prec_vol;
+
     for (int at = 0; at < n["t"]; ++at) // TODO: mark what time does it actually mean!
     {
       res_pos(at) = at * n["outfreq"] * n["dt"] / 3600.;
