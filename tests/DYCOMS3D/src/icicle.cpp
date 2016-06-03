@@ -34,6 +34,7 @@ void run(int nx, int ny, int nz, int nt, setup::real_t dt, const std::string &ou
   p.relax_th_rv = relax_th_rv;
   p.prs_tol=1e-6;
   p.dt = dt;
+  p.nt = nt;
   setopts_micro<solver_t>(p, nx, ny, nz, nt);
   //std::cout << "params.rhod po setopts micro " << p.rhod << " "  << *p.rhod << std::endl;
   setup::setopts(p, nx, ny, nz);
