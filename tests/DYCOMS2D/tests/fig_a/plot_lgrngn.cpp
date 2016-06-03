@@ -30,7 +30,7 @@ int main(int ac, char** av)
 	// cloud water content
 	//                                                         rho_w  kg2g
 	auto tmp = h5load(h5, "rw_rng000_mom3", at * n["outfreq"]) * 4./3 * 3.14 * 1e3 * 1e3;
-        std::string title = "cloud water mixing ratio [g/kg]";
+        std::string title = "cloud (0.5um < r < 25um) water mixing ratio [g/kg]";
 	gp << "set title '" + title + " t = " << std::fixed << std::setprecision(2) << (double(at) * n["outfreq"] * n["dt"] / 60.) << "min'\n";
 	plot(gp, tmp);
       }
@@ -40,7 +40,7 @@ int main(int ac, char** av)
 	//                                                         rho_w  kg2g
 	auto tmp = h5load(h5, "rw_rng001_mom3", at * n["outfreq"]) * 4./3 * 3.14 * 1e3 * 1e3;
 	gp << "set logscale cb\n";
- 	std::string title = "rain water mixing ratio [g/kg]";
+ 	std::string title = "rain (r > 25um) water mixing ratio [g/kg]";
 	gp << "set title '" + title + " t = " << std::fixed << std::setprecision(2) << (double(at) * n["outfreq"] * n["dt"] / 60.) << "min'\n";
 //	gp << "set cbrange [1e-2:1]\n";
 	plot(gp, tmp);
@@ -50,7 +50,7 @@ int main(int ac, char** av)
       {
 	// cloud particle concentration
 	auto tmp = 1e-6 * h5load(h5, "rw_rng000_mom0", at * n["outfreq"]);
-	std::string title ="cloud droplet spec. conc. [mg^{-1}]";
+	std::string title ="cloud (0.5um < r < 25um) droplet spec. conc. [mg^{-1}]";
 	gp << "set title '" + title + " t = " << std::fixed << std::setprecision(2) << (double(at) * n["outfreq"] * n["dt"] / 60.) << "min'\n";
 //	gp << "set cbrange [0:150]\n";
 	plot(gp, tmp);
@@ -72,7 +72,7 @@ int main(int ac, char** av)
       {
 	// rain particle concentration
 	auto tmp = 1e-6 * h5load(h5, "rw_rng001_mom0", at * n["outfreq"]);
-	std::string title = "rain drop spec. conc. [mg^{-1}]";
+	std::string title = "rain (r > 25um) drop spec. conc. [mg^{-1}]";
 	gp << "set title '" + title + " t = " << std::fixed << std::setprecision(2) << (double(at) * n["outfreq"] * n["dt"] / 60.) << "min'\n";
 //	gp << "set cbrange [.01:10]\n";
 	gp << "set logscale cb\n";
@@ -83,7 +83,7 @@ int main(int ac, char** av)
       {
 	// effective radius
 	auto tmp = h5load(h5, "rw_rng000_mom3", at * n["outfreq"]) / h5load(h5, "rw_rng000_mom2", at * n["outfreq"]) * 1e6;
-	std::string title = "cloud droplet effective radius [μm]"; 
+	std::string title = "cloud (0.5um < r < 25um) droplet effective radius [μm]"; 
 	gp << "set title '" + title + " t = " << std::fixed << std::setprecision(2) << (double(at) * n["outfreq"] * n["dt"] / 60.) << "min'\n";
 //	gp << "set cbrange [1:20]\n";
 	plot(gp, tmp);
