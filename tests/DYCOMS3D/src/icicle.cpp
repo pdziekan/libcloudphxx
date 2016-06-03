@@ -7,7 +7,7 @@
 
 #include <libmpdata++/bcond/cyclic_3d.hpp>
 #include <libmpdata++/bcond/open_3d.hpp>
-#include <libmpdata++/concurr/boost_thread.hpp> // not to conflict with OpenMP used via Thrust in libcloudph++
+#include <libmpdata++/concurr/cxx11_thread.hpp> // not to conflict with OpenMP used via Thrust in libcloudph++
 #include <libmpdata++/concurr/serial.hpp> // not to conflict with OpenMP used via Thrust in libcloudph++
 
 #include "setup.hpp" // 8th ICMW case 1 by Wojciech Grabowski)
@@ -61,7 +61,7 @@ void run(int nx, int ny, int nz, int nt, setup::real_t dt, const std::string &ou
   }
   else
   {
-    using concurr_t = concurr::boost_thread<
+    using concurr_t = concurr::cxx11_thread<
       solver_t, 
       bcond::cyclic, bcond::cyclic,
       bcond::cyclic, bcond::cyclic,
