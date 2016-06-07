@@ -308,8 +308,8 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
         // ... and now dividing them by rhod (z=0 is located at k=1/2)
         {
           blitz::secondIndex k;
-          Cx /= setup::rhod_fctr()(   k     * this->dj);
-          Cz /= setup::rhod_fctr()((k - .5) * this->dj);
+          Cx /= rhod;//setup::rhod_fctr()(   k     * this->dj);
+          Cz /= rhod;//setup::rhod_fctr()((k - .5) * this->dj);
         }
         // running synchronous stuff
         prtcls->step_sync(
