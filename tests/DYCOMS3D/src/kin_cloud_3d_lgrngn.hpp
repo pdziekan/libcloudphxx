@@ -31,8 +31,8 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
   std::unique_ptr<libcloudphxx::lgrngn::particles_proto_t<real_t>> prtcls;
   real_t prec_vol;
   std::ofstream f_prec;
-  clock::time_point tbeg, tend, tbeg_async, tend_async, tbeg_loop;
-  std::chrono::milliseconds tdiag, tupdate, tsync, tasync_wait, tloop;
+  clock::time_point tbeg, tend, tbeg1, tend1, tbeg_loop;
+  std::chrono::milliseconds tdiag, tupdate, tsync, tasync_wait, tloop, tpost_step;
 
   typename parent_t::arr_t rhod, w_LS, th_init, rv_init, hgt_fctr; // TODO: store them in rt_params, here only reference thread's subarrays; also they are just 1D profiles, no need to store whole 3D arrays
   blitz::Array<real_t, 2> k_i; // TODO: make it's size in x direction smaller to match thread's domain
@@ -139,7 +139,7 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
       assert(params.dt != 0); 
 
       // async does not make sense without CUDA
-      if (params.backend != libcloudphxx::lgrngn::CUDA && params.backend != libcloudphxx::lgrngn::multi_CUDA) params.async = false;
+//      if (params.backend != libcloudphxx::lgrngn::CUDA && params.backend != libcloudphxx::lgrngn::multi_CUDA) params.async = false;
 
       params.cloudph_opts_init.dt = params.dt; // advection timestep = microphysics timestep
       params.cloudph_opts_init.dx = params.dx;
@@ -286,7 +286,6 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
     }
   }
 
-
 #if defined(STD_FUTURE_WORKS)
   std::future<real_t> ftr;
 #endif
@@ -305,6 +304,7 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
     this->mem->barrier();
     if (this->rank == 0) 
     {
+      tbeg1 = clock::now();
       // assuring previous async step finished ...
 #if defined(STD_FUTURE_WORKS)
       if (
@@ -327,11 +327,8 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
       prtcls->diag_all();
       prtcls->diag_wet_mom(3);
       auto rl = r_l(blitz::Range(0,nx-1), blitz::Range(0,ny-1), blitz::Range(0,nz-1)); 
-      rl = blitz::Array<real_t,3>(prtcls->outbuf(), blitz::shape(nx, ny, nz), blitz::duplicateData); // copy in data from outbuf
-      rl = rl * 4./3. * 1000. * 3.14159;
-      rl = rl * rhod; 
-      rl = rl * setup::heating_kappa;
-
+      rl = blitz::Array<real_t,3>(prtcls->outbuf(), blitz::shape(nx, ny, nz), blitz::neverDeleteData); // copy in data from outbuf
+      rl = rl * 4./3. * 1000. * 3.14159 * rhod * setup::heating_kappa;
       {
         using libmpdataxx::arakawa_c::h;
         // temporarily Cx & Cz are multiplied by rhod ...
@@ -355,9 +352,9 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
         // ... and now dividing them by rhod (z=0 is located at k=1/2)
         {
           blitz::thirdIndex k;
-          Cx /= setup::rhod_fctr()(   k     * this->dk);
-          Cy /= setup::rhod_fctr()(   k     * this->dk);
-          Cz /= setup::rhod_fctr()((k - .5) * this->dk);
+          Cx /= rhod;
+          Cy /= rhod;
+          Cz /= rhod;
         }
         // running synchronous stuff
         tbeg = clock::now();
@@ -405,6 +402,7 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
       // performing diagnostics
       if (this->timestep % this->outfreq == 0) 
       { 
+
 #if defined(STD_FUTURE_WORKS)
         if (params.async)
         {
@@ -412,26 +410,27 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
           prec_vol += ftr.get();
         }
 #endif
+
         diag();
       }
+      tend1 = clock::now();
+      tpost_step += std::chrono::duration_cast<std::chrono::milliseconds>( tend1 - tbeg1 );
+      // there's no hook_post_loop, so we imitate it here
+      if(this->timestep == params.nt-1)
+      {
+        tend = clock::now();
+        tloop = std::chrono::duration_cast<std::chrono::milliseconds>( tend - tbeg_loop );
+        std::cout <<  "wall time in milliseconds: " << std::endl
+          << "loop: " << tloop.count() << std::endl
+          << "update: " << tupdate.count() << " ("<< double(tupdate.count())/tloop.count()*100 <<"%)" << std::endl
+          << "custom_post_step: " << tpost_step.count() << " ("<< double(tpost_step.count())/tloop.count()*100 <<"%)" << std::endl
+          << "diag: " << tdiag.count() << " ("<< double(tdiag.count())/tloop.count()*100 <<"%)" << std::endl
+          << "sync: " << tsync.count() << " ("<< double(tsync.count())/tloop.count()*100 <<"%)" << std::endl
+          << "async_wait: " << tasync_wait.count() << " ("<< double(tasync_wait.count())/tloop.count()*100 <<"%)" << std::endl;
+      }
     }
-
     this->mem->barrier();
-
-    // there's no hook_post_loop, so we imitate it here
-    if(this->rank==0 && this->timestep == params.nt-1)
-    {
-      tend = clock::now();
-      tloop = std::chrono::duration_cast<std::chrono::milliseconds>( tend - tbeg_loop );
-      std::cout <<  "wall time in milliseconds: " << std::endl
-        << "loop: " << tloop.count() << std::endl
-        << "update: " << tupdate.count() << " ("<< double(tupdate.count())/tloop.count()*100 <<"%)" << std::endl
-        << "diag: " << tdiag.count() << " ("<< double(tdiag.count())/tloop.count()*100 <<"%)" << std::endl
-        << "sync: " << tsync.count() << " ("<< double(tsync.count())/tloop.count()*100 <<"%)" << std::endl
-        << "async_wait: " << tasync_wait.count() << " ("<< double(tasync_wait.count())/tloop.count()*100 <<"%)" << std::endl;
-    }
   }
-
 
   public:
 
@@ -464,7 +463,7 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
     alpha(args.mem->tmp[__FILE__][0][3]),
     beta(args.mem->tmp[__FILE__][0][4]),
     F(args.mem->tmp[__FILE__][0][1])
-    ,tdiag(std::chrono::milliseconds::zero()), tupdate(std::chrono::milliseconds::zero()), tloop(std::chrono::milliseconds::zero()), tsync(std::chrono::milliseconds::zero())
+    ,tdiag(std::chrono::milliseconds::zero()), tupdate(std::chrono::milliseconds::zero()), tloop(std::chrono::milliseconds::zero()), tsync(std::chrono::milliseconds::zero()), tpost_step(std::chrono::milliseconds::zero())
 
   {
     int nx = this->mem->grid_size[0].length();
