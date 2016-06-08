@@ -32,7 +32,7 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
   real_t prec_vol;
   std::ofstream f_prec;
   clock::time_point tbeg, tend, tbeg1, tend1, tbeg_loop;
-  std::chrono::milliseconds tdiag, tupdate, tsync, tasync_wait, tloop, tpost_step;
+  std::chrono::milliseconds tdiag, tupdate, tsync, tasync_wait, tloop, tpost_step_custom, tpost_step_base;
 
   typename parent_t::arr_t rhod, w_LS, th_init, rv_init, hgt_fctr; // TODO: store them in rt_params, here only reference thread's subarrays; also they are just 1D profiles, no need to store whole 3D arrays
   blitz::Array<real_t, 2> k_i; // TODO: make it's size in x direction smaller to match thread's domain
@@ -349,12 +349,15 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
             this->mem->grid_size[2]^h
           ).reindex({0,0,0}).copy();
 
-        // ... and now dividing them by rhod (z=0 is located at k=1/2)
+        // ... and now dividing them by rhod (TODO: z=0 is located at k=1/2)
         {
-          blitz::thirdIndex k;
-          Cx /= rhod;
-          Cy /= rhod;
-          Cz /= rhod;
+          blitz::Range all = blitz::Range::all();
+          Cx(blitz::Range(1,nx), all, all)/= rhod;
+          Cy(all, blitz::Range(1,ny), all)/= rhod;
+          Cz(all, all, blitz::Range(1,nz))/= rhod;
+          Cx(0, all, all) /= rhod(0, all, all);
+          Cy(all, 0, all) /= rhod(all, 0, all);
+          Cz(all, all, 0) /= rhod(all, all, 0);
         }
         // running synchronous stuff
         tbeg = clock::now();
@@ -414,7 +417,7 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
         diag();
       }
       tend1 = clock::now();
-      tpost_step += std::chrono::duration_cast<std::chrono::milliseconds>( tend1 - tbeg1 );
+      tpost_step_custom += std::chrono::duration_cast<std::chrono::milliseconds>( tend1 - tbeg1 );
       // there's no hook_post_loop, so we imitate it here
       if(this->timestep == params.nt-1)
       {
@@ -423,7 +426,8 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
         std::cout <<  "wall time in milliseconds: " << std::endl
           << "loop: " << tloop.count() << std::endl
           << "update: " << tupdate.count() << " ("<< double(tupdate.count())/tloop.count()*100 <<"%)" << std::endl
-          << "custom_post_step: " << tpost_step.count() << " ("<< double(tpost_step.count())/tloop.count()*100 <<"%)" << std::endl
+          << "custom_post_step: " << tpost_step_custom.count() << " ("<< double(tpost_step_custom.count())/tloop.count()*100 <<"%)" << std::endl
+          << "base_post_step: " << tpost_step_base.count() << " ("<< double(tpost_step_base.count())/tloop.count()*100 <<"%)" << std::endl
           << "diag: " << tdiag.count() << " ("<< double(tdiag.count())/tloop.count()*100 <<"%)" << std::endl
           << "sync: " << tsync.count() << " ("<< double(tsync.count())/tloop.count()*100 <<"%)" << std::endl
           << "async_wait: " << tasync_wait.count() << " ("<< double(tasync_wait.count())/tloop.count()*100 <<"%)" << std::endl;
@@ -462,8 +466,13 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
     r_l(args.mem->tmp[__FILE__][0][2]),
     alpha(args.mem->tmp[__FILE__][0][3]),
     beta(args.mem->tmp[__FILE__][0][4]),
-    F(args.mem->tmp[__FILE__][0][1])
-    ,tdiag(std::chrono::milliseconds::zero()), tupdate(std::chrono::milliseconds::zero()), tloop(std::chrono::milliseconds::zero()), tsync(std::chrono::milliseconds::zero()), tpost_step(std::chrono::milliseconds::zero())
+    F(args.mem->tmp[__FILE__][0][1]),
+    tdiag(std::chrono::milliseconds::zero()),
+    tupdate(std::chrono::milliseconds::zero()), 
+    tloop(std::chrono::milliseconds::zero()),
+    tsync(std::chrono::milliseconds::zero()),
+    tpost_step_custom(std::chrono::milliseconds::zero()),
+    tpost_step_base(std::chrono::milliseconds::zero())
 
   {
     int nx = this->mem->grid_size[0].length();
