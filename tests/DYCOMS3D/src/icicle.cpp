@@ -21,7 +21,7 @@
 
 // model run logic - the same for any microphysics
 template <class solver_t>
-void run(int nx, int ny, int nz, int nt, setup::real_t dt, const std::string &outdir, const int &outfreq, int spinup, bool serial, bool relax_th_rv)
+void run(int nx, int ny, int nz, int nt, setup::real_t dt, const std::string &outdir, const int &outfreq, int spinup, bool serial, bool relax_th_rv, bool gccn)
 {
   // instantiation of structure containing simulation parameters
   typename solver_t::rt_params_t p;
@@ -35,7 +35,7 @@ void run(int nx, int ny, int nz, int nt, setup::real_t dt, const std::string &ou
   p.prs_tol=1e-6;
   p.dt = dt;
   p.nt = nt;
-  setopts_micro<solver_t>(p, nx, ny, nz, nt);
+  setopts_micro<solver_t>(p, nx, ny, nz, nt, gccn);
   //std::cout << "params.rhod po setopts micro " << p.rhod << " "  << *p.rhod << std::endl;
   setup::setopts(p, nx, ny, nz);
 
@@ -116,6 +116,7 @@ int main(int argc, char** argv)
       ("spinup", po::value<int>()->default_value(2400) , "number of initial timesteps during which rain formation is to be turned off")
       ("adv_serial", po::value<bool>()->default_value(false), "force advection to be computed on single thread")
       ("relax_th_rv", po::value<bool>()->default_value(true) , "relaxation of th and rv")
+      ("gccn", po::value<bool>()->default_value(false) , "add GCCNs")
       ("help", "produce a help message (see also --micro X --help)")
     ;
     po::variables_map vm;
@@ -159,6 +160,9 @@ int main(int argc, char** argv)
     // handling relaxation flag
     bool relax_th_rv = vm["relax_th_rv"].as<bool>();
 
+    // handling GCCN flag
+    bool gccn = vm["gccn"].as<bool>();
+
     // handling the "micro" option
     std::string micro = vm["micro"].as<std::string>();
 
@@ -172,7 +176,7 @@ int main(int argc, char** argv)
           vip_i=u, vip_j=v, vip_k=w, vip_den=-1
         }; };
       };
-      run<kin_cloud_3d_lgrngn<ct_params_t>>(nx, ny, nz, nt, dt, outdir, outfreq, spinup, adv_serial, relax_th_rv);
+      run<kin_cloud_3d_lgrngn<ct_params_t>>(nx, ny, nz, nt, dt, outdir, outfreq, spinup, adv_serial, relax_th_rv, gccn);
     }
     else throw
       po::validation_error(
