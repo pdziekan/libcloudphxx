@@ -105,6 +105,7 @@ int main(int ac, char** av)
           auto tmp = h5load(h5, "rw_rng000_mom0", at * n["outfreq"]);
           blitz::Array<float, 2> snap(tmp);
           snap /= 1e6; // per cm^3
+          snap *= rhod; // b4 it was per milligram
           res_prof(at) = blitz::mean(snap); 
         }
         catch(...) {;}
