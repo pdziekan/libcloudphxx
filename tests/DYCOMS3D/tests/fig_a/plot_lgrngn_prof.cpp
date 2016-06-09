@@ -22,7 +22,7 @@ int main(int ac, char** av)
 
   auto n = h5n(h5);
   printf("dx %lf dy %lf dz %lf\n", n["dx"], n["dy"], n["dz"]);
-  const double z_i = 795; // [m]
+  int k_i = 0; // inversion cell
 
   // average profile between 2h and 6h (in paper its between 2h and 6h! - do longer sims)
   int first_timestep = 7200. / n["dt"] / n["outfreq"];
@@ -65,12 +65,13 @@ int main(int ac, char** av)
     h5d.read(rhod.data(), H5::PredType::NATIVE_FLOAT, H5::DataSpace(3, ext), h5s);
   }
 
-  for (auto &plt : std::set<std::string>({"rtot", "rliq", "wvar", "w3rd", "prflux", "clfrac", "N_c"}))
+  for (auto &plt : std::set<std::string>({"00rtot", "rliq", "wvar", "w3rd", "prflux", "clfrac", "N_c"})) //rtot has to be first
   {
     blitz::firstIndex i;
     blitz::secondIndex j;
     blitz::thirdIndex k;
     blitz::Array<float, 3> res(n["x"], n["y"], n["z"]);
+    blitz::Array<float, 3> res_tmp3d(n["x"], n["y"], n["z"]);
     blitz::Array<float, 1> res_prof(n["z"]);
     blitz::Array<float, 2> res_tmp(n["x"], n["z"]);
     blitz::Array<float, 1> res_pos(n["z"]);
@@ -94,24 +95,30 @@ int main(int ac, char** av)
         }
         gp << "set title 'liquid water r [g/kg] averaged over 2h-6h, w/o rw<0.5um'\n";
       }
-      else if (plt == "rtot")
+      else if (plt == "00rtot")
       {
 	// total water content (vapor + cloud + rain, missing droplets with r<0.5um!)
         {
           auto tmp = h5load(h5, "rw_rng000_mom3", at * n["outfreq"]) * 4./3 * 3.14 * 1e3 * 1e3;
           blitz::Array<float, 3> snap(tmp);
-          res += snap; 
+          res_tmp3d = snap; 
         }
         {
           auto tmp = h5load(h5, "rw_rng001_mom3", at * n["outfreq"]) * 4./3 * 3.14 * 1e3 * 1e3;
           blitz::Array<float, 3> snap(tmp);
-          res += snap; 
+          res_tmp3d += snap; 
         }
         {
           auto tmp = h5load(h5, "rv", at * n["outfreq"]) * 1e3;
           blitz::Array<float, 3> snap(tmp);
-          res += snap;
+          res_tmp3d += snap;
         }
+        res += res_tmp3d;
+        res_tmp = blitz::mean(res_tmp3d(i, k, j), k); // average in y
+        res_prof = blitz::mean(res_tmp(j, i), j); // average in x
+        // find instantaneous inversion height
+        k_i +=  blitz::first((res_prof < 8.));
+
         gp << "set title 'total water r [g/kg] averaged over 2h-6h, w/o rw<0.5um'\n";
       }
       else if (plt == "N_c")
@@ -197,6 +204,9 @@ int main(int ac, char** av)
     } // time loop
     res /= last_timestep - first_timestep + 1;
     
+    double z_i = k_i / (last_timestep - first_timestep + 1) * n["dz"];
+    std::cout << "average inversion height " << z_i;
+
     res_pos = i * n["dz"] / z_i; 
     res_tmp = blitz::mean(res(i, k, j), k); // average in y
     res_prof = blitz::mean(res_tmp(j, i), j); // average in x
