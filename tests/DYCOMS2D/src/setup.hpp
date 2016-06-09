@@ -39,7 +39,7 @@ namespace setup
   const real_t F_1 = 22; // w/m^2
   const real_t q_i = 8e-3; // kg/kg
   const real_t c_p = 1004; // J / kg / K
-  const real_t z_abs = 1200; // [m] height above which absorber works
+  const real_t z_abs = 1250; // [m] height above which absorber works
 
   const real_t D = 3.75e-6; // large-scale wind horizontal divergence [1/s]
   const real_t rho_i = 1.12; // kg/m^3
@@ -161,7 +161,7 @@ namespace setup
 
   //th, rv and surface fluxes relaxation time and height
   const quantity<si::time, real_t> tau_rlx = 300 * si::seconds;
-  const quantity<si::length, real_t> z_rlx = 50 * si::metres;
+  const quantity<si::length, real_t> z_rlx = 300 * si::metres;
 
   // function expecting a libmpdata solver parameters struct as argument
   template <class T>
@@ -250,7 +250,8 @@ namespace setup
     solver.advectee(ix::w) = 0;  
    
     // absorbers
-    solver.vab_coefficient() = where(k * dz >= z_abs, 1. / 1020 * (k * dz - z_abs) / (Z / si::metres - z_abs), 0);
+    solver.vab_coefficient() = where(k * dz >= z_abs,  1. / 100 * pow(sin(3.1419 / 2. * (k * dz - z_abs)/ (Z / si::metres - z_abs)), 2), 0);
+
     solver.vab_relaxed_state(0) = solver.advectee(ix::u);
     solver.vab_relaxed_state(1) = 0;
 
