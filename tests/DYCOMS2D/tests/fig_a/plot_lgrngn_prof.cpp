@@ -27,6 +27,12 @@ int main(int ac, char** av)
   int first_timestep = 7200. / n["dt"] / n["outfreq"];
   int last_timestep = 21600. /  n["dt"] / n["outfreq"];
 
+  const double p_1000 = 1000.;
+  const double L = 2.5e6;
+  const double R_d = 287.;
+  const double c_p = 1004;
+  const double c_pd = c_p;
+
   Gnuplot gp;
   string file = h5 + "_profiles.svg";
   init_prof(gp, file, 3, 3, n); 
@@ -63,12 +69,13 @@ int main(int ac, char** av)
     h5d.read(rhod.data(), H5::PredType::NATIVE_FLOAT, H5::DataSpace(2, ext), h5s);
   }
 
-  for (auto &plt : std::set<std::string>({"00rtot", "rliq", "wvar", "w3rd", "prflux", "clfrac", "N_c"})) // rtot has to be first
+  for (auto &plt : std::set<std::string>({"00rtot", "rliq", "thl", "wvar", "w3rd", "prflux", "clfrac", "N_c"})) // rtot has to be first
   {
     blitz::firstIndex i;
     blitz::secondIndex j;
     blitz::Array<float, 2> res(n["x"], n["z"]);
     blitz::Array<float, 2> res_tmp(n["x"], n["z"]);
+    blitz::Array<float, 2> res_tmp2(n["x"], n["z"]);
     blitz::Array<float, 1> res_prof(n["z"]);
     blitz::Array<float, 1> res_pos(n["z"]);
     blitz::Range all = blitz::Range::all();
@@ -126,6 +133,30 @@ int main(int ac, char** av)
           res += snap; 
         }
         gp << "set title 'cloud droplets ( 0.5um < r < 25um) concentration [1/cm^3]'\n";
+      }
+      else if (plt == "thl")
+      {
+	// liquid potential temp [K]
+        {
+          {
+            auto tmp = h5load(h5, "rw_rng000_mom3", at * n["outfreq"]) * 4./3 * 3.14 * 1e3;
+            blitz::Array<float, 2> snap(tmp);
+            res_tmp2 = snap; 
+          }
+          {
+            auto tmp = h5load(h5, "rw_rng001_mom3", at * n["outfreq"]) * 4./3 * 3.14 * 1e3;
+            blitz::Array<float, 2> snap(tmp);
+            res_tmp2 += snap; 
+          }
+          // res_tmp2 is now q_l (liq water content)
+          auto tmp = h5load(h5, "th", at * n["outfreq"]);
+          blitz::Array<float, 2> snap(tmp); // snap is theta_dry
+          res_tmp = pow(snap * pow(rhod * R_d / (p_1000 * 100), R_d / c_pd), c_pd / (c_pd - R_d)); // res_tmp is now temperature; 1 bar = 100 000Pa
+          snap *= (res_tmp - res_tmp2 * L / c_p) / res_tmp; 
+          res += snap; 
+//          res += res_tmp2;
+        }
+        gp << "set title 'liquid potential temp [K]'\n";
       }
       else if (plt == "clfrac")
       {
