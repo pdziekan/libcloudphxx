@@ -29,6 +29,9 @@ int main(int ac, char** av)
   string file = h5 + "_series.svg";
   init_prof(gp, file, 3, 3, n); 
 
+  string prof_file = h5 + "_series.dat";
+  std::ofstream oprof_file(prof_file);
+
   // read density
   blitz::Array<float, 2> rhod;
   {
@@ -242,6 +245,7 @@ int main(int ac, char** av)
     std::cout << plt << " " << res_pos << res_prof << std::endl;
     gp.send1d(boost::make_tuple(res_pos, res_prof));
 
+    oprof_file << res_prof ;
 //    plot(gp, res);
   } // var loop
 } // main
