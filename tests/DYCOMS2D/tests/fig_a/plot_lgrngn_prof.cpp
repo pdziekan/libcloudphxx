@@ -33,9 +33,14 @@ int main(int ac, char** av)
   const double c_p = 1004;
   const double c_pd = c_p;
 
+  double z_i;
+
   Gnuplot gp;
   string file = h5 + "_profiles.svg";
   init_prof(gp, file, 3, 3, n); 
+
+  string prof_file = h5 + "_profiles.dat";
+  std::ofstream oprof_file(prof_file);
 
   blitz::Array<float, 2> rhod;
   rhod.resize(n["x"], n["z"]);
@@ -229,7 +234,7 @@ int main(int ac, char** av)
     } // time loop
     res /= last_timestep - first_timestep + 1;
     
-    double z_i = k_i / (last_timestep - first_timestep + 1) * n["dz"];
+    z_i = k_i / (last_timestep - first_timestep + 1) * n["dz"];
     std::cout << "average inversion height " << z_i;
     res_pos = i * n["dz"] / z_i; 
     res_prof = blitz::mean(res(j, i), j); // average in x
@@ -237,6 +242,9 @@ int main(int ac, char** av)
     gp << "plot '-' with line\n";
     gp.send1d(boost::make_tuple(res_prof, res_pos));
 
+    oprof_file << res_prof ;
+
 //    plot(gp, res);
   } // var loop
+  oprof_file << z_i << std::endl;
 } // main
