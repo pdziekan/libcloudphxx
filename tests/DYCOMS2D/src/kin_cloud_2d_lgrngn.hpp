@@ -428,7 +428,7 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
 
     // exponential decay with height
     real_t z_0 = setup::z_rlx / si::metres;
-    hgt_fctr = exp(- k * params.dz / z_0) / z_0;
+    hgt_fctr = exp(- k * params.dz / z_0);
 
     // delaying any initialisation to ante_loop as rank() does not function within ctor! // TODO: not anymore!!!
     // TODO: equip rank() in libmpdata with an assert() checking if not in serial block
