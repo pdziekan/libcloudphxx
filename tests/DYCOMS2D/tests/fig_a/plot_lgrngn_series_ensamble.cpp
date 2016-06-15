@@ -15,7 +15,7 @@ int main(int argc, char* argv[])
   int ctr = 0;
 
   std::string prof_file_name="/out_lgrngn_series.dat";
-  std::set<std::string> profs({"wvarmax", "nc", "clfrac", "lwp", "er", "surf_precip", "mass_dry", "acc_precip"});
+  std::set<std::string> profs({"wvarmax", "clfrac", "lwp", "er", "surf_precip", "mass_dry", "acc_precip", "cl_nc"});
   std::vector<Array<double, 1>> sums(profs.size());
 
   Gnuplot gp;
@@ -41,11 +41,11 @@ int main(int argc, char* argv[])
     for (auto &plt : profs) 
     {
       iprof_file >> snap;
-//      std::cout << "read " << snap;
+      std::cout << "read " << snap;
       if(i==1)
       {
         sums.at(prof_ctr).resize(snap.size());
-        sums.at(prof_ctr)+=0;
+        sums.at(prof_ctr)=0;
       }
       sums.at(prof_ctr)+=snap;
       prof_ctr++;
@@ -62,6 +62,8 @@ int main(int argc, char* argv[])
       gp << "set title 'average cloud fraction'\n";
     else if (plt == "nc")
       gp << "set title 'average cloud drop conc [1/cm^3]'\n";
+    else if (plt == "cl_nc")
+      gp << "set title 'average cloud drop conc [1/cm^3] in cloud cells'\n";
     else if (plt == "wvarmax")
       gp << "set title 'max variance of w [m^2 / s^2]'\n";
     else if (plt == "surf_precip")

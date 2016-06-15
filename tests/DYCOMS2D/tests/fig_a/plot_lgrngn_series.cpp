@@ -71,7 +71,7 @@ int main(int ac, char** av)
   blitz::Array<float, 2> rtot(n["x"],  n["z"]); 
   blitz::Range all = blitz::Range::all();
 
-  for (auto &plt : std::set<std::string>({"wvarmax", "nc", "clfrac", "lwp", "er", "surf_precip", "mass_dry", "acc_precip"}))
+  for (auto &plt : std::set<std::string>({"wvarmax", "clfrac", "lwp", "er", "surf_precip", "mass_dry", "acc_precip", "cl_nc"}))
   {
     res_prof = 0;
     res_pos = 0;
@@ -112,6 +112,28 @@ int main(int ac, char** av)
           res_prof(at) = blitz::mean(snap); 
         }
         catch(...) {;}
+      }
+      else if (plt == "cl_nc")
+      {
+	// cloud droplet (0.5um < r < 25 um) concentration in cloudy grid cells
+        try
+        {
+          // cloud fraction (cloudy if N_c > 20/cm^3)
+          auto tmp = h5load(h5, "rw_rng000_mom0", at * n["outfreq"]);
+          blitz::Array<float, 2> snap(tmp);
+          snap *= rhod; // b4 it was specific moment
+          snap /= 1e6; // per cm^3
+          blitz::Array<float, 2> snap2;
+          snap2.resize(snap.shape());
+          snap2=snap;
+          snap = iscloudy(snap); // cloudiness mask
+          snap2 *= snap;
+          if(blitz::sum(snap) > 0)
+            res_prof(at) = blitz::sum(snap2) / blitz::sum(snap); 
+          else
+            res_prof(at) = 0;
+        }
+        catch(...){;}
       }
       else if (plt == "mass_dry")
       {
@@ -219,6 +241,8 @@ int main(int ac, char** av)
       gp << "set title 'average cloud fraction'\n";
     else if (plt == "nc")
       gp << "set title 'average cloud drop conc [1/cm^3]'\n";
+    else if (plt == "cl_nc")
+      gp << "set title 'average cloud drop conc [1/cm^3] in cloudy cells (should be ca. 55)'\n";
     else if (plt == "wvarmax")
       gp << "set title 'max variance of w [m^2 / s^2]'\n";
     else if (plt == "surf_precip")
