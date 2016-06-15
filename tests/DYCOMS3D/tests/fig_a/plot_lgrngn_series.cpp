@@ -70,7 +70,7 @@ int main(int ac, char** av)
   blitz::Array<float, 3> rtot(n["x"], n["y"], n["z"]); 
   blitz::Range all = blitz::Range::all();
 
-  for (auto &plt : std::set<std::string>({"wvarmax", "nc", "clfrac", "lwp", "er", "surf_precip", "mass_dry", "acc_precip"}))
+  for (auto &plt : std::set<std::string>({"wvarmax", "cl_nc", "clfrac", "lwp", "er", "surf_precip", "mass_dry", "acc_precip"}))
   {
     res_prof = 0;
     res_pos = 0;
@@ -135,16 +135,24 @@ int main(int ac, char** av)
         catch(...) {;}
       }
 
-      else if (plt == "nc")
+      else if (plt == "cl_nc")
       {
-	// cloud droplet (0.5um < r < 25 um) concentration
+	// cloud droplet (0.5um < r < 25 um) concentration in cloudy cells
         try
         {
           auto tmp = h5load(h5, "rw_rng000_mom0", at * n["outfreq"]);
           blitz::Array<float, 3> snap(tmp);
           snap /= 1e6; // per cm^3
           snap *= rhod; // b4 it was per milligram
-          res_prof(at) = blitz::mean(snap); 
+          blitz::Array<float, 2> snap2;
+          snap2.resize(snap.shape());
+          snap2=snap;
+          snap = iscloudy(snap); // cloudiness mask
+          snap2 *= snap;
+          if(blitz::sum(snap) > 0)
+            res_prof(at) = blitz::sum(snap2) / blitz::sum(snap);
+          else
+            res_prof(at) = 0;
         }
         catch(...) {;}
       }
