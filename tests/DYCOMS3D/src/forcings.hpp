@@ -33,7 +33,7 @@ void kin_cloud_3d_lgrngn<ct_params_t>::radiation(const blitz::Array<real_t, 3> &
   blitz::thirdIndex ki;
   tmp1(ijk)  = rv(ijk) + r_l(ijk);
   k_i(i, j) = blitz::first( tmp1 < setup::q_i, ki); 
-  tmp1(ijk) = 0;
+  F(ijk) = 0;
 
   // calc Eqs. 5 and 6 from Ackerman et al 2009
   // TODO: z-th cell will be accounted for twice (in each integral)...
@@ -45,31 +45,21 @@ void kin_cloud_3d_lgrngn<ct_params_t>::radiation(const blitz::Array<real_t, 3> &
       {
         real_t sum = r_l(x, y, z) / 2.;
         if(z < nz-1) sum += blitz::sum(r_l(x, y, blitz::Range(z+1, nz-1)));
-        tmp1(x, y, z) += setup::F_0 * exp(- (nz - z) * this->dk * sum); 
+        F(x, y, z) += setup::F_0 * exp(- (nz - z) * this->dk * sum); 
 
         sum = r_l(x, y, z) / 2.;
         if(z > 0) sum += blitz::sum(r_l(x, y, blitz::Range(0, z-1)));
-        tmp1(x, y, z) += setup::F_1 * exp(- ((z) - 0) * this->dk * sum);
+        F(x, y, z) += setup::F_1 * exp(- ((z) - 0) * this->dk * sum);
 
         if(z >= k_i(x, y) )
         {
           real_t z_i = (-0.5 + k_i(x,y)) * this->dk;
           real_t z_d = z * this->dk - z_i;
-          tmp1(x, y, z) += setup::c_p * setup::rho_i * setup::D * (0.25 * pow(z_d, 4./3) + z_i * pow(z_d, 1./3)); 
+          F(x, y, z) += setup::c_p * setup::rho_i * setup::D * (0.25 * pow(z_d, 4./3) + z_i * pow(z_d, 1./3)); 
         }
       }
     }
   }
-  // Eq. 3.33 from Curry and Webster
-  // calculate divergence of heat flux
-  blitz::Range notopbot(1, nz-2);
-  F(i, j, notopbot) = - (tmp1(i, j, notopbot+1) - tmp1(i, j, notopbot-1)) / 2./ this->dk;
-  F(i, j, k.last()) = - (tmp1(i, j, k.last()) - tmp1(i, j, k.last()-1)) / this->dk;   
-  F(i, j, 0)        = - (tmp1(i, j, 1) - tmp1(i, j, 0)) / this->dk;                
-
-  // smoothing
-//  this->xchng_sclr(tmp1, i, j, k);
-//  F(i, j, k) = 0.25 * (tmp1(i, j, k + 1) + 2 * tmp1(i, j, k) + tmp1(i, j, k - 1));
 }
 
 template <class ct_params_t>
@@ -83,12 +73,7 @@ template <class ct_params_t>
 void kin_cloud_3d_lgrngn<ct_params_t>::surf_latent()
 {
   const auto &ijk = this->ijk;
-
-  // heating[W/m^3] / rhod[kg/m^3] / latent heat of evaporation [J/kg]
-  F(ijk) =  setup::F_lat /                           // heating 
-    (libcloudphxx::common::const_cp::l_tri<real_t>() * si::kilograms / si::joules) / // latent heat of evaporation
-    rhod(ijk) *                                                     // density
-    hgt_fctr(ijk); 
+  F(ijk) =  setup::F_lat * hgt_fctr(ijk); 
 }
 
 template <class ct_params_t>

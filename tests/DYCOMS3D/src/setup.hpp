@@ -163,7 +163,7 @@ namespace setup
 
   //th, rv and surface fluxes relaxation time and height
   const quantity<si::time, real_t> tau_rlx = 300 * si::seconds;
-  const quantity<si::length, real_t> z_rlx = 300 * si::metres;
+  const quantity<si::length, real_t> z_rlx = 25 * si::metres;
 
   // function expecting a libmpdata solver parameters struct as argument
   template <class T>

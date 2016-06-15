@@ -72,7 +72,7 @@ void setopts_micro(
   rt_params.cloudph_opts_init.ny = ny;
   rt_params.cloudph_opts_init.nz = nz;
   if (backend_str == "multi_CUDA")
-    rt_params.cloudph_opts_init.n_sd_max = 1.5 * nx * ny * nz * rt_params.cloudph_opts_init.sd_conc;
+    rt_params.cloudph_opts_init.n_sd_max = 1.2 * nx * ny * nz * rt_params.cloudph_opts_init.sd_conc;
   else
     rt_params.cloudph_opts_init.n_sd_max = nx * ny * nz * rt_params.cloudph_opts_init.sd_conc;
  
