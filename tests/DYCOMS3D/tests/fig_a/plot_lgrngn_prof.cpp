@@ -157,6 +157,7 @@ int main(int ac, char** av)
                      * 2264.76e3;      // latent heat of evaporation [J/kg]
           res += snap; 
         }
+/*
 	// add vertical velocity to precipitation flux (3rd mom of cloud drops * w)
         { 
           auto tmp = h5load(h5, "rw_rng000_mom3", at * n["outfreq"]); // this time its a specific moment
@@ -179,6 +180,7 @@ int main(int ac, char** av)
                      * 2264.76e3;      // latent heat of evaporation [J/kg]
           res += snap; 
         }
+*/
         // turn 3rd mom * velocity into flux in [W/m^2]
         gp << "set title 'precipitation flux [W/m^2]'\n";
       }
