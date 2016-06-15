@@ -12,10 +12,9 @@ BZ_USING_NAMESPACE(blitz)
 int main(int argc, char* argv[]) 
 {
   Array<double, 1> snap;
-  double mean_z_i = 0;
   int ctr = 0;
 
-  std::string prof_file="/out_lgrngn_series.dat";
+  std::string prof_file_name="/out_lgrngn_series.dat";
   std::set<std::string> profs({"wvarmax", "nc", "clfrac", "lwp", "er", "surf_precip", "mass_dry", "acc_precip"});
   std::vector<Array<double, 1>> sums(profs.size());
 
@@ -25,15 +24,16 @@ int main(int argc, char* argv[])
   init_prof(gp, file, 3, 3, n);
   blitz::Array<float, 1> res_pos(n["t"]);
   blitz::firstIndex fi;
+  res_pos = fi * n["outfreq"] * n["dt"] / 3600.;
 
   for(int i=1; i<argc; ++i)
   {
-    std::string file = argv[i] + prof_file;
-    std::cout << "reading in " << i << ": " << file << std::endl;
-    ifstream iprof_file(file);
+    std::string prof_file = argv[i] + prof_file_name;
+    std::cout << "reading in " << i << ": " << prof_file << std::endl;
+    ifstream iprof_file(prof_file);
     if (iprof_file.bad())
     {
-      cerr << "Unable to open file: " << file << endl;
+      cerr << "Unable to open file: " << prof_file << endl;
       continue;
     }
     ctr++;
@@ -41,6 +41,7 @@ int main(int argc, char* argv[])
     for (auto &plt : profs) 
     {
       iprof_file >> snap;
+//      std::cout << "read " << snap;
       if(i==1)
       {
         sums.at(prof_ctr).resize(snap.size());
@@ -49,12 +50,7 @@ int main(int argc, char* argv[])
       sums.at(prof_ctr)+=snap;
       prof_ctr++;
     }
-    double z_i;
-    iprof_file >> z_i;
-    mean_z_i += z_i;
   }
-  mean_z_i /= ctr;
-  res_pos = fi * n["outfreq"] * n["dt"] / 3600.;
 
   int i=0;
   for (auto &plt : profs) 
@@ -82,8 +78,22 @@ int main(int argc, char* argv[])
     sums.at(i) /= ctr;
 
     std::cout << plt << " " << res_pos << sums.at(i) << std::endl;
-    gp << "plot '-' with line\n";
+
+
+    gp << "plot '-' with line lw 3";
+    for(int j=1; j<argc; ++j)
+      gp << ", '-' with line";
+    gp << "\n";
     gp.send1d(boost::make_tuple(res_pos, sums.at(i)));
+    for(int j=1; j<argc; ++j)
+    {
+      std::string prof_file = argv[j] + prof_file_name;
+      ifstream iprof_file(prof_file);
+      for(int k=0; k <= i;++k)
+        iprof_file >> snap;
+      gp.send1d(boost::make_tuple(res_pos, snap));
+    }
+   // gp << "plot '-' with line\n";
     ++i;
   }
 

@@ -15,7 +15,7 @@ int main(int argc, char* argv[])
   double mean_z_i = 0;
   int ctr = 0;
 
-  std::string prof_file="/out_lgrngn_profiles.dat";
+  std::string prof_file_name="/out_lgrngn_profiles.dat";
   std::set<std::string> profs({"00rtot", "rliq", "thl", "wvar", "w3rd", "prflux", "clfrac", "N_c"});
   std::vector<Array<double, 1>> sums(profs.size());
 
@@ -28,7 +28,7 @@ int main(int argc, char* argv[])
 
   for(int i=1; i<argc; ++i)
   {
-    std::string file = argv[i] + prof_file;
+    std::string file = argv[i] + prof_file_name;
     std::cout << "reading in " << i << ": " << file << std::endl;
     ifstream iprof_file(file);
     if (iprof_file.bad())
@@ -76,8 +76,20 @@ int main(int argc, char* argv[])
     else if (plt == "w3rd")
       gp << "set title '3rd mom of w [m^3 / s^3]'\n";
     sums.at(i) /= ctr;
-    gp << "plot '-' with line\n";
+
+    gp << "plot '-' with line lw 3";
+    for(int j=1; j<argc; ++j)
+      gp << ", '-' with line";
+    gp << "\n";
     gp.send1d(boost::make_tuple(sums.at(i), res_pos));
+    for(int j=1; j<argc; ++j)
+    {
+      std::string prof_file = argv[j] + prof_file_name;
+      ifstream iprof_file(prof_file);
+      for(int k=0; k <= i;++k)
+        iprof_file >> snap;
+      gp.send1d(boost::make_tuple(snap, res_pos));
+    }
     ++i;
   }
 
