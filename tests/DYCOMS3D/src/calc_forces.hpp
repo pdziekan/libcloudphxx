@@ -13,9 +13,10 @@ void kin_cloud_3d_lgrngn<ct_params_t>::rv_src()
   // surface flux
   surf_latent();
   // divergence of rv flux
-  blitz::Range notop(0, nz-2);
-  alpha(i, j, notop) = (F(i, j, notop) - F(i, j, notop+1)) / this->dk;
-  alpha(i, j, k.last()) = F(i, j, k.last()) / this->dk;
+  blitz::Range notopbot(1, nz-2);
+  alpha(i, j, notopbot) += ( -F(i, j, notopbot+1) + F(i, j, notopbot-1)) / 2./ this->dk;
+  alpha(i, j, k.last()) += ( -F(i, j, k.last()) + F(i, j, k.last()-1)) / this->dk;
+  alpha(i, j, 0)        += ( -F(i, j, 1) + F(i, j, 0)) / this->dk;
   // change of rv[1/s] = latent heating[W/m^3] / lat_heat_of_evap[J/kg] / density[kg/m^3]
   alpha(ijk)/=(libcloudphxx::common::const_cp::l_tri<real_t>() * si::kilograms / si::joules) * rhod(ijk);
   // large-scale vertical wind
@@ -39,14 +40,13 @@ void kin_cloud_3d_lgrngn<ct_params_t>::th_src(const blitz::Array<real_t, 3> &rv)
   // -- heating --
   // surface flux
   surf_sens();
-  // divergence of th flux, F(j) is upward flux through bottom of the j-th cell
-  int nz = this->mem->grid_size[2].length(); //76
-  blitz::Range notop(0, nz-2);
-  alpha(i, j, notop) = (F(i, j, notop) - F(i, j, notop+1)) / this->dk;
-  alpha(i, j, k.last()) = F(i, j, k.last()) / this->dk;
-
+  // beta as tmp storage
+  beta(ijk) = F(ijk);
   // radiation
   radiation(rv);
+  // add fluxes from radiation and surface
+  F(ijk) += beta(ijk);
+
   // divergence of th flux, F(j) is upward flux in the middle of the j-th cell
   blitz::Range notopbot(1, nz-2);
   alpha(i, j, notopbot) += ( -F(i, j, notopbot+1) + F(i, j, notopbot-1)) / 2./ this->dk;
