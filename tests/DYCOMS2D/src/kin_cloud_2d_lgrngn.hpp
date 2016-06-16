@@ -216,11 +216,11 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
         rhs.at(ix::rv)(ijk) += alpha(ijk) + beta(ijk) * this->state(ix::rv)(ijk); 
         
         // ---- potential temp sources ----
-        th_src(this->state(ix::rv));
+        th_src(this->state(ix::rv)(ijk));
         rhs.at(ix::th)(ijk) += alpha(ijk) + beta(ijk) * this->state(ix::th)(ijk); 
 
         // vertical velocity sources
-        w_src(this->state(ix::th));
+        w_src(this->state(ix::th)(ijk));
         rhs.at(ix::w)(ijk) += alpha(ijk);
 
         // horizontal velocity sources 
@@ -241,13 +241,13 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
         
         // ---- potential temp sources ----
         beta(ijk) = this->state(ix::rv)(ijk) + 0.5 * this->dt * rhs.at(ix::rv)(ijk);
-        th_src(beta);
+        th_src(beta(ijk));
         rhs.at(ix::th)(ijk) += (alpha(ijk) + beta(ijk) * this->state(ix::th)(ijk)) / (1. - 0.5 * this->dt * beta(ijk)); 
 
         // vertical velocity sources
         // temporarily use beta to store the th^n+1 estimate
         beta(ijk) = this->state(ix::th)(ijk) + 0.5 * this->dt * rhs.at(ix::th)(ijk);
-        w_src(beta);
+        w_src(beta(ijk));
         rhs.at(ix::w)(ijk) += alpha(ijk);
 
         // horizontal velocity sources 
@@ -311,7 +311,7 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
             this->mem->grid_size[1]^h
           ).reindex({0,0}).copy();
 
-        // ... and now dividing them by rhod (z=0 is located at k=1/2)
+        // ... and now dividing them by rhod (TODO: z=0 is located at k=1/2)
         {
           blitz::Range all = blitz::Range::all();
           Cx(blitz::Range(1,nx), all)/= rhod;

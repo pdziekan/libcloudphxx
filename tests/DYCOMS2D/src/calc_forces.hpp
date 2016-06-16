@@ -11,9 +11,10 @@ void kin_cloud_2d_lgrngn<ct_params_t>::rv_src()
   // surface flux
   surf_latent();
   // divergence of rv flux
-  blitz::Range notop(0, nz-2);
-  alpha(i, notop) = (F(i, notop) - F(i, notop+1)) / this->dj;
-  alpha(i, j.last()) = F(i, j.last()) / this->dj;
+  blitz::Range notopbot(1, nz-2);
+  alpha(i, notopbot) += ( -F(i, notopbot+1) + F(i, notopbot-1)) / 2./ this->dj;
+  alpha(i, j.last()) += ( -F(i, j.last()) + F(i, j.last()-1)) / this->dj;
+  alpha(i, 0)        += ( -F(i, 1) + F(i, 0)) / this->dj;
   // change of rv[1/s] = latent heating[W/m^3] / lat_heat_of_evap[J/kg] / density[kg/m^3]
   alpha(ijk)/=(libcloudphxx::common::const_cp::l_tri<real_t>() * si::kilograms / si::joules) * rhod(ijk);
 
@@ -37,13 +38,13 @@ void kin_cloud_2d_lgrngn<ct_params_t>::th_src(const blitz::Array<real_t, 2> &rv)
   // -- heating --
   // surface flux
   surf_sens();
-  // divergence of th flux, F(j) is upward flux through bottom of the j-th cell
   int nz = this->mem->grid_size[1].length(); //76
-  blitz::Range notop(0, nz-2);
-  alpha(i, notop) = (F(i, notop) - F(i, notop+1)) / this->dj;
-  alpha(i, j.last()) = F(i, j.last()) / this->dj;
+  // beta as tmp storage
+  beta(ijk) = F(ijk);
   // radiation
   radiation(rv);
+  // add fluxes from radiation and surface
+  F(ijk) += beta(ijk);
   // divergence of th flux, F(j) is upward flux in the middle of the j-th cell
   blitz::Range notopbot(1, nz-2);
   alpha(i, notopbot) += ( -F(i, notopbot+1) + F(i, notopbot-1)) / 2./ this->dj;
