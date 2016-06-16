@@ -144,7 +144,7 @@ int main(int ac, char** av)
           blitz::Array<float, 3> snap(tmp);
           snap /= 1e6; // per cm^3
           snap *= rhod; // b4 it was per milligram
-          blitz::Array<float, 2> snap2;
+          blitz::Array<float, 3> snap2;
           snap2.resize(snap.shape());
           snap2=snap;
           snap = iscloudy(snap); // cloudiness mask
