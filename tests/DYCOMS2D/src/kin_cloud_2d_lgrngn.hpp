@@ -180,9 +180,11 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
     // du/dt = divergence of kinematic momentum flux * dt
     // TODO: single routine to calculate divergences
     int nz = this->mem->grid_size[1].length(); //76
-    blitz::Range notop(0, nz-2);
-    this->vip_rhs[0](i, notop) = (F(i, notop) - F(i, notop+1)) / this->dj * this->dt;
-    this->vip_rhs[0](i, j.last()) = F(i, j.last()) / this->dj * this->dt;
+    // divergence of th flux, F(j) is upward flux in the middle of the j-th cell
+    blitz::Range notopbot(1, nz-2);
+    this->vip_rhs[0](i, notopbot) = ( -F(i, notopbot+1) + F(i, notopbot-1)) / 2./ this->dj * this->dt;
+    this->vip_rhs[0](i, j.last()) = ( -F(i, j.last()) + F(i, j.last()-1)) / this->dj * this->dt;
+    this->vip_rhs[0](i, 0)        = ( -F(i, 1) + F(i, 0)) / this->dj * this->dt;
   }
 
   void buoyancy(const blitz::Array<real_t, 2> &th);
