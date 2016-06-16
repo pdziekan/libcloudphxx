@@ -171,12 +171,11 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
     const auto &i = this->i;
     const auto &j = this->j;
     blitz::Range zero(0,0);
-    // kinematic momentum flux through bottom of the domain = -u_fric^2 * u_i / |U| * exponential decay
-    // TODO: interpolate horizontal velocities to the bottom?
-    F(i, j) = - pow(setup::u_fric,2) * this->state(ix::vip_i)(i, zero) / sqrt(
-                          pow2(this->state(ix::vip_i)(i, zero)) + 
-                          pow2(this->state(ix::vip_j)(i, zero)))
+    // kinematic momentum flux  = -u_fric^2 * u_i / |U| * exponential decay
+    F(i, j) = - pow(setup::u_fric,2) * this->state(ix::vip_i)(i, zero) / 
+                          abs(this->state(ix::vip_i)(i, zero)) 
                           * hgt_fctr(i, j);
+
     // du/dt = divergence of kinematic momentum flux * dt
     // TODO: single routine to calculate divergences
     int nz = this->mem->grid_size[1].length(); //76
