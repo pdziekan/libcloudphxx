@@ -60,6 +60,7 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
    
     // recording total precipitation volume through the lower boundary
     f_prec << this->timestep << " "  << prec_vol << "\n";
+    f_prec.flush();
     prec_vol = 0.; 
    
     // recording requested statistical moments
