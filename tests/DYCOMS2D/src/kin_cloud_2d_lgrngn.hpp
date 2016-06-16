@@ -168,16 +168,21 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
   void vip_rhs_expl_calc()
   {
     parent_t::vip_rhs_expl_calc();
-    real_t z_0 = setup::z_rlx / si::metres;
-
-    for (int j = this->j.first(); j <= this->j.last(); ++j)
-    {
-      this->vip_rhs[0](this->i, j) += - pow(setup::u_fric,2) / z_0 * this->dt / sqrt(
-                                                pow2(this->state(ix::vip_i)(this->i, 0))
-                                              + pow2(this->state(ix::vip_j)(this->i, 0))
-                                              ) * this->state(ix::vip_i)(this->i, 0)
-                                                * exp(-this->dj * j / z_0);
-    }
+    const auto &i = this->i;
+    const auto &j = this->j;
+    blitz::Range zero(0,0);
+    // kinematic momentum flux through bottom of the domain = -u_fric^2 * u_i / |U| * exponential decay
+    // TODO: interpolate horizontal velocities to the bottom?
+    F(i, j) = - pow(setup::u_fric,2) * this->state(ix::vip_i)(i, zero) / sqrt(
+                          pow2(this->state(ix::vip_i)(i, zero)) + 
+                          pow2(this->state(ix::vip_j)(i, zero)))
+                          * hgt_fctr(i, j);
+    // du/dt = divergence of kinematic momentum flux * dt
+    // TODO: single routine to calculate divergences
+    int nz = this->mem->grid_size[1].length(); //76
+    blitz::Range notop(0, nz-2);
+    this->vip_rhs[0](i, notop) = (F(i, notop) - F(i, notop+1)) / this->dj * this->dt;
+    this->vip_rhs[0](i, j.last()) = F(i, j.last()) / this->dj * this->dt;
   }
 
   void buoyancy(const blitz::Array<real_t, 2> &th);
