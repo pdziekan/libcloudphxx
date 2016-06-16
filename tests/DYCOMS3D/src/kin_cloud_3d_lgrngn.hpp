@@ -181,21 +181,26 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
   void vip_rhs_expl_calc()
   {
     parent_t::vip_rhs_expl_calc();
-    real_t z_0 = setup::z_rlx / si::metres;
-
-    for (int k = this->k.first(); k <= this->k.last(); ++k)
+    const auto &i = this->i;
+    const auto &j = this->j;
+    const auto &k = this->k;
+    blitz::Range zero(0,0);
+    int nz = this->mem->grid_size[2].length(); //76
+    for(int d=0; d<2; ++d)
     {
-      this->vip_rhs[0](this->i, this->j, k) += - pow(setup::u_fric,2) / z_0 * this->dt / sqrt(
-                                                pow2(this->state(ix::vip_i)(this->i, this->j, 0))
-                                              + pow2(this->state(ix::vip_j)(this->i, this->j, 0))
-                                              ) * this->state(ix::vip_i)(this->i, this->j, 0)
-                                                * exp(-this->dk * k / z_0);
-      
-      this->vip_rhs[1](this->i, this->j, k) += - pow(setup::u_fric,2) / z_0 * this->dt / sqrt(
-                                                pow2(this->state(ix::vip_i)(this->i, this->j, 0))
-                                              + pow2(this->state(ix::vip_j)(this->i, this->j, 0))
-                                              ) * this->state(ix::vip_j)(this->i, this->j, 0)
-                                                * exp(-this->dk * k / z_0);
+      auto vip_ij = d==0? ix::vip_i : ix::vip_j;
+      // kinematic momentum flux = -u_fric^2 * u_i / |U| * exponential decay
+      F(i, j, k) = - pow(setup::u_fric,2) * this->state(vip_ij)(i, j, zero) / sqrt(
+                            pow2(this->state(ix::vip_i)(i, j, zero)) +
+                            pow2(this->state(ix::vip_j)(i, j, zero)))
+                            * hgt_fctr(i, j, k);
+      // du/dt = divergence of kinematic momentum flux * dt
+      // TODO: single routine to calculate divergences
+      // divergence of th flux, F(j) is upward flux in the middle of the j-th cell
+      blitz::Range notopbot(1, nz-2);
+      this->vip_rhs[d](i, j, notopbot) = ( -F(i, j, notopbot+1) + F(i, j, notopbot-1)) / 2./ this->dk * this->dt;
+      this->vip_rhs[d](i, j, k.last()) = ( -F(i, j, k.last()) + F(i, j, k.last()-1)) / this->dk * this->dt;
+      this->vip_rhs[d](i, j, 0)        = ( -F(i, j, 1) + F(i, j, 0)) / this->dk * this->dt;
     }
   }
 
