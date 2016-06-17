@@ -40,11 +40,11 @@ void kin_cloud_2d_lgrngn<ct_params_t>::th_src(const blitz::Array<real_t, 2> &rv)
   surf_sens();
   int nz = this->mem->grid_size[1].length(); //76
   // beta as tmp storage
-  beta(ijk) = F(ijk);
+  beta = F;
   // radiation
   radiation(rv);
   // add fluxes from radiation and surface
-  F(ijk) += beta(ijk);
+  F += beta;
   // divergence of th flux, F(j) is upward flux in the middle of the j-th cell
   blitz::Range notopbot(1, nz-2);
   alpha(i, notopbot) += ( -F(i, notopbot+1) + F(i, notopbot-1)) / 2./ this->dj;
