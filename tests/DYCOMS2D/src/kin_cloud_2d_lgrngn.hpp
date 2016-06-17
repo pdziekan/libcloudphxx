@@ -170,11 +170,13 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
     parent_t::vip_rhs_expl_calc();
     const auto &i = this->i;
     const auto &j = this->j;
-    blitz::Range zero(0,0);
     // kinematic momentum flux  = -u_fric^2 * u_i / |U| * exponential decay
-    F(i, j) = - pow(setup::u_fric,2) * this->state(ix::vip_i)(i, zero) / 
-                          abs(this->state(ix::vip_i)(i, zero)) 
-                          * hgt_fctr(i, j);
+    for (int ji = this->j.first(); ji <= this->j.last(); ++ji)
+    {
+      F(i, ji) = - pow(setup::u_fric,2) * this->state(ix::vip_i)(i, 0) / 
+                          abs(this->state(ix::vip_i)(i, 0)) 
+                          * hgt_fctr(i, ji);
+    }
 
     // du/dt = divergence of kinematic momentum flux * dt
     // TODO: single routine to calculate divergences
@@ -217,11 +219,11 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
         rhs.at(ix::rv)(ijk) += alpha(ijk) + beta(ijk) * this->state(ix::rv)(ijk); 
         
         // ---- potential temp sources ----
-        th_src(this->state(ix::rv)(ijk));
+        th_src(this->state(ix::rv));
         rhs.at(ix::th)(ijk) += alpha(ijk) + beta(ijk) * this->state(ix::th)(ijk); 
 
         // vertical velocity sources
-        w_src(this->state(ix::th)(ijk));
+        w_src(this->state(ix::th));
         rhs.at(ix::w)(ijk) += alpha(ijk);
 
         // horizontal velocity sources 
@@ -242,13 +244,13 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
         
         // ---- potential temp sources ----
         beta(ijk) = this->state(ix::rv)(ijk) + 0.5 * this->dt * rhs.at(ix::rv)(ijk);
-        th_src(beta(ijk));
+        th_src(beta);
         rhs.at(ix::th)(ijk) += (alpha(ijk) + beta(ijk) * this->state(ix::th)(ijk)) / (1. - 0.5 * this->dt * beta(ijk)); 
 
         // vertical velocity sources
         // temporarily use beta to store the th^n+1 estimate
         beta(ijk) = this->state(ix::th)(ijk) + 0.5 * this->dt * rhs.at(ix::th)(ijk);
-        w_src(beta(ijk));
+        w_src(beta);
         rhs.at(ix::w)(ijk) += alpha(ijk);
 
         // horizontal velocity sources 
