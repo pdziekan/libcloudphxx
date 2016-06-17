@@ -184,16 +184,18 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
     const auto &i = this->i;
     const auto &j = this->j;
     const auto &k = this->k;
-    blitz::Range zero(0,0);
     int nz = this->mem->grid_size[2].length(); //76
     for(int d=0; d<2; ++d)
     {
       auto vip_ij = d==0? ix::vip_i : ix::vip_j;
-      // kinematic momentum flux = -u_fric^2 * u_i / |U| * exponential decay
-      F(i, j, k) = - pow(setup::u_fric,2) * this->state(vip_ij)(i, j, zero) / sqrt(
-                            pow2(this->state(ix::vip_i)(i, j, zero)) +
-                            pow2(this->state(ix::vip_j)(i, j, zero)))
-                            * hgt_fctr(i, j, k);
+      for (int ki = this->k.first(); ki <= this->k.last(); ++ki)
+      {
+        // kinematic momentum flux = -u_fric^2 * u_i / |U| * exponential decay
+        F(i, j, ki) = - pow(setup::u_fric,2) * this->state(vip_ij)(i, j, 0) / sqrt(
+                              pow2(this->state(ix::vip_i)(i, j, 0)) +
+                              pow2(this->state(ix::vip_j)(i, j, 0)))
+                              * hgt_fctr(i, j, ki);
+      }
       // du/dt = divergence of kinematic momentum flux * dt
       // TODO: single routine to calculate divergences
       // divergence of th flux, F(j) is upward flux in the middle of the j-th cell
@@ -239,11 +241,11 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
         rhs.at(ix::rv)(ijk) += alpha(ijk) + beta(ijk) * this->state(ix::rv)(ijk); 
         
         // ---- potential temp sources ----
-        th_src(this->state(ix::rv)(ijk));
+        th_src(this->state(ix::rv));
         rhs.at(ix::th)(ijk) += alpha(ijk) + beta(ijk) * this->state(ix::th)(ijk); 
 
         // vertical velocity sources
-        w_src(this->state(ix::th)(ijk));
+        w_src(this->state(ix::th));
         rhs.at(ix::w)(ijk) += alpha(ijk);
 
         // horizontal velocity sources 
@@ -265,13 +267,13 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
         // ---- potential temp sources ----
         // temporarily use beta to store the rv^n+1 estimate
         beta(ijk) = this->state(ix::rv)(ijk) + 0.5 * this->dt * rhs.at(ix::rv)(ijk);
-        th_src(beta(ijk));
+        th_src(beta);
         rhs.at(ix::th)(ijk) += (alpha(ijk) + beta(ijk) * this->state(ix::th)(ijk)) / (1. - 0.5 * this->dt * beta(ijk)); 
 
         // vertical velocity sources
         // temporarily use beta to store the th^n+1 estimate
         beta(ijk) = this->state(ix::th)(ijk) + 0.5 * this->dt * rhs.at(ix::th)(ijk);
-        w_src(beta(ijk));
+        w_src(beta);
         rhs.at(ix::w)(ijk) += alpha(ijk);
 
         // horizontal velocity sources 

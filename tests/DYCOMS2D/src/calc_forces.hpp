@@ -12,9 +12,9 @@ void kin_cloud_2d_lgrngn<ct_params_t>::rv_src()
   surf_latent();
   // divergence of rv flux
   blitz::Range notopbot(1, nz-2);
-  alpha(i, notopbot) += ( -F(i, notopbot+1) + F(i, notopbot-1)) / 2./ this->dj;
-  alpha(i, j.last()) += ( -F(i, j.last()) + F(i, j.last()-1)) / this->dj;
-  alpha(i, 0)        += ( -F(i, 1) + F(i, 0)) / this->dj;
+  alpha(i, notopbot) = ( -F(i, notopbot+1) + F(i, notopbot-1)) / 2./ this->dj;
+  alpha(i, j.last()) = ( -F(i, j.last()) + F(i, j.last()-1)) / this->dj;
+  alpha(i, 0)        = ( -F(i, 1) + F(i, 0)) / this->dj;
   // change of rv[1/s] = latent heating[W/m^3] / lat_heat_of_evap[J/kg] / density[kg/m^3]
   alpha(ijk)/=(libcloudphxx::common::const_cp::l_tri<real_t>() * si::kilograms / si::joules) * rhod(ijk);
 
@@ -47,9 +47,9 @@ void kin_cloud_2d_lgrngn<ct_params_t>::th_src(const blitz::Array<real_t, 2> &rv)
   F += beta;
   // divergence of th flux, F(j) is upward flux in the middle of the j-th cell
   blitz::Range notopbot(1, nz-2);
-  alpha(i, notopbot) += ( -F(i, notopbot+1) + F(i, notopbot-1)) / 2./ this->dj;
-  alpha(i, j.last()) += ( -F(i, j.last()) + F(i, j.last()-1)) / this->dj;
-  alpha(i, 0)        += ( -F(i, 1) + F(i, 0)) / this->dj;
+  alpha(i, notopbot) = ( -F(i, notopbot+1) + F(i, notopbot-1)) / 2./ this->dj;
+  alpha(i, j.last()) = ( -F(i, j.last()) + F(i, j.last()-1)) / this->dj;
+  alpha(i, 0)        = ( -F(i, 1) + F(i, 0)) / this->dj;
 
   // change of theta[K/s] = heating[W/m^3] * theta[K] / T[K] / c_p[J/K/kg] / rhod[kg/m^3]
   for(int x = i.first() ; x <= i.last(); ++x)
@@ -57,7 +57,7 @@ void kin_cloud_2d_lgrngn<ct_params_t>::th_src(const blitz::Array<real_t, 2> &rv)
       for(int z = j.first() ; z <= j.last(); ++z)
       {
         alpha(x, z) = alpha(x, z) * this->state(ix::th)(x, z) / rhod(x, z) /
-                     (libcloudphxx::common::moist_air::c_p<real_t>(this->state(ix::rv)(x, z)) * si::kilograms * si::kelvins / si::joules) /
+                     (libcloudphxx::common::moist_air::c_p<real_t>(rv(x, z)) * si::kilograms * si::kelvins / si::joules) /
                      (libcloudphxx::common::theta_dry::T<real_t>(this->state(ix::th)(x, z) * si::kelvins, rhod(x, z) * si::kilograms / si::metres  / si::metres / si::metres) / si::kelvins);
       }
   }
