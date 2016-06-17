@@ -43,11 +43,11 @@ void kin_cloud_3d_lgrngn<ct_params_t>::th_src(const blitz::Array<real_t, 3> &rv)
   // surface flux
   surf_sens();
   // beta as tmp storage
-  beta = F;
+  beta(ijk) = F(ijk);
   // radiation
   radiation(rv);
   // add fluxes from radiation and surface
-  F += beta;
+  F(ijk) += beta(ijk);
 
   // divergence of th flux, F(j) is upward flux in the middle of the j-th cell
   blitz::Range notopbot(1, nz-2);
