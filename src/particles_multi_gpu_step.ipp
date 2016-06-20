@@ -155,7 +155,7 @@ namespace libcloudphxx
           int n_copied = particles[rgt_dev].pimpl->lft_count;
           n_part_old = n_part;
           n_part += n_copied;
-          assert(opts_init.n_sd_max >= n_part);
+          assert(glob_opts_init.n_sd_max >= n_part);
           n.resize(n_part);
           thrust::copy(in_n_bfr.begin(), in_n_bfr.begin() + n_copied, n.begin() + n_part_old);
 
@@ -226,7 +226,7 @@ namespace libcloudphxx
           n_copied = particles[lft_dev].pimpl->rgt_count;
           n_part_old = n_part;
           n_part += n_copied;
-          assert(opts_init.n_sd_max >= n_part);
+          assert(glob_opts_init.n_sd_max >= n_part);
           n.resize(n_part);
           thrust::copy( in_n_bfr.begin(), in_n_bfr.begin() + n_copied, n.begin() + n_part_old);
 
