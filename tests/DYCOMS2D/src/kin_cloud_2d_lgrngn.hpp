@@ -274,6 +274,8 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
   {
     parent_t::hook_post_step(); // includes output
 
+    // store -rv_old in tmp1
+    tmp1(this->ijk) = - this->mem->advectee(ix::rv)(this->ijk);
     this->mem->barrier();
     if (this->rank == 0) 
     {
@@ -377,8 +379,20 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
         diag();
       }
     }
-
     this->mem->barrier();
+    // get delta_rv in tmp1
+    tmp1(this->ijk) += this->mem->advectee(ix::rv)(this->ijk);
+    // update theta accordin to drv
+    using libcloudphxx::common::moist_air::c_pd;
+    using libcloudphxx::common::const_cp::l_tri;
+    for(int x = this->i.first() ; x <= this->i.last(); ++x)
+    {
+      for(int z = this->j.first() ; z <= this->j.last(); ++z)
+      {
+        this->mem->advectee(ix::th)(x,z) += - tmp1(x,z) * (l_tri<double>() / c_pd<double>() / si::kelvin) *
+          this->mem->advectee(ix::th)(x,z) / (libcloudphxx::common::theta_dry::T<real_t>(this->state(ix::th)(x, z) * si::kelvins, rhod(x, z) * si::kilograms / si::metres  / si::metres / si::metres) / si::kelvins); 
+      }
+    }
   }
 
   public:
