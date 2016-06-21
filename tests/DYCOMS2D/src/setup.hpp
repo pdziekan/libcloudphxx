@@ -161,7 +161,7 @@ namespace setup
 
   //th, rv and surface fluxes relaxation time and height
   const quantity<si::time, real_t> tau_rlx = 300 * si::seconds;
-  const quantity<si::length, real_t> z_rlx = 25 * si::metres;
+  const quantity<si::length, real_t> z_rlx = 50 * si::metres;
 
   // function expecting a libmpdata solver parameters struct as argument
   template <class T>
@@ -256,7 +256,7 @@ namespace setup
     solver.vab_relaxed_state(1) = 0;
 
     // density profile
-    solver.g_factor() = rhod_fctr()(k * dz); // TODO: reenable g_factor (and nug option) once it works in 3D libmpdata
+    solver.g_factor() = rhod_fctr()(k * dz); 
   }
 
   // lognormal aerosol distribution

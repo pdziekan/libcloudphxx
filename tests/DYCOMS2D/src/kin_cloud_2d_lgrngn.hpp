@@ -178,10 +178,12 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
                           * hgt_fctr(i, ji);
     }
 
-    // du/dt = divergence of kinematic momentum flux * dt
-    // divergence of th flux, F(j) is upward flux in the middle of the j-th cell
+    // du/dt = sum of kinematic momentum fluxes * dt
     this->xchng_sclr(F, i, j);
-    this->vip_rhs[0](i, j) = (F(i, j-1) - F(i, j+1)) / 2./ this->dj * this->dt;
+    this->vip_rhs[0](i, j) = (F(i, j) - F(i, j+1)) / this->dj * this->dt;
+    // top and bottom cells are two times lower
+    this->vip_rhs[0](i, 0) *= 2; 
+    this->vip_rhs[0](i, this->j.last()) *= 2; 
   }
 
   void buoyancy(const blitz::Array<real_t, 2> &th);
@@ -431,9 +433,11 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
     // prescribed initial rv profile
     rv_init = 0.; // initially the reference state is not known, will be saved after spinup
 
-    // exponential decay with height
+    // exponential decay with height to distribute constant surface fluxes
+    // used to get flux through the bottom of the cell, z=0 at k=1/2
     real_t z_0 = setup::z_rlx / si::metres;
-    hgt_fctr = exp(- k * params.dz / z_0);
+    hgt_fctr = exp(- (k-0.5) * params.dz / z_0);
+    hgt_fctr(blitz::Range::all(),0) = 1;
 
     // delaying any initialisation to ante_loop as rank() does not function within ctor! // TODO: not anymore!!!
     // TODO: equip rank() in libmpdata with an assert() checking if not in serial block

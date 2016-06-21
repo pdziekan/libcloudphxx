@@ -78,5 +78,5 @@ void kin_cloud_2d_lgrngn<ct_params_t>::subsidence(const int &type) // large-scal
   const auto &j = this->j;
   tmp1(ijk) = this->state(type)(ijk);
   this->xchng_sclr(tmp1, i, j);
-  F(i, j) = - w_LS(i, j) * (tmp1(i, j + 1) - tmp1(i, j - 1)) / (2. * this->dj); // use built-in blitz stencil?
+  F(i, j) = - w_LS(i, j) * (tmp1(i, j + 1) - tmp1(i, j - 1)) / (2. * this->dj); 
 }
