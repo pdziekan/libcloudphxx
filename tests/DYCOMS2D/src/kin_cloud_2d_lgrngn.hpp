@@ -28,7 +28,7 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
   real_t prec_vol;
   std::ofstream f_prec;
 
-  typename parent_t::arr_t rhod, w_LS, th_init, th_ref, rv_init, hgt_fctr; // TODO: store them in rt_params, here only reference thread's subarrays; also they are just 1D profiles, no need to store whole 3D arrays
+  typename parent_t::arr_t rhod, w_LS, hgt_fctr; // TODO: store them in rt_params, here only reference thread's subarrays; also they are just 1D profiles, no need to store whole 3D arrays
 
   blitz::Array<real_t, 1> k_i; // TODO: make it's size in x direction smaller to match thread's domain
 
@@ -429,8 +429,6 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
     int nx = this->mem->grid_size[0].length();
     int nz = this->mem->grid_size[1].length();
     rhod.resize(nx,nz);
-    th_init.resize(nx,nz);
-    th_ref.resize(nx,nz);
     w_LS.resize(nx,nz);
     rv_init.resize(nx,nz);
     hgt_fctr.resize(nx,nz);
@@ -441,12 +439,6 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
 
     // prescribed large-scale vertical wind
     w_LS = setup::w_LS_fctr()(k * params.dz);
-
-    // prescribed initial temp profile
-    th_init = setup::th_dry_fctr()(k * params.dz);
-
-    // prescribed initial rv profile
-    rv_init = 0.; // initially the reference state is not known, will be saved after spinup
 
     // reference theta and rhod profiles
     {

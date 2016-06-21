@@ -20,7 +20,7 @@ class kin_cloud_2d_common : public
 
   // relaxation stuff
   bool relax_th_rv;
-  blitz::Array<typename ct_params_t::real_t, 2> th_eq, rv_eq;
+  blitz::Array<typename ct_params_t::real_t, 2> th_eq, rv_eq, th_ref;
   
   // spinup stuff
   virtual bool get_rain() = 0;
@@ -37,7 +37,10 @@ class kin_cloud_2d_common : public
     if (spinup > 0)
     {
       blitz::secondIndex k;
+      // initially the enviromental and reference profiles are the initial profiles
+      rhod = setup::rhod_fctr()(k * dz);
       th_eq = setup::th_dry_fctr()(k * dz);
+      th_ref = th_eq;
       rv_eq = setup::r_t()(k * dz);
 
       set_rain(false);
@@ -59,6 +62,7 @@ class kin_cloud_2d_common : public
     {
       // save horizontal means of th and rv after spinup
       // they will be the relaxation goals
+      // and also the enviormental profiles for buoyancy
       // TODO: when calculating mean, do not include first or last point (which is the same in cyclic boundaries);
       //       right now it is accounted for twice, but the concurrency-aware sum cannot exclude single point
       for (int j = this->j.first(); j <= this->j.last(); ++j)
@@ -66,6 +70,8 @@ class kin_cloud_2d_common : public
         th_eq(this->i, j) = this->mem->sum(this->state(ix::th), this->i, rng_t(j, j), false)  /  (this->mem->grid_size[0].length());
         rv_eq(this->i, j) = this->mem->sum(this->state(ix::rv), this->i, rng_t(j, j), false)  /  (this->mem->grid_size[0].length());
       }
+    // calculate reference theta and rhod
+    // like in Wojtek's code
     }
 
     parent_t::hook_ante_step(); 
@@ -130,6 +136,8 @@ class kin_cloud_2d_common : public
     spinup(p.spinup),
     relax_th_rv(p.relax_th_rv),
     th_eq(this->mem->grid_size[0].length(),
+          this->mem->grid_size[1].length()),
+    th_ref(this->mem->grid_size[0].length(),
           this->mem->grid_size[1].length()),
     rv_eq(this->mem->grid_size[0].length(),
           this->mem->grid_size[1].length())
