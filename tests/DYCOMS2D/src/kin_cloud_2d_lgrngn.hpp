@@ -294,9 +294,10 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
       prtcls->diag_all();
       prtcls->diag_wet_mom(3);
       auto rl = r_l(blitz::Range(0,nx-1), blitz::Range(0,nz-1)); 
-      rl = blitz::Array<real_t,2>(prtcls->outbuf(), blitz::shape(nx, nz), blitz::duplicateData); // copy in data from outbuf
-      rl = rl * 4./3. * 1000. * 3.14159;
-      rl = rl * rhod; 
+      rl = blitz::Array<real_t,2>(prtcls->outbuf(), blitz::shape(nx, nz), blitz::duplicateData); // copy in data from outbuf; total liquid third moment of wet radius per kg of dry air [m^3 / kg]
+      rl = rl * 4./3. * 1000. * 3.14159; // get mixing ratio [kg/kg]
+      // in radiation parametrization we integrate mixing ratio * rhod
+      rl = rl * rhod;
       rl = rl * setup::heating_kappa;
 
       {
@@ -331,7 +332,7 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
           make_arrinfo(Cz) // ix:w ?
         );
         // artificially remove negative rv...
-        this->mem->advectee(ix::rv) = where(this->mem->advectee(ix::rv) < 0., 0., this->mem->advectee(ix::rv));
+        // this->mem->advectee(ix::rv) = where(this->mem->advectee(ix::rv) < 0., 0., this->mem->advectee(ix::rv));
       } 
 
       // running asynchronous stuff

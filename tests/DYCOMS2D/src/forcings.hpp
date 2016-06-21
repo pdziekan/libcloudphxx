@@ -19,6 +19,7 @@ void kin_cloud_2d_lgrngn<ct_params_t>::buoyancy(const blitz::Array<real_t, 2> &t
 
 template <class ct_params_t>
 void kin_cloud_2d_lgrngn<ct_params_t>::radiation(const blitz::Array<real_t, 2> &rv)
+// calc upward radiative flux through the bottom of the cells
 {
   const auto &ijk = this->ijk;
   const auto &i = this->i;
@@ -33,23 +34,26 @@ void kin_cloud_2d_lgrngn<ct_params_t>::radiation(const blitz::Array<real_t, 2> &
   F(ijk) = 0;
 
   // calc Eqs. 5 and 6 from Ackerman et al 2009
-  // TODO: z-th cell will be accounted for twice (in each integral)...
   for(int x = i.first() ; x <= i.last(); ++x) // 0..75 || 0..37 38..75 || ...
   {
     for(int z = 0 ; z < nz; ++z)
     {
-      real_t sum = r_l(x, z) / 2.;
-      if(z < nz-1) sum += blitz::sum(r_l(x, blitz::Range(z+1, nz-1)));
-      F(x, z) += setup::F_0 * exp(- (nz - z) * this->dj * sum); 
+      double sum = blitz::sum(r_l(x, blitz::Range(z, nz-1)));
+      if(z==0)
+        F(x, z) += setup::F_0 * exp(- (nz - z - 1) * this->dj * sum); 
+      else
+        F(x, z) += setup::F_0 * exp(- (nz - z - 0.5) * this->dj * sum); 
 
-      sum = r_l(x, z) / 2.;
-      if(z > 0) sum += blitz::sum(r_l(x, blitz::Range(0, z-1)));
-      F(x, z) += setup::F_1 * exp(- ((z) - 0) * this->dj * sum);
-
-      if(z >= k_i(x) )
+      if(z > 0)
       {
-        real_t z_i = (-0.5 + k_i(x)) * this->dj;
-        real_t z_d = z * this->dj - z_i;
+        sum = blitz::sum(r_l(x, blitz::Range(0, z-1)));
+        F(x, z) += setup::F_1 * exp(- (z - 0.5) * this->dj * sum);
+      }
+
+      if(z > k_i(x) )
+      {
+        real_t z_i = (k_i(x) - .5) * this->dj; // bottom of the first cell above inversion, z=0 at k=0.5
+        real_t z_d = (z - 0.5) * this->dj - z_i;
         F(x, z) += setup::c_p * setup::rho_i * setup::D * (0.25 * pow(z_d, 4./3) + z_i * pow(z_d, 1./3)); 
       }
     }

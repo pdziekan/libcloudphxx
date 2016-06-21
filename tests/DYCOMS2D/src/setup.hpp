@@ -171,34 +171,6 @@ namespace setup
     params.dz = (Z / si::metres) / (nz-1);
     params.di = params.dx;
     params.dj = params.dz;
- 
-    // prescribed density
-/*    blitz::Array<real_t, 2> rhod(nx, nz);
-    {
-      blitz::secondIndex j;
-      rhod = rhod_fctr()(j * params.dz);
-    }
-    std::cout << "rhod w setopts" << rhod << std::endl;
-
-    params.rhod = new blitz::Array<real_t, 2>(rhod.dataFirst(), rhod.shape(), blitz::neverDeleteData);
-    std::cout << "params.rhod w setopts" << params.rhod << " " << *params.rhod << std::endl;
-
-    // prescribed large-scale vertical wind
-    blitz::Array<real_t, 2> w_LS(nx, nz);
-    {
-      blitz::secondIndex j;
-      w_LS = w_LS_fctr()(j * params.dz);
-    }
-    params.w_LS = new blitz::Array<real_t, 2>(w_LS.dataFirst(), w_LS.shape(), blitz::neverDeleteData);
-
-    // prescribed initial temp profile
-    blitz::Array<real_t, 2> th_init(nx, nz);
-    {
-      blitz::secondIndex j;
-      th_init = th_dry_fctr()(j * params.dz);
-    }
-    params.th_init = new blitz::Array<real_t, 2>(th_init.dataFirst(), th_init.shape(), blitz::neverDeleteData);
-*/
   }
 
   // function expecting a libmpdata++ solver as argument

@@ -9,9 +9,12 @@ void kin_cloud_2d_lgrngn<ct_params_t>::rv_src()
   const auto &j = this->j;
   // surface flux
   surf_latent();
-  // divergence of rv flux
+  // sum of rv flux
   this->xchng_sclr(F, i, j);
-  alpha(i, j) = ( F(i, j-1) - F(i, j+1)) / 2./ this->dj;
+  alpha(i, j) = ( F(i, j) - F(i, j+1)) / this->dj;
+  // top and bottom cells are two times lower
+  alpha(i, 0) *= 2; 
+  alpha(i, this->j.last()) *= 2; 
   // change of rv[1/s] = latent heating[W/m^3] / lat_heat_of_evap[J/kg] / density[kg/m^3]
   alpha(ijk)/=(libcloudphxx::common::const_cp::l_tri<real_t>() * si::kilograms / si::joules) * rhod(ijk);
   // large-scale vertical wind
@@ -40,9 +43,12 @@ void kin_cloud_2d_lgrngn<ct_params_t>::th_src(const blitz::Array<real_t, 2> &rv)
   radiation(rv);
   // add fluxes from radiation and surface
   F(ijk) += beta(ijk);
-  // divergence of th flux, F(j) is upward flux in the middle of the j-th cell
+  // sum of th flux, F(j) is upward flux through the bottom of the j-th cell
   this->xchng_sclr(F, i, j);
-  alpha(i, j) = ( F(i, j-1) - F(i, j+1)) / 2./ this->dj;
+  alpha(i, j) = ( F(i, j) - F(i, j+1)) /  this->dj;
+  // top and bottom cells are two times lower
+  alpha(i, 0) *= 2; 
+  alpha(i, this->j.last()) *= 2; 
 
   // change of theta[K/s] = heating[W/m^3] * theta[K] / T[K] / c_p[J/K/kg] / rhod[kg/m^3]
   for(int x = i.first() ; x <= i.last(); ++x)
