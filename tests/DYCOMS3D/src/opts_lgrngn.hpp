@@ -36,6 +36,7 @@ void setopts_micro(
     ("backend", po::value<std::string>()->required() , "one of: CUDA, OpenMP, serial")
     ("async", po::value<bool>()->default_value(true), "use CPU for advection while GPU does micro (ignored if backend != CUDA)")
     ("sd_conc", po::value<unsigned long long>()->required() , "super-droplet number per grid cell (unsigned long long)")
+    ("sd_conc_max", po::value<unsigned long long>()->default_value(0) , "maximal super-droplet number per grid cell (unsigned long long)")
     // processes
     ("adve", po::value<bool>()->default_value(rt_params.cloudph_opts.adve) , "particle advection     (1=on, 0=off)")
     ("sedi", po::value<bool>()->default_value(rt_params.cloudph_opts.sedi) , "particle sedimentation (1=on, 0=off)")
@@ -68,11 +69,12 @@ void setopts_micro(
   rt_params.async = vm["async"].as<bool>();
 
   rt_params.cloudph_opts_init.sd_conc = vm["sd_conc"].as<unsigned long long>();
+  auto sd_conc_max = vm["sd_conc_max"].as<unsigned long long>();
   rt_params.cloudph_opts_init.nx = nx;
   rt_params.cloudph_opts_init.ny = ny;
   rt_params.cloudph_opts_init.nz = nz;
   if (backend_str == "multi_CUDA")
-    rt_params.cloudph_opts_init.n_sd_max = 1.2 * nx * ny * nz * rt_params.cloudph_opts_init.sd_conc;
+    rt_params.cloudph_opts_init.n_sd_max = nx * ny * nz * sd_conc_max;
   else
     rt_params.cloudph_opts_init.n_sd_max = nx * ny * nz * rt_params.cloudph_opts_init.sd_conc;
  
