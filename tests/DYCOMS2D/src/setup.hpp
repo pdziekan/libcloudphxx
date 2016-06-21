@@ -113,7 +113,7 @@ namespace setup
   };
 
   // density profile as a function of altitude
-  // hydrostatic
+  // hydrostatic and assuming constant theta (not used now)
   struct rhod_fctr
   {
     real_t operator()(real_t z) const

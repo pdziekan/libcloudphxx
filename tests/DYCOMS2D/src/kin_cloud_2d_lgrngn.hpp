@@ -28,7 +28,8 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
   real_t prec_vol;
   std::ofstream f_prec;
 
-  typename parent_t::arr_t rhod, w_LS, th_init, rv_init, hgt_fctr; // TODO: store them in rt_params, here only reference thread's subarrays; also they are just 1D profiles, no need to store whole 3D arrays
+  typename parent_t::arr_t rhod, w_LS, th_init, th_ref, rv_init, hgt_fctr; // TODO: store them in rt_params, here only reference thread's subarrays; also they are just 1D profiles, no need to store whole 3D arrays
+
   blitz::Array<real_t, 1> k_i; // TODO: make it's size in x direction smaller to match thread's domain
 
   // global arrays, shared among threads, TODO: in fact no need to share them?
@@ -415,6 +416,7 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
     int nz = this->mem->grid_size[1].length();
     rhod.resize(nx,nz);
     th_init.resize(nx,nz);
+    th_ref.resize(nx,nz);
     w_LS.resize(nx,nz);
     rv_init.resize(nx,nz);
     hgt_fctr.resize(nx,nz);
@@ -422,8 +424,6 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
     r_l = 0.;
 
     blitz::secondIndex k;
-    // prescribed density
-    rhod = setup::rhod_fctr()(k * params.dz);
 
     // prescribed large-scale vertical wind
     w_LS = setup::w_LS_fctr()(k * params.dz);
@@ -433,6 +433,38 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
 
     // prescribed initial rv profile
     rv_init = 0.; // initially the reference state is not known, will be saved after spinup
+
+    // reference theta and rhod profiles
+    {
+      // copied from Wojtek, but not working
+      // th_init shoulkd be replaced with th_l etc..
+      //
+      // calculate average stability
+      /*
+      blitz::Range notopbot(1, nz-2);
+      blitz::Array<real_t, 1> st(nz);
+      st=0;
+      st(notopbot) = (th_init(0, notopbot+1) - th_init(0, notopbot-1)) / th_init(0, notopbot);
+      double st_avg = blitz::sum(st) / (nz-2);
+      // reference theta
+      th_ref = th_init(0,0) * exp(st_avg * k * params.dz);
+      // virtual temp at surface
+      using libcloudphxx::common::moist_air::R_d_over_c_pd;
+      using libcloudphxx::common::moist_air::c_pd;
+      using libcloudphxx::common::moist_air::R_d;
+      using libcloudphxx::common::theta_std::p_1000;
+
+      double T_surf = th_init(0, 0) *  pow(setup::p_0 / p_1000<double>(),  R_d_over_c_pd<double>());
+      double T_virt_surf = T_surf * (1. + 0.608 * setup::r_t()(0.));
+      double rho_surf = (setup::p_0 / si::pascals) / T_virt_surf / 287. ; // TODO: R_d instead of 287
+      double cs = 9.81 / (c_pd<double>() / si::joules * si::kilograms * si::kelvins) / st_avg / T_surf;
+      // rhod profile
+      rhod = rho_surf * exp(- st_avg * k * params.dz) * pow(
+               1. - cs * (1 - exp(- st_avg * k * params.dz)), R_d_over_c_pd<double>() - 1);
+      */
+      std::cout << "rhod: " << rhod;
+      std::cout << "th_ref: " << th_ref;
+    }
 
     // exponential decay with height to distribute constant surface fluxes
     // used to get flux through the bottom of the cell, z=0 at k=1/2
