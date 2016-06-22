@@ -1,7 +1,7 @@
 #pragma once
 
 template <class ct_params_t>
-void kin_cloud_2d_lgrngn<ct_params_t>::buoyancy(const blitz::Array<real_t, 2> &th)
+void kin_cloud_2d_lgrngn<ct_params_t>::buoyancy(const blitz::Array<real_t, 2> &th, const blitz::Array<real_t, 2> &rv)
 {
   const auto &ijk = this->ijk;
   const auto &i = this->i;
@@ -9,9 +9,9 @@ void kin_cloud_2d_lgrngn<ct_params_t>::buoyancy(const blitz::Array<real_t, 2> &t
 
   const real_t g = 9.81; 
 
-//  namespace moist_air = libcloudphxx::common::moist_air;
-//  const real_t eps = moist_air::R_v<real_t>() / moist_air::R_d<real_t>() - 1.;
-  tmp1(ijk) = g * ((th(ijk) - th_init(ijk)) / th_ref(ijk));// + eps * (rv - rv_init(ijk)));
+  namespace moist_air = libcloudphxx::common::moist_air;
+  const real_t eps = moist_air::R_v<real_t>() / moist_air::R_d<real_t>() - 1.;
+  tmp1(ijk) = g * ((th(ijk) - this->th_eq(ijk)) / this->th_ref(ijk)) + eps * (rv(ijk) - this->rv_eq(ijk)) - r_l(ijk);
 
   this->xchng_sclr(tmp1, i, j); 
   F(i, j) = 0.25 * (tmp1(i, j + 1) + 2 * tmp1(i, j) + tmp1(i, j - 1));

@@ -28,7 +28,7 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
   real_t prec_vol;
   std::ofstream f_prec;
 
-  typename parent_t::arr_t rhod, w_LS, hgt_fctr; // TODO: store them in rt_params, here only reference thread's subarrays; also they are just 1D profiles, no need to store whole 3D arrays
+  typename parent_t::arr_t w_LS, hgt_fctr; // TODO: store them in rt_params, here only reference thread's subarrays; also they are just 1D profiles, no need to store whole 3D arrays
 
   blitz::Array<real_t, 1> k_i; // TODO: make it's size in x direction smaller to match thread's domain
 
@@ -117,7 +117,7 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
   { 
     params.cloudph_opts.coal = val;
     params.cloudph_opts.sedi = val; 
-    params.cloudph_opts.RH_max = val ? 44 : 1.01; // 1% limit during spinup // TODO: specify it somewhere else, dup in blk_2m
+    params.cloudph_opts.RH_max = val ? 44 : 1.01; // 0.5% limit during spinup // TODO: specify it somewhere else, dup in blk_2m
   };
 
   // deals with initial supersaturation
@@ -153,7 +153,7 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
 	prtcls->init(
 	  make_arrinfo(this->mem->advectee(ix::th)),
 	  make_arrinfo(this->mem->advectee(ix::rv)),
-	  make_arrinfo(rhod)
+	  make_arrinfo(this->rhod)
 	); 
 
       // open file for output of precitpitation volume
@@ -187,11 +187,11 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
     this->vip_rhs[0](i, this->j.last()) *= 2; 
   }
 
-  void buoyancy(const blitz::Array<real_t, 2> &th);
+  void buoyancy(const blitz::Array<real_t, 2> &th, const blitz::Array<real_t, 2> &rv);
   void radiation(const blitz::Array<real_t, 2> &rv);
   void rv_src();
   void th_src(const blitz::Array<real_t, 2> &rv);
-  void w_src(const blitz::Array<real_t, 2> &th);
+  void w_src(const blitz::Array<real_t, 2> &th, const blitz::Array<real_t, 2> &rv);
   void surf_sens();
   void surf_latent();
   void subsidence(const int&);
@@ -222,7 +222,7 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
         rhs.at(ix::th)(ijk) += alpha(ijk) + beta(ijk) * this->state(ix::th)(ijk); 
 
         // vertical velocity sources
-        w_src(this->state(ix::th));
+        w_src(this->state(ix::th), this->state(ix::rv));
         rhs.at(ix::w)(ijk) += alpha(ijk);
 
         // horizontal velocity sources 
@@ -249,7 +249,9 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
         // vertical velocity sources
         // temporarily use beta to store the th^n+1 estimate
         beta(ijk) = this->state(ix::th)(ijk) + 0.5 * this->dt * rhs.at(ix::th)(ijk);
-        w_src(beta);
+        // temporarily use F to store the rv^n+1 estimate
+        F(ijk) = this->state(ix::rv)(ijk) + 0.5 * this->dt * rhs.at(ix::rv)(ijk);
+        w_src(beta, F);
         rhs.at(ix::w)(ijk) += alpha(ijk);
 
         // horizontal velocity sources 
@@ -299,13 +301,13 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
       auto rl = r_l(blitz::Range(0,nx-1), blitz::Range(0,nz-1)); 
       rl = blitz::Array<real_t,2>(prtcls->outbuf(), blitz::shape(nx, nz), blitz::duplicateData); // copy in data from outbuf; total liquid third moment of wet radius per kg of dry air [m^3 / kg]
       rl = rl * 4./3. * 1000. * 3.14159; // get mixing ratio [kg/kg]
-      // in radiation parametrization we integrate mixing ratio * rhod
-      rl = rl * rhod;
+      // in radiation parametrization we integrate mixing ratio * this->rhod
+      rl = rl * this->rhod;
       rl = rl * setup::heating_kappa;
 
       {
         using libmpdataxx::arakawa_c::h;
-        // temporarily Cx & Cz are multiplied by rhod ...
+        // temporarily Cx & Cz are multiplied by this->rhod ...
         auto 
           Cx = this->mem->GC[0](
             this->mem->grid_size[0]^h, 
@@ -316,20 +318,20 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
             this->mem->grid_size[1]^h
           ).reindex({0,0}).copy();
 
-        // ... and now dividing them by rhod (TODO: z=0 is located at k=1/2)
+        // ... and now dividing them by this->rhod (TODO: z=0 is located at k=1/2)
         {
           blitz::Range all = blitz::Range::all();
-          Cx(blitz::Range(1,nx), all)/= rhod;
-          Cz(all, blitz::Range(1,nz))/= rhod;
-          Cx(0, all) /= rhod(0, all);
-          Cz(all, 0) /= rhod(all, 0);
+          Cx(blitz::Range(1,nx), all)/= this->rhod;
+          Cz(all, blitz::Range(1,nz))/= this->rhod;
+          Cx(0, all) /= this->rhod(0, all);
+          Cz(all, 0) /= this->rhod(all, 0);
         }
         // running synchronous stuff
         prtcls->step_sync(
           params.cloudph_opts,
           make_arrinfo(this->mem->advectee(ix::th)),
           make_arrinfo(this->mem->advectee(ix::rv)),
-          make_arrinfo(rhod),
+          make_arrinfo(this->rhod),
           make_arrinfo(Cx), // ix::u ?
           libcloudphxx::lgrngn::arrinfo_t<real_t>(),
           make_arrinfo(Cz) // ix:w ?
@@ -390,7 +392,7 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
       for(int z = this->j.first() ; z <= this->j.last(); ++z)
       {
         this->mem->advectee(ix::th)(x,z) += - tmp1(x,z) * (l_tri<double>() / c_pd<double>() / si::kelvin) *
-          this->mem->advectee(ix::th)(x,z) / (libcloudphxx::common::theta_dry::T<real_t>(this->state(ix::th)(x, z) * si::kelvins, rhod(x, z) * si::kilograms / si::metres  / si::metres / si::metres) / si::kelvins); 
+          this->mem->advectee(ix::th)(x,z) / (libcloudphxx::common::theta_dry::T<real_t>(this->state(ix::th)(x, z) * si::kelvins, this->rhod(x, z) * si::kilograms / si::metres  / si::metres / si::metres) / si::kelvins); 
       }
     }
   }
@@ -428,9 +430,7 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
   {
     int nx = this->mem->grid_size[0].length();
     int nz = this->mem->grid_size[1].length();
-    rhod.resize(nx,nz);
     w_LS.resize(nx,nz);
-    rv_init.resize(nx,nz);
     hgt_fctr.resize(nx,nz);
     k_i.resize(nx);
     r_l = 0.;
@@ -439,38 +439,6 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
 
     // prescribed large-scale vertical wind
     w_LS = setup::w_LS_fctr()(k * params.dz);
-
-    // reference theta and rhod profiles
-    {
-      // copied from Wojtek, but not working
-      // th_init shoulkd be replaced with th_l etc..
-      //
-      // calculate average stability
-      /*
-      blitz::Range notopbot(1, nz-2);
-      blitz::Array<real_t, 1> st(nz);
-      st=0;
-      st(notopbot) = (th_init(0, notopbot+1) - th_init(0, notopbot-1)) / th_init(0, notopbot);
-      double st_avg = blitz::sum(st) / (nz-2);
-      // reference theta
-      th_ref = th_init(0,0) * exp(st_avg * k * params.dz);
-      // virtual temp at surface
-      using libcloudphxx::common::moist_air::R_d_over_c_pd;
-      using libcloudphxx::common::moist_air::c_pd;
-      using libcloudphxx::common::moist_air::R_d;
-      using libcloudphxx::common::theta_std::p_1000;
-
-      double T_surf = th_init(0, 0) *  pow(setup::p_0 / p_1000<double>(),  R_d_over_c_pd<double>());
-      double T_virt_surf = T_surf * (1. + 0.608 * setup::r_t()(0.));
-      double rho_surf = (setup::p_0 / si::pascals) / T_virt_surf / 287. ; // TODO: R_d instead of 287
-      double cs = 9.81 / (c_pd<double>() / si::joules * si::kilograms * si::kelvins) / st_avg / T_surf;
-      // rhod profile
-      rhod = rho_surf * exp(- st_avg * k * params.dz) * pow(
-               1. - cs * (1 - exp(- st_avg * k * params.dz)), R_d_over_c_pd<double>() - 1);
-      */
-      std::cout << "rhod: " << rhod;
-      std::cout << "th_ref: " << th_ref;
-    }
 
     // exponential decay with height to distribute constant surface fluxes
     // used to get flux through the bottom of the cell, z=0 at k=1/2
