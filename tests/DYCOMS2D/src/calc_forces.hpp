@@ -7,23 +7,28 @@ void kin_cloud_2d_lgrngn<ct_params_t>::rv_src()
   const auto &ijk = this->ijk;
   const auto &i = this->i;
   const auto &j = this->j;
-  // surface flux
-  surf_latent();
-  // sum of rv flux
-  int nz = this->mem->grid_size[1].length();
-  blitz::Range notop(0, nz-2);
-  alpha(i, notop) = (F(i, notop) - F(i, notop+1)) / this->dj;
-  alpha(i, j.last()) = F(i, j.last()) / this->dj;
+  if(this->timestep >= this->spinup)
+  {
+    // surface flux
+    surf_latent();
+    // sum of rv flux
+    int nz = this->mem->grid_size[1].length();
+    blitz::Range notop(0, nz-2);
+    alpha(i, notop) = (F(i, notop) - F(i, notop+1)) / this->dj;
+    alpha(i, j.last()) = F(i, j.last()) / this->dj;
 
-/*
-  this->xchng_sclr(F, i, j);
-  alpha(i, j) = ( F(i, j) - F(i, j+1)) / this->dj;
-*/
-  // top and bottom cells are two times lower
-  alpha(i, 0) *= 2; 
-  alpha(i, this->j.last()) *= 2; 
-  // change of rv[1/s] = latent heating[W/m^3] / lat_heat_of_evap[J/kg] / density[kg/m^3]
-  alpha(ijk)/=(libcloudphxx::common::const_cp::l_tri<real_t>() * si::kilograms / si::joules) * this->rhod(ijk);
+/*  
+    this->xchng_sclr(F, i, j);
+    alpha(i, j) = ( F(i, j) - F(i, j+1)) / this->dj;
+*/  
+    // top and bottom cells are two times lower
+    alpha(i, 0) *= 2; 
+    alpha(i, this->j.last()) *= 2; 
+    // change of rv[1/s] = latent heating[W/m^3] / lat_heat_of_evap[J/kg] / density[kg/m^3]
+    alpha(ijk)/=(libcloudphxx::common::const_cp::l_tri<real_t>() * si::kilograms / si::joules) * this->rhod(ijk);
+  }
+  else
+    alpha(ijk) = 0;
   // large-scale vertical wind
   subsidence(ix::rv);
   alpha(ijk) += F(ijk);
