@@ -28,7 +28,7 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
   real_t prec_vol;
   std::ofstream f_prec;
 
-  typename parent_t::arr_t w_LS, hgt_fctr; // TODO: store them in rt_params, here only reference thread's subarrays; also they are just 1D profiles, no need to store whole 3D arrays
+  typename parent_t::arr_t w_LS, hgt_fctr_sclr, hgt_fctr_vctr; // TODO: store them in rt_params, here only reference thread's subarrays; also they are just 1D profiles, no need to store whole 3D arrays
 
   blitz::Array<real_t, 1> k_i; // TODO: make it's size in x direction smaller to match thread's domain
 
@@ -437,7 +437,8 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
     int nx = this->mem->grid_size[0].length();
     int nz = this->mem->grid_size[1].length();
     w_LS.resize(nx,nz);
-    hgt_fctr.resize(nx,nz);
+    hgt_fctr_sclr.resize(nx,nz);
+    hgt_fctr_vctr.resize(nx,nz);
     k_i.resize(nx);
     r_l = 0.;
 
@@ -448,9 +449,12 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
 
     // exponential decay with height to distribute constant surface fluxes
     // used to get flux through the bottom of the cell, z=0 at k=1/2
-    real_t z_0 = setup::z_rlx / si::metres;
-    hgt_fctr = exp(- (k-0.5) * params.dz / z_0);
-    hgt_fctr(blitz::Range::all(),0) = 1;
+    real_t z_0 = setup::z_rlx_vctr / si::metres;
+    hgt_fctr_vctr = exp(- (k-0.5) * params.dz / z_0);
+    hgt_fctr_vctr(blitz::Range::all(),0) = 1;
+    z_0 = setup::z_rlx_sclr / si::metres;
+    hgt_fctr_sclr = exp(- (k-0.5) * params.dz / z_0);
+    hgt_fctr_sclr(blitz::Range::all(),0) = 1;
 
     // delaying any initialisation to ante_loop as rank() does not function within ctor! // TODO: not anymore!!!
     // TODO: equip rank() in libmpdata with an assert() checking if not in serial block

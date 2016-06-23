@@ -64,14 +64,14 @@ template <class ct_params_t>
 void kin_cloud_2d_lgrngn<ct_params_t>::surf_sens()
 {
   const auto &ijk = this->ijk;
-  F(ijk) = setup::F_sens * hgt_fctr(ijk);
+  F(ijk) = setup::F_sens * hgt_fctr_sclr(ijk);
 }
 
 template <class ct_params_t>
 void kin_cloud_2d_lgrngn<ct_params_t>::surf_latent()
 {
   const auto &ijk = this->ijk;
-  F(ijk) =  setup::F_lat * hgt_fctr(ijk); 
+  F(ijk) =  setup::F_lat * hgt_fctr_sclr(ijk); 
 }
 
 template <class ct_params_t>
