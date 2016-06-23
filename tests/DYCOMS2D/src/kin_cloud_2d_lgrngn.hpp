@@ -174,14 +174,20 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
     // kinematic momentum flux  = -u_fric^2 * u_i / |U| * exponential decay
     for (int ji = this->j.first(); ji <= this->j.last(); ++ji)
     {
-      F(i, ji) = - pow(setup::u_fric,2) * this->state(ix::vip_i)(i, 0) / 
-                          abs(this->state(ix::vip_i)(i, 0)) 
-                          * hgt_fctr(i, ji);
+      F(i, ji) = - pow(setup::u_fric,2) * this->state(ix::vip_i)(i, 0) / sqrt(
+                          pow2(this->state(ix::vip_i)(i, 0)))
+                          * hgt_fctr_vctr(i, ji);
     }
 
     // du/dt = sum of kinematic momentum fluxes * dt
+    int nz = this->mem->grid_size[1].length(); //76
+    blitz::Range notop(0, nz-2);
+    this->vip_rhs[0](i, notop) = (F(i, notop) - F(i, notop+1)) / this->dj * this->dt;
+    this->vip_rhs[0](i, this->j.last()) = (F(i, this->j.last())) / this->dj * this->dt;
+/*
     this->xchng_sclr(F, i, j);
     this->vip_rhs[0](i, j) = (F(i, j) - F(i, j+1)) / this->dj * this->dt;
+*/
     // top and bottom cells are two times lower
     this->vip_rhs[0](i, 0) *= 2; 
     this->vip_rhs[0](i, this->j.last()) *= 2; 

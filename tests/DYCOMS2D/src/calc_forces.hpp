@@ -10,8 +10,15 @@ void kin_cloud_2d_lgrngn<ct_params_t>::rv_src()
   // surface flux
   surf_latent();
   // sum of rv flux
+  int nz = this->mem->grid_size[1].length();
+  blitz::Range notop(0, nz-2);
+  alpha(i, notop) = (F(i, notop) - F(i, notop+1)) / this->dj;
+  alpha(i, j.last()) = F(i, j.last()) / this->dj;
+
+/*
   this->xchng_sclr(F, i, j);
   alpha(i, j) = ( F(i, j) - F(i, j+1)) / this->dj;
+*/
   // top and bottom cells are two times lower
   alpha(i, 0) *= 2; 
   alpha(i, this->j.last()) *= 2; 
@@ -44,8 +51,17 @@ void kin_cloud_2d_lgrngn<ct_params_t>::th_src(const blitz::Array<real_t, 2> &rv)
   // add fluxes from radiation and surface
   F(ijk) += beta(ijk);
   // sum of th flux, F(j) is upward flux through the bottom of the j-th cell
+
+  int nz = this->mem->grid_size[1].length(); //76
+  // sum of th flux
+  blitz::Range notop(0, nz-2);
+  alpha(i, notop) = (F(i, notop) - F(i, notop+1)) / this->dj;
+  alpha(i, j.last()) = F(i, j.last()) / this->dj;
+
+/*
   this->xchng_sclr(F, i, j);
   alpha(i, j) = ( F(i, j) - F(i, j+1)) /  this->dj;
+*/
   // top and bottom cells are two times lower
   alpha(i, 0) *= 2; 
   alpha(i, this->j.last()) *= 2; 
