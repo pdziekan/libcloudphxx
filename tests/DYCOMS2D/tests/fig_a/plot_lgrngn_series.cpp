@@ -260,7 +260,7 @@ int main(int ac, char** av)
     {
       // forward difference, in cm
       blitz::Range nolast = blitz::Range(0, n["t"]-2);
-      res_prof(nolast) = (res_prof(nolast+1) - res_prof(nolast)) * n["dz"] * 1e2 / (n["dt"] * n["outfreq"]) + D * res_prof(nolast) * n["dz"] * 1e2;
+      res_prof(nolast) = (res_prof(nolast+1) - res_prof(nolast)) * n["dz"] * 1e2 / (n["dt"] * n["outfreq"]) + D * (res_prof(nolast) - 0.5) * n["dz"] * 1e2;
       res_prof(n["t"]-1) = 0.;
       gp << "set title 'entrainment rate [cm / s]'\n";
     }

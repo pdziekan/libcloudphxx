@@ -236,9 +236,9 @@ int main(int ac, char** av)
     } // time loop
     res /= last_timestep - first_timestep + 1;
     
-    z_i = k_i / (last_timestep - first_timestep + 1) * n["dz"];
+    z_i = (double(k_i)-0.5) / (last_timestep - first_timestep + 1) * n["dz"];
     std::cout << "average inversion height " << z_i;
-    res_pos = i * n["dz"] / z_i; 
+    res_pos = (i-0.5) * n["dz"] / z_i; 
     res_prof = blitz::mean(res(j, i), j); // average in x
 
     gp << "plot '-' with line\n";

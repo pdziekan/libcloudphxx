@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
     mean_z_i += z_i;
   }
   mean_z_i /= ctr;
-  res_pos = fi * n["dz"] / mean_z_i;
+  res_pos = (fi-0.5) * n["dz"] / mean_z_i;
 
   int i=0;
   for (auto &plt : profs) 
