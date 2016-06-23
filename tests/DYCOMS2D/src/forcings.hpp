@@ -11,7 +11,7 @@ void kin_cloud_2d_lgrngn<ct_params_t>::buoyancy(const blitz::Array<real_t, 2> &t
 
   namespace moist_air = libcloudphxx::common::moist_air;
   const real_t eps = moist_air::R_v<real_t>() / moist_air::R_d<real_t>() - 1.;
-  tmp1(ijk) = g * ((th(ijk) - this->th_eq(ijk)) / this->th_ref(ijk)) + eps * (rv(ijk) - this->rv_eq(ijk)) - r_l(ijk);
+  tmp1(ijk) = g * ((th(ijk) - this->th_eq(ijk)) / this->th_ref(ijk));// + eps * (rv(ijk) - this->rv_eq(ijk)) - r_l(ijk);
 
   this->xchng_sclr(tmp1, i, j); 
   F(i, j) = 0.25 * (tmp1(i, j + 1) + 2 * tmp1(i, j) + tmp1(i, j - 1));
