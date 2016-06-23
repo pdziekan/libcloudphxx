@@ -79,6 +79,7 @@ class kin_cloud_2d_common : public
     // calculate reference theta and rhod
     // like in Wojtek's code
     {
+/*
       blitz::secondIndex k;
       int nz = this->mem->grid_size[1].length();
       // calculate average stability
@@ -102,7 +103,7 @@ class kin_cloud_2d_common : public
       // rhod profile
       rhod = rho_surf * exp(- st_avg * k * dz) * pow(
                1. - cs * (1 - exp(- st_avg * k * dz)), (1. / R_d_over_c_pd<double>()) - 1);
-
+*/
 //      g_factor() = rhod;
 
 /*
