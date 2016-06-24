@@ -13,6 +13,7 @@ void kin_cloud_2d_lgrngn<ct_params_t>::buoyancy(const blitz::Array<real_t, 2> &t
   const real_t eps = moist_air::R_v<real_t>() / moist_air::R_d<real_t>() - 1.;
   tmp1(ijk) = g * ((th(ijk) - this->th_eq(ijk)) / this->th_ref(ijk));// + eps * (rv(ijk) - this->rv_eq(ijk)) - r_l(ijk);
 
+// smoothing
   this->xchng_sclr(tmp1, i, j); 
   F(i, j) = 0.25 * (tmp1(i, j + 1) + 2 * tmp1(i, j) + tmp1(i, j - 1));
 }
@@ -58,6 +59,10 @@ void kin_cloud_2d_lgrngn<ct_params_t>::radiation(const blitz::Array<real_t, 2> &
       }
     }
   }
+// smoothing
+  tmp1(ijk)=F(ijk);
+  this->xchng_sclr(tmp1, i, j); 
+  F(i, j) = 0.25 * (tmp1(i, j + 1) + 2 * tmp1(i, j) + tmp1(i, j - 1));
 }
 
 template <class ct_params_t>
@@ -65,6 +70,12 @@ void kin_cloud_2d_lgrngn<ct_params_t>::surf_sens()
 {
   const auto &ijk = this->ijk;
   F(ijk) = setup::F_sens * hgt_fctr_sclr(ijk);
+// smoothing
+  const auto &i = this->i;
+  const auto &j = this->j;
+  tmp1(ijk)=F(ijk);
+  this->xchng_sclr(tmp1, i, j); 
+  F(i, j) = 0.25 * (tmp1(i, j + 1) + 2 * tmp1(i, j) + tmp1(i, j - 1));
 }
 
 template <class ct_params_t>
@@ -72,6 +83,12 @@ void kin_cloud_2d_lgrngn<ct_params_t>::surf_latent()
 {
   const auto &ijk = this->ijk;
   F(ijk) =  setup::F_lat * hgt_fctr_sclr(ijk); 
+// smoothing
+  const auto &i = this->i;
+  const auto &j = this->j;
+  tmp1(ijk)=F(ijk);
+  this->xchng_sclr(tmp1, i, j); 
+  F(i, j) = 0.25 * (tmp1(i, j + 1) + 2 * tmp1(i, j) + tmp1(i, j - 1));
 }
 
 template <class ct_params_t>
@@ -83,4 +100,8 @@ void kin_cloud_2d_lgrngn<ct_params_t>::subsidence(const int &type) // large-scal
   tmp1(ijk) = this->state(type)(ijk);
   this->xchng_sclr(tmp1, i, j);
   F(i, j) = - w_LS(i, j) * (tmp1(i, j + 1) - tmp1(i, j - 1)) / (2. * this->dj); 
+// smoothing
+  tmp1(ijk)=F(ijk);
+  this->xchng_sclr(tmp1, i, j); 
+  F(i, j) = 0.25 * (tmp1(i, j + 1) + 2 * tmp1(i, j) + tmp1(i, j - 1));
 }
