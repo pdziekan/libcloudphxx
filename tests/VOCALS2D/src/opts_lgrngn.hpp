@@ -77,7 +77,7 @@ void setopts_micro(
  
   if(!gccn)
     boost::assign::ptr_map_insert<
-      setup::log_dry_radii<thrust_real_t> // value type
+      setup::log_dry_radii_polluted<thrust_real_t> // value type
     >(
       rt_params.cloudph_opts_init.dry_distros // map
     )(
@@ -85,7 +85,7 @@ void setopts_micro(
     );
   else
     boost::assign::ptr_map_insert<
-      setup::log_dry_radii_gccn<thrust_real_t> // value type
+      setup::log_dry_radii_polluted_gccn<thrust_real_t> // value type
     >(
       rt_params.cloudph_opts_init.dry_distros // map
     )(

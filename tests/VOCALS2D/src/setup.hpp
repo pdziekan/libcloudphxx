@@ -117,7 +117,7 @@ namespace setup
   const quantity<si::dimensionless, real_t>
     sdev_rd_gccn = real_t(2.235);
   const quantity<power_typeof_helper<si::length, static_rational<-3>>::type, real_t>
-    n3_stp_gccn = real_t(2.216e6) / si::cubic_metres;
+    n_stp_gccn = real_t(2.216e6) / si::cubic_metres;
 
   //aerosol chemical composition parameters (needed for activation)
   // for lgrngn:

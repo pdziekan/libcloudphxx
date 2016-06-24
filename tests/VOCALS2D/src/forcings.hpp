@@ -92,18 +92,3 @@ void kin_cloud_2d_lgrngn<ct_params_t>::surf_latent()
   this->xchng_sclr(tmp1, i, j); 
   F(i, j) = 0.25 * (tmp1(i, j + 1) + 2 * tmp1(i, j) + tmp1(i, j - 1));
 }
-
-template <class ct_params_t>
-void kin_cloud_2d_lgrngn<ct_params_t>::subsidence(const int &type) // large-scale vertical wind
-{
-  const auto &ijk = this->ijk;
-  const auto &i = this->i;
-  const auto &j = this->j;
-  tmp1(ijk) = this->state(type)(ijk);
-  this->xchng_sclr(tmp1, i, j);
-  F(i, j) = - w_LS(i, j) * (tmp1(i, j + 1) - tmp1(i, j - 1)) / (2. * this->dj); 
-// smoothing
-  tmp1(ijk)=F(ijk);
-  this->xchng_sclr(tmp1, i, j); 
-  F(i, j) = 0.25 * (tmp1(i, j + 1) + 2 * tmp1(i, j) + tmp1(i, j - 1));
-}

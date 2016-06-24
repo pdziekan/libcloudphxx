@@ -30,9 +30,11 @@ void kin_cloud_2d_lgrngn<ct_params_t>::rv_src()
   else
     alpha(ijk) = 0;
   // absorber
-  alpha(ijk) += (*this->mem->vab_coeff)(ijk) * this->rv_eq(ijk);
-  // TODO: add nudging to alpha
-  beta(ijk) = - (*this->mem->vab_coeff)(ijk);
+//  alpha(ijk) += (*this->mem->vab_coeff)(ijk) * this->rv_eq(ijk);
+//  beta(ijk) = - (*this->mem->vab_coeff)(ijk);
+  // nudging  
+  alpha(ijk) += nudge_coeff(ijk) * this->rv_eq(ijk);
+  beta(ijk) -= nudge_coeff(ijk);
   // TODO: add nudging to beta
 }
 
@@ -79,10 +81,11 @@ void kin_cloud_2d_lgrngn<ct_params_t>::th_src(const blitz::Array<real_t, 2> &rv)
       }
   }
   // absorber
-  alpha(ijk) += (*this->mem->vab_coeff)(ijk) * this->th_eq(ijk);
-  // TODO: add nudging to alpha
-  beta(ijk) = - (*this->mem->vab_coeff)(ijk);
-  // TODO: add nudging to beta
+//  alpha(ijk) += (*this->mem->vab_coeff)(ijk) * this->th_eq(ijk);
+//  beta(ijk) = - (*this->mem->vab_coeff)(ijk);
+  // nudging  
+  alpha(ijk) += nudge_coeff(ijk) * this->th_eq(ijk);
+  beta(ijk) -= nudge_coeff(ijk);
 }
 
 template <class ct_params_t>

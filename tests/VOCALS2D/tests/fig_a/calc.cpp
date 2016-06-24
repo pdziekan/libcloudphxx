@@ -37,7 +37,7 @@ int main(int ac, char** av)
   std::cout << "output directory: " << outdir << std::endl;
 */
   string opts_common = 
-    "--outfreq=300 --nt=21600 --spinup=3600 --nx=33 --nz=76 --dt=1. --relax_th_rv=false"; // DYCOMS: 129x301 ; 600 21600 3600
+    "--outfreq=300 --nt=21600 --spinup=3600 --nx=41 --nz=31 --dt=1. --relax_th_rv=false"; // VOCALS: 201x151 ; 600 21600 3600
   set<string> opts_micro({
 //    "--micro=blk_1m --outdir=out_blk_1m",
 //    "--micro=blk_2m --outdir=out_blk_2m",
