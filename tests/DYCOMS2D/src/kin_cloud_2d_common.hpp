@@ -71,11 +71,13 @@ class kin_cloud_2d_common : public
       // and also the enviormental profiles for buoyancy
       // TODO: when calculating mean, do not include first or last point (which is the same in cyclic boundaries);
       //       right now it is accounted for twice, but the concurrency-aware sum cannot exclude single point
+     /*
       for (int j = this->j.first(); j <= this->j.last(); ++j)
       {  
         th_eq(this->i, j) = this->mem->sum(this->state(ix::th), this->i, rng_t(j, j), false)  /  (this->mem->grid_size[0].length());
         rv_eq(this->i, j) = this->mem->sum(this->state(ix::rv), this->i, rng_t(j, j), false)  /  (this->mem->grid_size[0].length());
       }
+*/
     // calculate reference theta and rhod
     // like in Wojtek's code
     {
