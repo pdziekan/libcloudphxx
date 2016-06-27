@@ -51,12 +51,14 @@ void kin_cloud_2d_lgrngn<ct_params_t>::radiation(const blitz::Array<real_t, 2> &
         F(x, z) += setup::F_1 * exp(- (z - 0.5) * this->dj * sum);
       }
 
+/*
       if(z > k_i(x) )
       {
         real_t z_i = (k_i(x) - .5) * this->dj; // bottom of the first cell above inversion, z=0 at k=0.5
         real_t z_d = (z - 0.5) * this->dj - z_i;
         F(x, z) += setup::c_p * setup::rho_i * setup::D * (0.25 * pow(z_d, 4./3) + z_i * pow(z_d, 1./3)); 
       }
+*/
     }
   }
 // smoothing
@@ -86,21 +88,6 @@ void kin_cloud_2d_lgrngn<ct_params_t>::surf_latent()
 // smoothing
   const auto &i = this->i;
   const auto &j = this->j;
-  tmp1(ijk)=F(ijk);
-  this->xchng_sclr(tmp1, i, j); 
-  F(i, j) = 0.25 * (tmp1(i, j + 1) + 2 * tmp1(i, j) + tmp1(i, j - 1));
-}
-
-template <class ct_params_t>
-void kin_cloud_2d_lgrngn<ct_params_t>::subsidence(const int &type) // large-scale vertical wind
-{
-  const auto &ijk = this->ijk;
-  const auto &i = this->i;
-  const auto &j = this->j;
-  tmp1(ijk) = this->state(type)(ijk);
-  this->xchng_sclr(tmp1, i, j);
-  F(i, j) = - w_LS(i, j) * (tmp1(i, j + 1) - tmp1(i, j - 1)) / (2. * this->dj); 
-// smoothing
   tmp1(ijk)=F(ijk);
   this->xchng_sclr(tmp1, i, j); 
   F(i, j) = 0.25 * (tmp1(i, j + 1) + 2 * tmp1(i, j) + tmp1(i, j - 1));
