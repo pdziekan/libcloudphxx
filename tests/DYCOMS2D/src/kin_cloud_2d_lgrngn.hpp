@@ -415,6 +415,7 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
     libcloudphxx::lgrngn::opts_t<real_t> cloudph_opts;
     libcloudphxx::lgrngn::opts_init_t<real_t> cloudph_opts_init;
     outmom_t<real_t> out_dry, out_wet;
+    real_t z_rlx_sclr;
   };
 
   private:
@@ -455,7 +456,7 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
     real_t z_0 = setup::z_rlx_vctr / si::metres;
     hgt_fctr_vctr = exp(- (k-0.5) * params.dz / z_0);
     hgt_fctr_vctr(blitz::Range::all(),0) = 1;
-    z_0 = setup::z_rlx_sclr / si::metres;
+    z_0 = params.z_rlx_sclr;
     hgt_fctr_sclr = exp(- (k-0.5) * params.dz / z_0);
     hgt_fctr_sclr(blitz::Range::all(),0) = 1;
 
