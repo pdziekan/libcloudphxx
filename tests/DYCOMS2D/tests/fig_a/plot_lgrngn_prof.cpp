@@ -88,6 +88,7 @@ int main(int ac, char** av)
 
     for (int at = first_timestep; at <= last_timestep; ++at) // TODO: mark what time does it actually mean!
     {
+      std::cout << at * n["outfreq"] << std::endl;
       if (plt == "rliq")
       {
 	// liquid water content (cloud + rain, missing droplets with r<0.5um!)
