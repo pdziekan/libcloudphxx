@@ -21,7 +21,7 @@
 
 // model run logic - the same for any microphysics
 template <class solver_t>
-void run(int nx, int ny, int nz, int nt, setup::real_t dt, const std::string &outdir, const int &outfreq, int spinup, bool serial, bool relax_th_rv, bool gccn)
+void run(int nx, int ny, int nz, int nt, setup::real_t dt, const std::string &outdir, const int &outfreq, int spinup, bool serial, bool relax_th_rv, bool gccn, setup::real_t z_rlx_sclr)
 {
   // instantiation of structure containing simulation parameters
   typename solver_t::rt_params_t p;
@@ -34,6 +34,7 @@ void run(int nx, int ny, int nz, int nt, setup::real_t dt, const std::string &ou
   p.relax_th_rv = relax_th_rv;
   p.prs_tol=1e-6;
   p.dt = dt;
+  p.z_rlx_sclr = z_rlx_sclr;
   p.nt = nt;
   setopts_micro<solver_t>(p, nx, ny, nz, nt, gccn);
   //std::cout << "params.rhod po setopts micro " << p.rhod << " "  << *p.rhod << std::endl;
@@ -111,6 +112,7 @@ int main(int argc, char** argv)
       ("nz", po::value<int>()->default_value(76) , "grid cell count in vertical")
       ("nt", po::value<int>()->default_value(3600) , "timestep count")
       ("dt", po::value<setup::real_t>()->required() , "timestep length")
+      ("z_rlx_sclr", po::value<setup::real_t>()->default_value(10) , "scalars surface flux charasteristic heihjt")
       ("outdir", po::value<std::string>(), "output file name (netCDF-compatible HDF5)")
       ("outfreq", po::value<int>(), "output rate (timestep interval)")
       ("spinup", po::value<int>()->default_value(2400) , "number of initial timesteps during which rain formation is to be turned off")
@@ -153,6 +155,9 @@ int main(int argc, char** argv)
    
     //handling timestep length
     setup::real_t dt = vm["dt"].as<setup::real_t>();
+ 
+    //handling z_rlx_sclr
+    setup::real_t z_rlx_sclr = vm["z_rlx_sclr"].as<setup::real_t>();
 
     // handling serial-advection-forcing flag
     bool adv_serial = vm["adv_serial"].as<bool>();
@@ -176,7 +181,7 @@ int main(int argc, char** argv)
           vip_i=u, vip_j=v, vip_k=w, vip_den=-1
         }; };
       };
-      run<kin_cloud_3d_lgrngn<ct_params_t>>(nx, ny, nz, nt, dt, outdir, outfreq, spinup, adv_serial, relax_th_rv, gccn);
+      run<kin_cloud_3d_lgrngn<ct_params_t>>(nx, ny, nz, nt, dt, outdir, outfreq, spinup, adv_serial, relax_th_rv, gccn, z_rlx_sclr);
     }
     else throw
       po::validation_error(
