@@ -179,7 +179,7 @@ class kin_cloud_3d_common : public
     th_ref(this->mem->grid_size[0].length(),
           this->mem->grid_size[1].length(),
           this->mem->grid_size[2].length()),
-    th_rhod(this->mem->grid_size[0].length(),
+    rhod(this->mem->grid_size[0].length(),
           this->mem->grid_size[1].length(),
           this->mem->grid_size[2].length()),
     rv_eq(this->mem->grid_size[0].length(),
