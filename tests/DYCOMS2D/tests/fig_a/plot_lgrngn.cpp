@@ -22,6 +22,7 @@ int main(int ac, char** av)
   {
     for (auto &plt : std::unordered_set<std::string>({"rl", "rr", "nc", "nr", "ef", "na", "th", "rv", "u", "w", "sd_conc", "r_dry"}))
     {
+      std::cout << at * n["outfreq"] << " : " << plt << std::endl;
       Gnuplot gp;
       init(gp, h5 + ".plot/" + plt + "/" + zeropad(at * n["outfreq"]) + ".svg", 1, 1, n); 
 
@@ -144,8 +145,6 @@ int main(int ac, char** av)
         auto tmp = h5load(h5, "sd_conc", at * n["outfreq"]);
         plot(gp, tmp);
       }   
-
-      else assert(false);
     } // var loop
   } // time loop
 } // main
