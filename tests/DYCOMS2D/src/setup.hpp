@@ -142,8 +142,8 @@ namespace setup
     sdev_rd1 = real_t(1.2),
     sdev_rd2 = real_t(1.7);
   const quantity<power_typeof_helper<si::length, static_rational<-3>>::type, real_t>
-    n1_stp = real_t(125e6) / si::cubic_metres,
-    n2_stp = real_t(65e6) / si::cubic_metres;
+    n1_stp = real_t(125e6) / si::cubic_metres, // 125 || 31
+    n2_stp = real_t(65e6) / si::cubic_metres;  // 65 || 16
 
   //aerosol lognormal dist. for GCCN from Jorgen Jensen
   const quantity<si::length, real_t>
@@ -155,7 +155,8 @@ namespace setup
 
   //aerosol chemical composition parameters (needed for activation)
   // for lgrngn:
-  const quantity<si::dimensionless, real_t> kappa = .61; // CCN-derived value from Table 1 in Petters and Kreidenweis 2007
+  const quantity<si::dimensionless, real_t> kappa = .61; // ammonium sulphate; CCN-derived value from Table 1 in Petters and Kreidenweis 2007
+  const quantity<si::dimensionless, real_t> kappa_gccn = 1.28; // NaCl; CCN-derived value from Table 1 in Petters and Kreidenweis 2007
   // for blk_2m:
   const quantity<si::dimensionless, real_t> chem_b = .55; //ammonium sulphate //chem_b = 1.33; // sodium chloride
 
@@ -256,8 +257,6 @@ namespace setup
     T funval(const T lnrd) const
     {
       return T((
-          lognormal::n_e(mean_rd1, sdev_rd1, n1_stp, quantity<si::dimensionless, real_t>(lnrd)) +
-          lognormal::n_e(mean_rd2, sdev_rd2, n2_stp, quantity<si::dimensionless, real_t>(lnrd)) +
           lognormal::n_e(mean_rd3, sdev_rd3, n3_stp, quantity<si::dimensionless, real_t>(lnrd)) 
         ) * si::cubic_metres
       );
