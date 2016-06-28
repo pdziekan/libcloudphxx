@@ -34,7 +34,7 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
   clock::time_point tbeg, tend, tbeg1, tend1, tbeg_loop;
   std::chrono::milliseconds tdiag, tupdate, tsync, tasync_wait, tloop, tpost_step_custom, tpost_step_base;
 
-  typename parent_t::arr_t rhod, w_LS, th_init, rv_init, hgt_fctr; // TODO: store them in rt_params, here only reference thread's subarrays; also they are just 1D profiles, no need to store whole 3D arrays
+  typename parent_t::arr_t rhod, w_LS, th_init, rv_init, hgt_fctr_sclr, hgt_fctr_vctr; // TODO: store them in rt_params, here only reference thread's subarrays; also they are just 1D profiles, no need to store whole 3D arrays
   blitz::Array<real_t, 2> k_i; // TODO: make it's size in x direction smaller to match thread's domain
 
   // global arrays, shared among threads, TODO: in fact no need to share them?
@@ -164,7 +164,7 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
 	prtcls->init(
 	  make_arrinfo(this->mem->advectee(ix::th)),
 	  make_arrinfo(this->mem->advectee(ix::rv)),
-	  make_arrinfo(rhod)
+	  make_arrinfo(this->rhod)
 	); 
 
       // open file for output of precitpitation volume
@@ -192,25 +192,25 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
       {
         // kinematic momentum flux = -u_fric^2 * u_i / |U| * exponential decay
         F(i, j, ki) = - pow(setup::u_fric,2) * this->state(vip_ij)(i, j, 0) / sqrt(
-                              pow2(this->state(ix::vip_i)(i, j, 0)) +
-                              pow2(this->state(ix::vip_j)(i, j, 0)))
-                              * hgt_fctr(i, j, ki);
+                              pow2(this->state(ix::vip_i)(i, j, 0))) 
+                              * hgt_fctr_vctr(i, j, ki);
       }
-      // du/dt = divergence of kinematic momentum flux * dt
-      // TODO: single routine to calculate divergences
-      // divergence of th flux, F(j) is upward flux in the middle of the j-th cell
-      blitz::Range notopbot(1, nz-2);
-      this->vip_rhs[d](i, j, notopbot) = ( -F(i, j, notopbot+1) + F(i, j, notopbot-1)) / 2./ this->dk * this->dt;
-      this->vip_rhs[d](i, j, k.last()) = ( -F(i, j, k.last()) + F(i, j, k.last()-1)) / this->dk * this->dt;
-      this->vip_rhs[d](i, j, 0)        = ( -F(i, j, 1) + F(i, j, 0)) / this->dk * this->dt;
+      // du/dt = sum of kinematic momentum fluxes * dt
+      blitz::Range notop(0, nz-2);
+      this->vip_rhs[d](i, j, notop) = ( F(i, j, notop) - F(i, j, notop+1)) / this->dk * this->dt;
+      this->vip_rhs[d](i, j, k.last()) = ( F(i, j, k.last())) / this->dk * this->dt;
+
+      // top and bottom cells are two times lower
+      this->vip_rhs[d](i, j, 0) *= 2; 
+      this->vip_rhs[d](i, j, k.last()) *= 2; 
     }
   }
 
-  void buoyancy(const blitz::Array<real_t, 3> &th);
+  void buoyancy(const blitz::Array<real_t, 3> &th, const blitz::Array<real_t, 3> &rv);
   void radiation(const blitz::Array<real_t, 3> &rv);
   void rv_src();
   void th_src(const blitz::Array<real_t, 3> &rv);
-  void w_src(const blitz::Array<real_t, 3> &th);
+  void w_src(const blitz::Array<real_t, 3> &th, const blitz::Array<real_t, 3> &rv);
   void surf_sens();
   void surf_latent();
   void subsidence(const int&);
@@ -245,7 +245,7 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
         rhs.at(ix::th)(ijk) += alpha(ijk) + beta(ijk) * this->state(ix::th)(ijk); 
 
         // vertical velocity sources
-        w_src(this->state(ix::th));
+        w_src(this->state(ix::th), this->state(ix::rv));
         rhs.at(ix::w)(ijk) += alpha(ijk);
 
         // horizontal velocity sources 
@@ -273,7 +273,9 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
         // vertical velocity sources
         // temporarily use beta to store the th^n+1 estimate
         beta(ijk) = this->state(ix::th)(ijk) + 0.5 * this->dt * rhs.at(ix::th)(ijk);
-        w_src(beta);
+        // temporarily use F to store the rv^n+1 estimate
+        F(ijk) = this->state(ix::rv)(ijk) + 0.5 * this->dt * rhs.at(ix::rv)(ijk);
+        w_src(beta, F);
         rhs.at(ix::w)(ijk) += alpha(ijk);
 
         // horizontal velocity sources 
@@ -336,7 +338,7 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
       prtcls->diag_wet_mom(3);
       auto rl = r_l(blitz::Range(0,nx-1), blitz::Range(0,ny-1), blitz::Range(0,nz-1)); 
       rl = blitz::Array<real_t,3>(prtcls->outbuf(), blitz::shape(nx, ny, nz), blitz::neverDeleteData); // copy in data from outbuf
-      rl = rl * 4./3. * 1000. * 3.14159 * rhod * setup::heating_kappa;
+      rl = rl * 4./3. * 1000. * 3.14159 * this->rhod * setup::heating_kappa;
       {
         using libmpdataxx::arakawa_c::h;
         // temporarily Cx & Cz are multiplied by rhod ...
@@ -360,12 +362,12 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
         // ... and now dividing them by rhod (TODO: z=0 is located at k=1/2)
         {
           blitz::Range all = blitz::Range::all();
-          Cx(blitz::Range(1,nx), all, all)/= rhod;
-          Cy(all, blitz::Range(1,ny), all)/= rhod;
-          Cz(all, all, blitz::Range(1,nz))/= rhod;
-          Cx(0, all, all) /= rhod(0, all, all);
-          Cy(all, 0, all) /= rhod(all, 0, all);
-          Cz(all, all, 0) /= rhod(all, all, 0);
+          Cx(blitz::Range(1,nx), all, all)/= this->rhod;
+          Cy(all, blitz::Range(1,ny), all)/= this->rhod;
+          Cz(all, all, blitz::Range(1,nz))/= this->rhod;
+          Cx(0, all, all) /= this->rhod(0, all, all);
+          Cy(all, 0, all) /= this->rhod(all, 0, all);
+          Cz(all, all, 0) /= this->rhod(all, all, 0);
         }
         // running synchronous stuff
         tbeg = clock::now();
@@ -373,7 +375,7 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
           params.cloudph_opts,
           make_arrinfo(this->mem->advectee(ix::th)),
           make_arrinfo(this->mem->advectee(ix::rv)),
-          make_arrinfo(rhod),
+          make_arrinfo(this->rhod),
           make_arrinfo(Cx), // ix::u ?
           make_arrinfo(Cy), // ix::u ?
           make_arrinfo(Cz) // ix:w ?
@@ -453,6 +455,7 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
     libcloudphxx::lgrngn::opts_t<real_t> cloudph_opts;
     libcloudphxx::lgrngn::opts_init_t<real_t> cloudph_opts_init;
     outmom_t<real_t> out_dry, out_wet;
+    real_t z_rlx_sclr;
     int nt; // number of timesteps
   };
 
@@ -486,30 +489,24 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
     int nx = this->mem->grid_size[0].length();
     int ny = this->mem->grid_size[1].length();
     int nz = this->mem->grid_size[2].length();
-    rhod.resize(nx,ny,nz);
-    th_init.resize(nx,ny,nz);
     w_LS.resize(nx,ny,nz);
-    rv_init.resize(nx,ny,nz);
-    hgt_fctr.resize(nx,ny,nz);
+    hgt_fctr_sclr.resize(nx,ny,nz);
+    hgt_fctr_vctr.resize(nx,ny,nz);
     k_i.resize(nx, ny);
     r_l = 0.;
 
     blitz::thirdIndex k;
-    // prescribed density
-    rhod = setup::rhod_fctr()(k * params.dz);
-
     // prescribed large-scale vertical wind
     w_LS = setup::w_LS_fctr()(k * params.dz);
 
-    // prescribed initial temp profile
-    th_init = setup::th_dry_fctr()(k * params.dz);
-
-    // prescribed initial rv profile
-    rv_init = 0.; // initially the reference state is not known, will be saved after spinup
-
-    // exponential decay with height
-    real_t z_0 = setup::z_rlx / si::metres;
-    hgt_fctr = exp(- k * params.dz / z_0);
+    // exponential decay with height to distribute constant surface fluxes
+    // used to get flux through the bottom of the cell, z=0 at k=1/2
+    real_t z_0 = setup::z_rlx_vctr / si::metres;
+    hgt_fctr_vctr = exp(- (k-0.5) * params.dz / z_0);
+    hgt_fctr_vctr(blitz::Range::all(),0) = 1;
+    z_0 = params.z_rlx_sclr;
+    hgt_fctr_sclr = exp(- (k-0.5) * params.dz / z_0);
+    hgt_fctr_sclr(blitz::Range::all(),0) = 1;
 
     // delaying any initialisation to ante_loop as rank() does not function within ctor! // TODO: not anymore!!!
     // TODO: equip rank() in libmpdata with an assert() checking if not in serial block
