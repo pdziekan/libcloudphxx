@@ -74,7 +74,7 @@ int main(int ac, char** av)
     h5d.read(rhod.data(), H5::PredType::NATIVE_FLOAT, H5::DataSpace(2, ext), h5s);
   }
 
-  for (auto &plt : std::set<std::string>({"00rtot", "rliq", "thl", "wvar", "w3rd", "prflux", "clfrac", "N_c", "buoy_flux"})) // rtot has to be first
+  for (auto &plt : std::set<std::string>({"00rtot", "rliq", "thl", "wvar", "w3rd", "prflux", "clfrac", "N_c"})) // rtot has to be first
   {
     blitz::firstIndex i;
     blitz::secondIndex j;
@@ -103,46 +103,6 @@ int main(int ac, char** av)
           res += snap; 
         }
         gp << "set title 'liquid water r [g/kg] averaged over 2h-6h, w/o rw<0.5um'\n";
-      }
-      if (plt == "buoy_flux")
-      {
-        // buoyancy flux
-        blitz::Array<float, 2> rc(rhod.shape()), rr(rhod.shape()), w(rhod.shape()), th(rhod.shape()),
-                               rv(rhod.shape()), T_v(rhod.shape()), th_v(rhod.shape());
-	// cloud water mixing ratio [kg/kg]
-        {
-          auto tmp = h5load(h5, "rw_rng000_mom3", at * n["outfreq"]) * 4./3 * 3.14 * 1e3;
-          rc = tmp;
-        }
-	// rain water mixing ratio [kg/kg]
-        {
-          auto tmp = h5load(h5, "rw_rng001_mom3", at * n["outfreq"]) * 4./3 * 3.14 * 1e3;
-          rr = tmp;
-        }
-	// vertical velocity
-        {
-          auto tmp = h5load(h5, "w", at * n["outfreq"]);
-          w = tmp;
-        }
-        // potential temperature
-        {
-          auto tmp = h5load(h5, "th", at * n["outfreq"]);
-          th = tmp;
-        }
-        // vapour mixing ratio
-        {
-          auto tmp = h5load(h5, "rv", at * n["outfreq"]);
-          rv= tmp;
-        }
-        // virtual temperature
-        T_v = pow(th * pow(rhod * R_d / (p_1000 * 100), R_d / c_pd), c_pd / (c_pd - R_d));
-        T_v *= 1 + 0.61 * rv - (rc + rr);
-        // virtual potential temp
-        th_v = th * (1 + 0.61 * rv - (rc + rr));
-        
-        //buoy flux = g / T_v * (w * th_v) ;*1e4 to get cm^2
-        res += 9.81 / T_v * (w * th_v) * 1e4;
-        gp << "set title 'buoyancy flux [cm^2 / s^3]'\n";
       }
       else if (plt == "00rtot")
       {
@@ -273,6 +233,7 @@ int main(int ac, char** av)
         res += snap;
         gp << "set title '3rd mom of w [m^3 / s^3]'\n";
       }
+      else assert(false);
     } // time loop
     res /= last_timestep - first_timestep + 1;
     
