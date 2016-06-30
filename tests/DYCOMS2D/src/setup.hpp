@@ -176,7 +176,7 @@ namespace setup
 
   // function expecting a libmpdata++ solver as argument
   template <class concurr_t>
-  void intcond(concurr_t &solver)
+  void intcond(concurr_t &solver, blitz::Array<setup::real_t, 2> &rhod)
   {
     using ix = typename concurr_t::solver_t::ix;
 
@@ -229,7 +229,7 @@ namespace setup
     solver.vab_relaxed_state(1) = 0;
 
     // density profile
-    solver.g_factor() = rhod_fctr()(k * dz); 
+    solver.g_factor() = rhod; 
   }
 
   // lognormal aerosol distribution

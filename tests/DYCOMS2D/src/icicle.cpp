@@ -42,7 +42,7 @@ void run(int nx, int nz, int nt, setup::real_t dt, const std::string &outdir, co
   // global arrays storing env profiles of th and rv (for buoyancy)
   blitz::Array<setup::real_t, 2> th_e(nx, nz), rv_e(nx, nz), th_ref(nx, nz), rhod(nx, nz);
   setup::env_prof(th_e, rv_e, th_ref, rhod, nz);
-  // pass their positions to params
+  // pass them to params
   p.th_e = new blitz::Array<setup::real_t, 2>(th_e.dataFirst(), th_e.shape(), blitz::neverDeleteData);
   p.rv_e = new blitz::Array<setup::real_t, 2>(rv_e.dataFirst(), rv_e.shape(), blitz::neverDeleteData);
   p.th_ref = new blitz::Array<setup::real_t, 2>(th_ref.dataFirst(), th_ref.shape(), blitz::neverDeleteData);
@@ -65,7 +65,7 @@ void run(int nx, int nz, int nt, setup::real_t dt, const std::string &outdir, co
     slv.reset(new concurr_t(p));
 
     // initial condition
-    setup::intcond(*static_cast<concurr_t*>(slv.get()));
+    setup::intcond(*static_cast<concurr_t*>(slv.get()), rhod);
   }
   else
   {
@@ -77,7 +77,7 @@ void run(int nx, int nz, int nt, setup::real_t dt, const std::string &outdir, co
     slv.reset(new concurr_t(p));
 
     // initial condition
-    setup::intcond(*static_cast<concurr_t*>(slv.get()));
+    setup::intcond(*static_cast<concurr_t*>(slv.get()), rhod);
   }
 
 
