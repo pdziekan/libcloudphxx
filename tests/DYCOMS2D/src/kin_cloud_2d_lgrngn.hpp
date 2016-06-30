@@ -399,7 +399,7 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
     {
       for(int z = this->j.first() ; z <= this->j.last(); ++z)
       {
-        this->mem->advectee(ix::th)(x,z) += - tmp1(x,z) * (l_tri<double>() / c_pd<double>() / si::kelvin) *
+        this->mem->advectee(ix::th)(x,z) += - tmp1(x,z) * (l_tri<setup::real_t>() / c_pd<setup::real_t>() / si::kelvin) *
           this->mem->advectee(ix::th)(x,z) / (libcloudphxx::common::theta_dry::T<real_t>(this->state(ix::th)(x, z) * si::kelvins, this->rhod(x, z) * si::kilograms / si::metres  / si::metres / si::metres) / si::kelvins); 
       }
     }

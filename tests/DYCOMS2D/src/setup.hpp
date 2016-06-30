@@ -49,7 +49,6 @@ namespace setup
   const real_t u_fric = 0.25; // m/s, friction velocity
 
   // liquid water potential temperature at height z
-  template <class real_t>
   quantity<si::temperature, real_t> th_l(const real_t &z)
   {
     quantity<si::temperature, real_t> ret;
@@ -265,4 +264,58 @@ namespace setup
     log_dry_radii_gccn *do_clone() const 
     { return new log_dry_radii_gccn( *this ); }
   };
+
+
+  // calculate the initial environmental theta and rv profiles
+  // like in Wojtek's BabyEulag
+  void env_prof(blitz::Array<setup::real_t, 2> &th_e, blitz::Array<setup::real_t, 2> &rv_e, int nz)
+  {
+    using libcloudphxx::common::moist_air::R_d_over_c_pd;
+    using libcloudphxx::common::moist_air::c_pd;
+    using libcloudphxx::common::moist_air::R_d;
+    using libcloudphxx::common::const_cp::l_tri;
+    using libcloudphxx::common::theta_std::p_1000;
+
+    blitz::Range all(blitz::Range::all());
+    // pressure profile
+    blitz::Array<setup::real_t, 1> pre(nz);
+    // temperature profile
+    blitz::Array<setup::real_t, 1> T(nz);
+    setup::real_t dz = (Z / si::metres) / (nz-1);
+
+
+    r_t rt;
+    T(0) = th_l(0.) / si::kelvins *  pow(setup::p_0 / p_1000<setup::real_t>(),  R_d_over_c_pd<setup::real_t>());
+    pre(0) = setup::p_0 / si::pascals;
+    th_e(all, 0) = th_l(0.) / si::kelvins;
+    rv_e(all, 0) = rt(0.);
+
+    setup::real_t tt0 = 273.17;
+    setup::real_t rv = 461;
+    setup::real_t ee0 = 611.;
+    setup::real_t a = R_d<setup::real_t>() / rv / si::joules * si::kelvins * si::kilograms;
+    setup::real_t b = l_tri<setup::real_t>() / si::joules * si::kilograms / rv / tt0;
+    setup::real_t c = l_tri<setup::real_t>() / c_pd<setup::real_t>() / si::kelvins;
+    setup::real_t d = l_tri<setup::real_t>() / si::joules * si::kilograms / rv;
+    setup::real_t f = R_d_over_c_pd<setup::real_t>(); 
+
+    for(int k=1; k<nz; ++k)
+    {
+      setup::real_t bottom = R_d<setup::real_t>() / si::joules * si::kelvins * si::kilograms * T(k-1) * (1 + 0.61 * rv_e(0, k-1));
+      setup::real_t rho1 = pre(k-1) / bottom;
+      pre(k) = pre(k-1) - rho1 * 9.81 * dz;
+      setup::real_t thetme = pow(p_1000<setup::real_t>() / si::pascals / pre(k), f);
+      setup::real_t thi = 1. / (th_l(k * dz) / si::kelvins);
+      setup::real_t y = b * thetme * tt0 * thi; 
+      setup::real_t ees = ee0 * exp(b-y);
+      setup::real_t qvs = a * ees / (pre(k) - ees); 
+      setup::real_t cf1 = thetme*thetme*thi*thi;
+      cf1 *= c * d * pre(k) / (pre(k) - ees);
+      setup::real_t delta = (rt(k*dz) - qvs) / (1 + qvs * cf1);
+      if(delta < 0.) delta = 0.;
+      rv_e(all, k) = rt(k*dz) - delta;
+      th_e(all, k) = th_l(k*dz) / si::kelvins + c * thetme * delta;
+      T(k) = th_e(0, k) * pow(pre(k) / (p_1000<setup::real_t>() / si::pascals),  f);
+    }
+  }
 };

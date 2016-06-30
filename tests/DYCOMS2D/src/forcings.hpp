@@ -39,7 +39,7 @@ void kin_cloud_2d_lgrngn<ct_params_t>::radiation(const blitz::Array<real_t, 2> &
   {
     for(int z = 0 ; z < nz; ++z)
     {
-      double sum = blitz::sum(r_l(x, blitz::Range(z, nz-1)));
+      setup::real_t sum = blitz::sum(r_l(x, blitz::Range(z, nz-1)));
       if(z==0)
         F(x, z) += setup::F_0 * exp(- (nz - z - 1) * this->dj * sum); 
       else
