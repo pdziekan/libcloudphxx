@@ -21,7 +21,7 @@ class kin_cloud_2d_common : public
   // relaxation stuff
   bool relax_th_rv;
   blitz::Array<typename ct_params_t::real_t, 2> &th_eq, &rv_eq;
-  blitz::Array<typename ct_params_t::real_t, 2> th_ref, rhod;
+  blitz::Array<typename ct_params_t::real_t, 2> &th_ref, &rhod;
   
   // spinup stuff
   virtual bool get_rain() = 0;
@@ -171,7 +171,7 @@ class kin_cloud_2d_common : public
     typename ct_params_t::real_t dx = 0, dz = 0;
     int spinup = 0; // number of timesteps during which autoconversion is to be turned off
     bool relax_th_rv = true;
-    typename parent_t::arr_t *th_e, *rv_e;
+    typename parent_t::arr_t *th_e, *rv_e, *th_ref, *rhod;
   };
 
   // ctor
@@ -186,14 +186,10 @@ class kin_cloud_2d_common : public
     relax_th_rv(p.relax_th_rv),
     th_eq(*p.th_e),
     rv_eq(*p.rv_e),
-    th_ref(this->mem->grid_size[0].length(),
-          this->mem->grid_size[1].length()),
-    rhod(this->mem->grid_size[0].length(),
-         this->mem->grid_size[1].length())
+    th_ref(*p.th_ref),
+    rhod(*p.rhod)
   {
     assert(dx != 0);
     assert(dz != 0);
-    std::cout << th_eq;
-    std::cout << rv_eq;
   }  
 };

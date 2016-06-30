@@ -268,7 +268,7 @@ namespace setup
 
   // calculate the initial environmental theta and rv profiles
   // like in Wojtek's BabyEulag
-  void env_prof(blitz::Array<setup::real_t, 2> &th_e, blitz::Array<setup::real_t, 2> &rv_e, int nz)
+  void env_prof(blitz::Array<setup::real_t, 2> &th_e, blitz::Array<setup::real_t, 2> &rv_e, blitz::Array<setup::real_t, 2> &th_ref, blitz::Array<setup::real_t, 2> &rhod, int nz)
   {
     using libcloudphxx::common::moist_air::R_d_over_c_pd;
     using libcloudphxx::common::moist_air::c_pd;
@@ -317,5 +317,29 @@ namespace setup
       th_e(all, k) = th_l(k*dz) / si::kelvins + c * thetme * delta;
       T(k) = th_e(0, k) * pow(pre(k) / (p_1000<setup::real_t>() / si::pascals),  f);
     }
+
+    // compute reference state theta and rhod
+    blitz::secondIndex k;
+    // calculate average stability
+    blitz::Range notopbot(1, nz-2);
+    blitz::Array<setup::real_t, 1> st(nz);
+    st=0;
+    st(notopbot) = (th_e(0, notopbot+1) - th_e(0, notopbot-1)) / th_e(0, notopbot);
+    setup::real_t st_avg = blitz::sum(st) / (nz-2) / (2.*dz);
+    // reference theta
+    th_ref = th_e(0,0) * exp(st_avg * k * dz);
+    // virtual temp at surface
+    using libcloudphxx::common::moist_air::R_d_over_c_pd;
+    using libcloudphxx::common::moist_air::c_pd;
+    using libcloudphxx::common::moist_air::R_d;
+    using libcloudphxx::common::theta_std::p_1000;
+
+    setup::real_t T_surf = th_e(0, 0) *  pow(setup::p_0 / p_1000<setup::real_t>(),  R_d_over_c_pd<setup::real_t>());
+    setup::real_t T_virt_surf = T_surf * (1. + 0.608 * rv_e(0, 0));
+    setup::real_t rho_surf = (setup::p_0 / si::pascals) / T_virt_surf / 287. ; // TODO: R_d instead of 287
+    setup::real_t cs = 9.81 / (c_pd<setup::real_t>() / si::joules * si::kilograms * si::kelvins) / st_avg / T_surf;
+    // rhod profile
+    rhod = rho_surf * exp(- st_avg * k * dz) * pow(
+             1. - cs * (1 - exp(- st_avg * k * dz)), (1. / R_d_over_c_pd<setup::real_t>()) - 1);
   }
 };
