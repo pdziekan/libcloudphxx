@@ -40,6 +40,16 @@ void run(int nx, int ny, int nz, int nt, setup::real_t dt, const std::string &ou
   //std::cout << "params.rhod po setopts micro " << p.rhod << " "  << *p.rhod << std::endl;
   setup::setopts(p, nx, ny, nz);
 
+  // global arrays storing env profiles of th and rv (for buoyancy)
+  blitz::Array<setup::real_t, 3> th_e(nx, ny, nz), rv_e(nx, ny, nz), th_ref(nx, ny, nz), rhod(nx, ny, nz);
+  setup::env_prof(th_e, rv_e, th_ref, rhod, nz);
+  // pass them to params
+  p.th_e = new blitz::Array<setup::real_t, 3>(th_e.dataFirst(), th_e.shape(), blitz::neverDeleteData);
+  p.rv_e = new blitz::Array<setup::real_t, 3>(rv_e.dataFirst(), rv_e.shape(), blitz::neverDeleteData);
+  p.th_ref = new blitz::Array<setup::real_t, 3>(th_ref.dataFirst(), th_ref.shape(), blitz::neverDeleteDa
+a);
+  p.rhod = new blitz::Array<setup::real_t, 3>(rhod.dataFirst(), rhod.shape(), blitz::neverDeleteData);
+
   // solver instantiation
   std::unique_ptr<
     concurr::any<
@@ -58,7 +68,7 @@ void run(int nx, int ny, int nz, int nt, setup::real_t dt, const std::string &ou
     slv.reset(new concurr_t(p));
 
     // initial condition
-    setup::intcond(*static_cast<concurr_t*>(slv.get()));
+    setup::intcond(*static_cast<concurr_t*>(slv.get()), rhod);
   }
   else
   {
@@ -71,7 +81,7 @@ void run(int nx, int ny, int nz, int nt, setup::real_t dt, const std::string &ou
     slv.reset(new concurr_t(p));
 
     // initial condition
-    setup::intcond(*static_cast<concurr_t*>(slv.get()));
+    setup::intcond(*static_cast<concurr_t*>(slv.get()), rhod);
   }
 
 

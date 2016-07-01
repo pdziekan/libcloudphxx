@@ -435,12 +435,12 @@ class kin_cloud_3d_lgrngn : public kin_cloud_3d_common<ct_params_t>
         tloop = std::chrono::duration_cast<std::chrono::milliseconds>( tend - tbeg_loop );
         std::cout <<  "wall time in milliseconds: " << std::endl
           << "loop: " << tloop.count() << std::endl
-          << "update: " << tupdate.count() << " ("<< double(tupdate.count())/tloop.count()*100 <<"%)" << std::endl
-          << "custom_post_step: " << tpost_step_custom.count() << " ("<< double(tpost_step_custom.count())/tloop.count()*100 <<"%)" << std::endl
-          << "base_post_step: " << tpost_step_base.count() << " ("<< double(tpost_step_base.count())/tloop.count()*100 <<"%)" << std::endl
-          << "diag: " << tdiag.count() << " ("<< double(tdiag.count())/tloop.count()*100 <<"%)" << std::endl
-          << "sync: " << tsync.count() << " ("<< double(tsync.count())/tloop.count()*100 <<"%)" << std::endl
-          << "async_wait: " << tasync_wait.count() << " ("<< double(tasync_wait.count())/tloop.count()*100 <<"%)" << std::endl;
+          << "update: " << tupdate.count() << " ("<< setup::real_t(tupdate.count())/tloop.count()*100 <<"%)" << std::endl
+          << "custom_post_step: " << tpost_step_custom.count() << " ("<< setup::real_t(tpost_step_custom.count())/tloop.count()*100 <<"%)" << std::endl
+          << "base_post_step: " << tpost_step_base.count() << " ("<< setup::real_t(tpost_step_base.count())/tloop.count()*100 <<"%)" << std::endl
+          << "diag: " << tdiag.count() << " ("<< setup::real_t(tdiag.count())/tloop.count()*100 <<"%)" << std::endl
+          << "sync: " << tsync.count() << " ("<< setup::real_t(tsync.count())/tloop.count()*100 <<"%)" << std::endl
+          << "async_wait: " << tasync_wait.count() << " ("<< setup::real_t(tasync_wait.count())/tloop.count()*100 <<"%)" << std::endl;
       }
     }
     this->mem->barrier();
