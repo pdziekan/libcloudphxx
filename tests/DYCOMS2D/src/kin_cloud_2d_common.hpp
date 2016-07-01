@@ -20,7 +20,8 @@ class kin_cloud_2d_common : public
 
   // relaxation stuff
   bool relax_th_rv;
-  blitz::Array<typename ct_params_t::real_t, 2> th_eq, rv_eq, th_ref, rhod;
+  blitz::Array<typename ct_params_t::real_t, 2> &th_eq, &rv_eq;
+  blitz::Array<typename ct_params_t::real_t, 2> &th_ref, &rhod;
   
   // spinup stuff
   virtual bool get_rain() = 0;
@@ -38,10 +39,12 @@ class kin_cloud_2d_common : public
     {
       blitz::secondIndex k;
       // initially the enviromental and reference profiles are the initial profiles
+     /*
       rhod = setup::rhod_fctr()(k * dz);
       th_eq = setup::th_dry_fctr()(k * dz);
       th_ref = th_eq;
       rv_eq = setup::r_t()(k * dz);
+*/
 /*
       std::cout << "pre-spinup profiles:" << std::endl;
       std::cout << "rhod: " << rhod;
@@ -86,10 +89,10 @@ class kin_cloud_2d_common : public
       int nz = this->mem->grid_size[1].length();
       // calculate average stability
       blitz::Range notopbot(1, nz-2);
-      blitz::Array<double, 1> st(nz);
+      blitz::Array<setup::real_t, 1> st(nz);
       st=0;
       st(notopbot) = (th_eq(0, notopbot+1) - th_eq(0, notopbot-1)) / th_eq(0, notopbot);
-      double st_avg = blitz::sum(st) / (nz-2) / (2.*dz);
+      setup::real_t st_avg = blitz::sum(st) / (nz-2) / (2.*dz);
       // reference theta
       th_ref = th_eq(0,0) * exp(st_avg * k * dz);
       // virtual temp at surface
@@ -98,13 +101,13 @@ class kin_cloud_2d_common : public
       using libcloudphxx::common::moist_air::R_d;
       using libcloudphxx::common::theta_std::p_1000;
 
-      double T_surf = th_eq(0, 0) *  pow(setup::p_0 / p_1000<double>(),  R_d_over_c_pd<double>());
-      double T_virt_surf = T_surf * (1. + 0.608 * rv_eq(0, 0));
-      double rho_surf = (setup::p_0 / si::pascals) / T_virt_surf / 287. ; // TODO: R_d instead of 287
-      double cs = 9.81 / (c_pd<double>() / si::joules * si::kilograms * si::kelvins) / st_avg / T_surf;
+      setup::real_t T_surf = th_eq(0, 0) *  pow(setup::p_0 / p_1000<setup::real_t>(),  R_d_over_c_pd<setup::real_t>());
+      setup::real_t T_virt_surf = T_surf * (1. + 0.608 * rv_eq(0, 0));
+      setup::real_t rho_surf = (setup::p_0 / si::pascals) / T_virt_surf / 287. ; // TODO: R_d instead of 287
+      setup::real_t cs = 9.81 / (c_pd<setup::real_t>() / si::joules * si::kilograms * si::kelvins) / st_avg / T_surf;
       // rhod profile
       rhod = rho_surf * exp(- st_avg * k * dz) * pow(
-               1. - cs * (1 - exp(- st_avg * k * dz)), (1. / R_d_over_c_pd<double>()) - 1);
+               1. - cs * (1 - exp(- st_avg * k * dz)), (1. / R_d_over_c_pd<setup::real_t>()) - 1);
 */
 //      g_factor() = rhod;
 
@@ -168,6 +171,7 @@ class kin_cloud_2d_common : public
     typename ct_params_t::real_t dx = 0, dz = 0;
     int spinup = 0; // number of timesteps during which autoconversion is to be turned off
     bool relax_th_rv = true;
+    typename parent_t::arr_t *th_e, *rv_e, *th_ref, *rhod;
   };
 
   // ctor
@@ -180,14 +184,10 @@ class kin_cloud_2d_common : public
     dz(p.dz),
     spinup(p.spinup),
     relax_th_rv(p.relax_th_rv),
-    th_eq(this->mem->grid_size[0].length(),
-          this->mem->grid_size[1].length()),
-    th_ref(this->mem->grid_size[0].length(),
-          this->mem->grid_size[1].length()),
-    rv_eq(this->mem->grid_size[0].length(),
-          this->mem->grid_size[1].length()),
-    rhod(this->mem->grid_size[0].length(),
-          this->mem->grid_size[1].length())
+    th_eq(*p.th_e),
+    rv_eq(*p.rv_e),
+    th_ref(*p.th_ref),
+    rhod(*p.rhod)
   {
     assert(dx != 0);
     assert(dz != 0);
