@@ -20,6 +20,13 @@ endforeach()
 #target_link_libraries(plot_lgrngn_spec ${Boost_LIBRARIES})
 #target_include_directories(plot_lgrngn_spec PUBLIC ${Boost_INCLUDE_DIRS})
 
+add_executable(plot_lgrngn_mean_spec plot_lgrngn_mean_spec.cpp)
+#add_test(plot_lgrngn_mean_spec plot_lgrngn_mean_spec ${CMAKE_BINARY_DIR})
+target_link_libraries(plot_lgrngn_mean_spec ${HDF5_LIBRARIES})
+target_include_directories(plot_lgrngn_mean_spec PUBLIC ${HDF5_INCLUDE_DIRS})
+target_link_libraries(plot_lgrngn_mean_spec ${Boost_LIBRARIES})
+target_include_directories(plot_lgrngn_mean_spec PUBLIC ${Boost_INCLUDE_DIRS})
+
 set(OUT_LGRNGN_DIR  ${CMAKE_BINARY_DIR}/tests/fig_a/)
 add_executable(plot_lgrngn_prof plot_lgrngn_prof.cpp)
 add_test(plot_lgrngn_prof plot_lgrngn_prof ${OUT_LGRNGN_DIR})
