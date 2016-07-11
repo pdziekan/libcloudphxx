@@ -25,7 +25,7 @@ int main(int ac, char** av)
 
   // average profile between 2h and 6h (in paper its between 2h and 6h! - do longer sims)
   int first_timestep = 7200. / n["dt"] / n["outfreq"];
-  int last_timestep = 21600. /  n["dt"] / n["outfreq"];
+  int last_timestep = 12000. /  n["dt"] / n["outfreq"];
 
   const double p_1000 = 1000.;
   const double L = 2.5e6;
@@ -37,7 +37,7 @@ int main(int ac, char** av)
 
   Gnuplot gp;
   string file = h5 + "_profiles.svg";
-  init_prof(gp, file, 3, 3, n); 
+  init_prof(gp, file, 4, 3, n); 
 
   string prof_file = h5 + "_profiles.dat";
   std::ofstream oprof_file(prof_file);
@@ -74,7 +74,7 @@ int main(int ac, char** av)
     h5d.read(rhod.data(), H5::PredType::NATIVE_FLOAT, H5::DataSpace(2, ext), h5s);
   }
 
-  for (auto &plt : std::set<std::string>({"00rtot", "rliq", "thl", "wvar", "w3rd", "prflux", "clfrac", "N_c"})) // rtot has to be first
+  for (auto &plt : std::set<std::string>({"00rtot", "rliq", "thl", "wvar", "w3rd", "prflux", "clfrac", "N_c", "act_rd", "gccn_rw"})) // rtot has to be first
   {
     blitz::firstIndex i;
     blitz::secondIndex j;
@@ -103,6 +103,38 @@ int main(int ac, char** av)
           res += snap; 
         }
         gp << "set title 'liquid water r [g/kg] averaged over 2h-6h, w/o rw<0.5um'\n";
+      }
+      if (plt == "gccn_rw")
+      {
+	// gccn (rd>2um) droplets dry radius
+        {
+          auto tmp = h5load(h5, "gccn_rw_mom1", at * n["outfreq"]) * 1e6;
+          blitz::Array<float, 2> snap(tmp);
+          res_tmp = snap; 
+        }
+        {
+          auto tmp = h5load(h5, "gccn_rw_mom0", at * n["outfreq"]);
+          blitz::Array<float, 2> snap(tmp);
+          res_tmp = where(res_tmp > 0 , res_tmp / snap, res_tmp);
+        }
+        res += res_tmp;
+        gp << "set title 'gccn-based droplets mean wet radius'\n";
+      }
+      if (plt == "act_rd")
+      {
+	// activated droplets dry radius
+        {
+          auto tmp = h5load(h5, "act_rd_mom1", at * n["outfreq"]) * 1e6;
+          blitz::Array<float, 2> snap(tmp);
+          res_tmp = snap; 
+        }
+        {
+          auto tmp = h5load(h5, "act_rd_mom0", at * n["outfreq"]);
+          blitz::Array<float, 2> snap(tmp);
+          res_tmp = where(res_tmp > 0 , res_tmp / snap, res_tmp);
+        }
+        res += res_tmp;
+        gp << "set title 'activated droplets mean dry radius'\n";
       }
       else if (plt == "00rtot")
       {
