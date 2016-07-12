@@ -16,7 +16,8 @@ int main(int argc, char* argv[])
   int ctr = 0;
 
   std::string prof_file_name="/out_lgrngn_profiles.dat";
-  std::set<std::string> profs({"00rtot", "rliq", "thl", "wvar", "w3rd", "prflux", "clfrac", "N_c"});
+  std::set<std::string> profs({"00rtot", "rliq", "thl", "wvar", "w3rd", "prflux", "clfrac", "N_c", "act_rd", "gccn_rw", "gccn_rw_down"});
+
   std::vector<Array<double, 1>> sums(profs.size());
 
   Gnuplot gp;
@@ -75,6 +76,12 @@ int main(int argc, char* argv[])
       gp << "set title 'variance of w [m^2 / s^2]'\n";
     else if (plt == "w3rd")
       gp << "set title '3rd mom of w [m^3 / s^3]'\n";
+    else if (plt == "act_rd")
+      gp << "set title 'activated droplets mean dry radius [um]'\n";
+    else if (plt == "gccn_rw")
+      gp << "set title 'GCCN-based droplets mean wet radius [um]'\n";
+    else if (plt == "gccn_rw_down")
+      gp << "set title 'GCCN-based droplets mean wet radius [um] in downdraught regions'\n";
     sums.at(i) /= ctr;
 
     gp << "plot '-' with line lw 3";
