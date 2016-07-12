@@ -12,6 +12,12 @@ double iscloudy(double x)
 }
 BZ_DECLARE_FUNCTION(iscloudy)
 
+double isdowndraught(double x)
+{
+  return x < -0.2 ? 1. : 0.;
+}
+BZ_DECLARE_FUNCTION(isdowndraught)
+
 int main(int ac, char** av)
 {
   if (ac != 2) error_macro("expecting 1 argument: dir containing out_lgrngn")
@@ -74,7 +80,7 @@ int main(int ac, char** av)
     h5d.read(rhod.data(), H5::PredType::NATIVE_FLOAT, H5::DataSpace(2, ext), h5s);
   }
 
-  for (auto &plt : std::set<std::string>({"00rtot", "rliq", "thl", "wvar", "w3rd", "prflux", "clfrac", "N_c", "act_rd", "gccn_rw"})) // rtot has to be first
+  for (auto &plt : std::set<std::string>({"00rtot", "rliq", "thl", "wvar", "w3rd", "prflux", "clfrac", "N_c", "act_rd", "gccn_rw", "gccn_rw_down"})) // rtot has to be first
   {
     blitz::firstIndex i;
     blitz::secondIndex j;
@@ -85,6 +91,7 @@ int main(int ac, char** av)
     blitz::Array<float, 1> res_pos(n["z"]);
     blitz::Range all = blitz::Range::all();
     res = 0;
+    res_prof = 0;
 
     for (int at = first_timestep; at <= last_timestep; ++at) // TODO: mark what time does it actually mean!
     {
@@ -119,6 +126,30 @@ int main(int ac, char** av)
         }
         res += res_tmp;
         gp << "set title 'gccn-based droplets mean wet radius'\n";
+      }
+      if (plt == "gccn_rw_down")
+      {
+	// gccn (rd>2um) droplets dry radius in downdraughts
+        {
+          auto tmp = h5load(h5, "gccn_rw_mom1", at * n["outfreq"]) * 1e6;
+          blitz::Array<float, 2> snap(tmp);
+          res_tmp = snap; 
+        }
+        {
+          auto tmp = h5load(h5, "gccn_rw_mom0", at * n["outfreq"]);
+          blitz::Array<float, 2> snap(tmp);
+          res_tmp = where(res_tmp > 0 , res_tmp / snap, res_tmp);
+        }
+        {
+          auto tmp = h5load(h5, "w", at * n["outfreq"]);
+          blitz::Array<float, 2> snap(tmp);
+          res_tmp2 = isdowndraught(snap);
+          res_tmp *= res_tmp2;
+        }
+        // mean only over downdraught cells
+        res_pos = blitz::sum(res_tmp2(j, i), j);
+        res_prof += where(res_pos > 0 , blitz::sum(res_tmp(j, i), j) / res_pos, 0);
+        gp << "set title 'gccn-based droplets mean wet radius (downdraughts only)'\n";
       }
       if (plt == "act_rd")
       {
@@ -265,14 +296,17 @@ int main(int ac, char** av)
         res += snap;
         gp << "set title '3rd mom of w [m^3 / s^3]'\n";
       }
-      else assert(false);
+//      else assert(false);
     } // time loop
     res /= last_timestep - first_timestep + 1;
     
     z_i = (double(k_i)-0.5) / (last_timestep - first_timestep + 1) * n["dz"];
     std::cout << "average inversion height " << z_i;
     res_pos = (i-0.5) * n["dz"] / z_i; 
-    res_prof = blitz::mean(res(j, i), j); // average in x
+    if (plt == "gccn_rw_down")
+      res_prof /= last_timestep - first_timestep + 1;
+    else
+      res_prof = blitz::mean(res(j, i), j); // average in x
 
     gp << "plot '-' with line\n";
     gp.send1d(boost::make_tuple(res_prof, res_pos));
