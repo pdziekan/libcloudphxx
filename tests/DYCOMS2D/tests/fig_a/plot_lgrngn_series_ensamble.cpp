@@ -21,10 +21,12 @@ int main(int argc, char* argv[])
   Gnuplot gp;
   std::string file = argv[1] + std::string("/out_lgrngn_mean_series.svg");
   auto n = h5n(argv[1] + std::string("out_lgrngn"));
-  init_prof(gp, file, 3, 3, n);
+  init_prof(gp, file, 3, 3);
   blitz::Array<float, 1> res_pos(n["t"]);
   blitz::firstIndex fi;
   res_pos = fi * n["outfreq"] * n["dt"] / 3600.;
+
+  ofstream oprof_file("out_lgrngn_mean_series.dat");
 
   for(int i=1; i<argc; ++i)
   {
@@ -81,6 +83,7 @@ int main(int argc, char* argv[])
 
     std::cout << plt << " " << res_pos << sums.at(i) << std::endl;
 
+    oprof_file << sums.at(i);
 
     gp << "plot '-' with line lw 3";
     for(int j=1; j<argc; ++j)

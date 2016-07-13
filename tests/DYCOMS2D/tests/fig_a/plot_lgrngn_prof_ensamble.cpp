@@ -23,9 +23,11 @@ int main(int argc, char* argv[])
   Gnuplot gp;
   std::string file = argv[1] + std::string("/out_lgrngn_mean_profiles.svg");
   auto n = h5n(argv[1] + std::string("out_lgrngn"));
-  init_prof(gp, file, 3, 3, n);
+  init_prof(gp, file, 3, 3);
   blitz::Array<float, 1> res_pos(n["z"]);
   blitz::firstIndex fi;
+
+  ofstream oprof_file("out_lgrngn_mean_profiles.dat");
 
   for(int i=1; i<argc; ++i)
   {
@@ -84,6 +86,8 @@ int main(int argc, char* argv[])
       gp << "set title 'GCCN-based droplets mean wet radius [um] in downdraught regions'\n";
     sums.at(i) /= ctr;
 
+    oprof_file << sums.at(i);
+
     gp << "plot '-' with line lw 3";
     for(int j=1; j<argc; ++j)
       gp << ", '-' with line";
@@ -99,7 +103,5 @@ int main(int argc, char* argv[])
     }
     ++i;
   }
-
-
-
+  oprof_file << mean_z_i;
 }

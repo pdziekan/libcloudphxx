@@ -49,6 +49,13 @@ target_include_directories(plot_lgrngn_prof_ensamble PUBLIC ${HDF5_INCLUDE_DIRS}
 target_link_libraries(plot_lgrngn_prof_ensamble ${Boost_LIBRARIES})
 target_include_directories(plot_lgrngn_prof_ensamble PUBLIC ${Boost_INCLUDE_DIRS})
 
+add_executable(plot_lgrngn_prof_ensamble_compare plot_lgrngn_prof_ensamble_compare.cpp)
+add_test(plot_lgrngn_prof_ensamble_compare plot_lgrngn_prof_ensamble_compare ${OUT_LGRNGN_DIR})
+target_link_libraries(plot_lgrngn_prof_ensamble_compare ${HDF5_LIBRARIES})
+target_include_directories(plot_lgrngn_prof_ensamble_compare PUBLIC ${HDF5_INCLUDE_DIRS})
+target_link_libraries(plot_lgrngn_prof_ensamble_compare ${Boost_LIBRARIES})
+target_include_directories(plot_lgrngn_prof_ensamble_compare PUBLIC ${Boost_INCLUDE_DIRS})
+
 add_executable(plot_lgrngn_series_ensamble plot_lgrngn_series_ensamble.cpp)
 add_test(plot_lgrngn_series_ensamble plot_lgrngn_series_ensamble ${OUT_LGRNGN_DIR})
 target_link_libraries(plot_lgrngn_series_ensamble ${HDF5_LIBRARIES})

@@ -43,7 +43,7 @@ int main(int ac, char** av)
 
   Gnuplot gp;
   string file = h5 + "_profiles.svg";
-  init_prof(gp, file, 4, 3, n); 
+  init_prof(gp, file, 4, 3); 
 
   string prof_file = h5 + "_profiles.dat";
   std::ofstream oprof_file(prof_file);

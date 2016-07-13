@@ -27,7 +27,7 @@ int main(int ac, char** av)
 
   Gnuplot gp;
   string file = h5 + "_series.svg";
-  init_prof(gp, file, 3, 3, n); 
+  init_prof(gp, file, 3, 3); 
 
   string prof_file = h5 + "_series.dat";
   std::ofstream oprof_file(prof_file);
