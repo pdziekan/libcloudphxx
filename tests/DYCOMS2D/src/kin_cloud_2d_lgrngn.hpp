@@ -28,6 +28,8 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
   real_t prec_vol;
   std::ofstream f_prec;
 
+  bool coal, sedi;
+
   typename parent_t::arr_t w_LS, hgt_fctr_sclr, hgt_fctr_vctr; // TODO: store them in rt_params, here only reference thread's subarrays; also they are just 1D profiles, no need to store whole 3D arrays
 
   blitz::Array<real_t, 1> k_i; // TODO: make it's size in x direction smaller to match thread's domain
@@ -135,14 +137,17 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
   bool get_rain() { return params.cloudph_opts.coal && params.cloudph_opts.sedi; }
   void set_rain(bool val) 
   { 
-    params.cloudph_opts.coal = val;
-    params.cloudph_opts.sedi = val; 
+    params.cloudph_opts.coal = val ? coal : false;
+    params.cloudph_opts.sedi = val ? sedi : false; 
     params.cloudph_opts.RH_max = val ? 44 : 1.01; // 0.5% limit during spinup // TODO: specify it somewhere else, dup in blk_2m
   };
 
   // deals with initial supersaturation
   void hook_ante_loop(int nt)
   {
+    coal = params.cloudph_opts.coal;
+    sedi = params.cloudph_opts.sedi;
+
     parent_t::hook_ante_loop(nt); 
 
     // TODO: barrier?
