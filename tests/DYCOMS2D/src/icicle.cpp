@@ -21,7 +21,7 @@
 
 // model run logic - the same for any microphysics
 template <class solver_t>
-void run(int nx, int nz, int nt, setup::real_t dt, const std::string &outdir, const int &outfreq, int spinup, bool serial, bool relax_th_rv, bool gccn, bool onishi, setup::real_t eps, setup::real_t ReL, setup::real_t z_rlx_sclr)
+void run(int nx, int nz, int nt, setup::real_t dt, const std::string &outdir, const int &outfreq, int spinup, bool serial, bool relax_th_rv, bool gccn, bool onishi, bool pristine, setup::real_t eps, setup::real_t ReL, setup::real_t z_rlx_sclr)
 {
   // instantiation of structure containing simulation parameters
   typename solver_t::rt_params_t p;
@@ -35,7 +35,7 @@ void run(int nx, int nz, int nt, setup::real_t dt, const std::string &outdir, co
   p.prs_tol=1e-6;
   p.dt = dt;
   p.z_rlx_sclr = z_rlx_sclr;
-  setopts_micro<solver_t>(p, nx, nz, nt, gccn, onishi, eps, ReL);
+  setopts_micro<solver_t>(p, nx, nz, nt, gccn, onishi, pristine, eps, ReL);
   //std::cout << "params.rhod po setopts micro " << p.rhod << " "  << *p.rhod << std::endl;
   setup::setopts(p, nx, nz);
 
@@ -125,6 +125,7 @@ int main(int argc, char** argv)
       ("relax_th_rv", po::value<bool>()->default_value(true) , "relaxation of th and rv")
       ("gccn", po::value<bool>()->default_value(false) , "add GCCNs")
       ("onishi", po::value<bool>()->default_value(false) , "use the turbulent onishi kernel")
+      ("pristine", po::value<bool>()->default_value(false) , "pristine conditions")
       ("eps", po::value<setup::real_t>()->default_value(0.01) , "turb dissip rate (for onishi kernel) [m^2/s^3]")
       ("ReL", po::value<setup::real_t>()->default_value(5000) , "taylor-microscale reynolds number (onishi kernel)")
       ("help", "produce a help message (see also --micro X --help)")
@@ -175,6 +176,9 @@ int main(int argc, char** argv)
     // handling GCCN flag
     bool gccn = vm["gccn"].as<bool>();
 
+    // handling pristine flag
+    bool pristine = vm["pristine"].as<bool>();
+
     // handling onishi flag
     bool onishi = vm["onishi"].as<bool>();
    
@@ -197,7 +201,7 @@ int main(int argc, char** argv)
           vip_i=u, vip_j=w, vip_den=-1
         }; };
       };
-      run<kin_cloud_2d_lgrngn<ct_params_t>>(nx, nz, nt, dt, outdir, outfreq, spinup, adv_serial, relax_th_rv, gccn, onishi, eps, ReL, z_rlx_sclr);
+      run<kin_cloud_2d_lgrngn<ct_params_t>>(nx, nz, nt, dt, outdir, outfreq, spinup, adv_serial, relax_th_rv, gccn, onishi, pristine, eps, ReL, z_rlx_sclr);
     }
     else throw
       po::validation_error(
