@@ -86,47 +86,24 @@ namespace libcloudphxx
 
       // condensation/evaporation 
       if (opts.cond) 
-      { // cond/evap
-        for (int step = 0; step < pimpl->opts_init.sstp_cond; ++step) 
-        {   
-          pimpl->sstp_step(step, !rhod.is_null());
-          pimpl->hskpng_Tpr(); 
-          pimpl->cond(pimpl->opts_init.dt / pimpl->opts_init.sstp_cond, opts.RH_max);
-        }
-      }
-
-      // chemistry
-      if (opts.chem_dsl or opts.chem_dsc or opts.chem_rct) 
       {
-        for (int step = 0; step < pimpl->opts_init.sstp_chem; ++step) 
-        {   
-          // set flag for those SD that are big enough to have chemical reactions
-          pimpl->chem_flag_ante();
-
-          // calculate new volume of droplets (needed for chemistry)
-          pimpl->chem_vol_ante();
-
-          if (opts.chem_dsl)
-          {
-            //adjust trace gases to substepping
-            pimpl->sstp_step_chem(step, !rhod.is_null());
-
-            //dissolving trace gases (Henrys law)
-            pimpl->chem_henry(pimpl->opts_init.dt / pimpl->opts_init.sstp_chem);
-
-            //cleanup - TODO think of something better
-            pimpl->chem_cleanup();
-          }
-              
-          if (opts.chem_dsc)
-          { //dissociation
-            pimpl->chem_dissoc();
-          }
-            
-          if (opts.chem_rct)
-          { //oxidation 
-            pimpl->chem_react(pimpl->opts_init.dt / pimpl->opts_init.sstp_chem);
-          }
+        if(pimpl->opts_init.sstp_cond > 1)
+        // apply substeps per-particle logic
+        {
+          for (int step = 0; step < pimpl->opts_init.sstp_cond; ++step) 
+          {   
+            pimpl->sstp_step(step, !rhod.is_null());
+            pimpl->cond_sstp(pimpl->opts_init.dt / pimpl->opts_init.sstp_cond, opts.RH_max); 
+          } 
+          // copy sstp_tmp_rv and th to rv and th
+          pimpl->update_state(pimpl->rv, pimpl->sstp_tmp_rv);
+          pimpl->update_state(pimpl->th, pimpl->sstp_tmp_th);
+        }
+        else
+        // no substeps
+        {
+          pimpl->hskpng_Tpr();
+          pimpl->cond(pimpl->opts_init.dt / pimpl->opts_init.sstp_cond, opts.RH_max); 
         }
       }
 

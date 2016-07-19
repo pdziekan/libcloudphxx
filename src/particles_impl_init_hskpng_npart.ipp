@@ -54,6 +54,27 @@ namespace libcloudphxx
       {
         tmp_device_real_part_chem.reserve(opts_init.n_sd_max); 
       }
+
+      if(opts_init.chem_switch || opts_init.sstp_cond > 1)
+      {
+        tmp_device_real_part1.reserve(opts_init.n_sd_max); 
+        tmp_device_real_part2.reserve(opts_init.n_sd_max); 
+        tmp_device_real_part3.reserve(opts_init.n_sd_max); 
+        tmp_device_real_part4.reserve(opts_init.n_sd_max);  
+      }
+
+      if(opts_init.sstp_cond>1)
+      {
+        sstp_tmp_rv.resize(opts_init.n_sd_max);
+        sstp_tmp_th.resize(opts_init.n_sd_max);
+        sstp_tmp_rh.resize(opts_init.n_sd_max);
+      }
+
+      if(opts_init.chem_switch)
+      {
+        V_old.reserve(opts_init.n_sd_max);
+        tmp_device_real_part5.reserve(opts_init.n_sd_max);  
+      }
     }
   };
 };
