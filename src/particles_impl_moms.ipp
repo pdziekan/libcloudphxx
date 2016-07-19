@@ -150,7 +150,8 @@ namespace libcloudphxx
     template <typename real_t, backend_t device>
     void particles_t<real_t, device>::impl::moms_calc(
       const typename thrust_device::vector<real_t>::iterator &vec_bgn,
-      const real_t power
+      const real_t power,
+      const bool specific = true
     )
     {
       assert(selected_before_counting);
@@ -187,28 +188,31 @@ namespace libcloudphxx
       count_n = n.first - count_ijk.begin();
       assert(count_n > 0 && count_n <= n_cell);
 
-      // dividing by dv
-      thrust::transform(
-        count_mom.begin(), count_mom.begin() + count_n,     // input - first arg
-        thrust::make_permutation_iterator(                  // input - second arg
-          dv.begin(),
-          count_ijk.begin()
-        ),
-        count_mom.begin(),                                  // output (in place)
-        thrust::divides<real_t>()
-      );
+      if(specific)
+      {
+        // dividing by dv
+        thrust::transform(
+          count_mom.begin(), count_mom.begin() + count_n,     // input - first arg
+          thrust::make_permutation_iterator(                  // input - second arg
+            dv.begin(),
+            count_ijk.begin()
+          ),
+          count_mom.begin(),                                  // output (in place)
+          thrust::divides<real_t>()
+        );
 
-      // dividing by rhod to get specific moments
-      // (for compatibility with blk_1m and blk_2m reporting mixing ratios)
-      thrust::transform(
-        count_mom.begin(), count_mom.begin() + count_n,     // input - first arg
-        thrust::make_permutation_iterator(                  // input - second arg
-          rhod.begin(),
-          count_ijk.begin()
-        ),
-        count_mom.begin(),                                  // output (in place)
-        thrust::divides<real_t>()
-      );
+        // dividing by rhod to get specific moments
+        // (for compatibility with blk_1m and blk_2m reporting mixing ratios)
+        thrust::transform(
+          count_mom.begin(), count_mom.begin() + count_n,     // input - first arg
+          thrust::make_permutation_iterator(                  // input - second arg
+            rhod.begin(),
+            count_ijk.begin()
+          ),
+          count_mom.begin(),                                  // output (in place)
+          thrust::divides<real_t>()
+        );
+      }
     }
   };  
 };

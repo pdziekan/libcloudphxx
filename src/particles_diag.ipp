@@ -69,6 +69,19 @@ namespace libcloudphxx
       };
     }
 
+    // records relative humidity
+    template <typename real_t, backend_t device>
+    void particles_t<real_t, device>::diag_RH()
+    {
+      pimpl->hskpng_Tpr(); 
+
+      thrust::copy(
+        pimpl->RH.begin(), 
+        pimpl->RH.end(), 
+        pimpl->count_mom.begin()
+      );
+    }
+
     // records super-droplet concentration per grid cell
     template <typename real_t, backend_t device>
     void particles_t<real_t, device>::diag_sd_conc()
@@ -199,7 +212,8 @@ namespace libcloudphxx
         detail::precip_rate<real_t>()
       );  
 
-      pimpl->moms_calc_cond(pimpl->vt.begin(), 1.);
+      pimpl->moms_all();
+      pimpl->moms_calc(pimpl->vt.begin(), 1., false);
  
       // copy back stored vterm
       thrust::copy(tmp_vt.begin(), tmp_vt.end(), pimpl->vt.begin());
