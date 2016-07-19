@@ -49,7 +49,6 @@ namespace libcloudphxx
 
       if(opts_init.chem_switch)
       {
-        V_old.resize(n_part);
         tmp_device_real_part5.resize(n_part); 
       }
     }

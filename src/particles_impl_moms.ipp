@@ -151,7 +151,7 @@ namespace libcloudphxx
     void particles_t<real_t, device>::impl::moms_calc(
       const typename thrust_device::vector<real_t>::iterator &vec_bgn,
       const real_t power,
-      const bool specific = true
+      const bool specific
     )
     {
       assert(selected_before_counting);

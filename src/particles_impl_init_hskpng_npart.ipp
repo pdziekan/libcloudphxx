@@ -50,10 +50,6 @@ namespace libcloudphxx
         in_real_bfr.resize(7 * opts_init.n_sd_max / opts_init.nx / fraction);     // for rd3 rw2 kpa vt x y z
         out_real_bfr.resize(7 * opts_init.n_sd_max / opts_init.nx / fraction);
       }
-      if(opts_init.chem_switch)
-      {
-        tmp_device_real_part_chem.reserve(opts_init.n_sd_max); 
-      }
 
       if(opts_init.chem_switch || opts_init.sstp_cond > 1)
       {
@@ -72,7 +68,6 @@ namespace libcloudphxx
 
       if(opts_init.chem_switch)
       {
-        V_old.reserve(opts_init.n_sd_max);
         tmp_device_real_part5.reserve(opts_init.n_sd_max);  
       }
     }

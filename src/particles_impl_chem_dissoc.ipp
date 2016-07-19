@@ -149,59 +149,6 @@ namespace libcloudphxx
 
       if (opts_init.chem_switch == false) throw std::runtime_error("all chemistry was switched off");
 
-      // equilibrium stuff: dissociation
- 
-      // save number of moles of dissolving chem species
-      // could be avoided if we could have more than 10 elements in a tuple...
-      // TODO - add thrust tuple for 12 arguments https://github.com/thrust/thrust
-      thrust_device::vector<real_t> &n_SO2_old(tmp_device_real_part2);
-      thrust_device::vector<real_t> &n_CO2_old(tmp_device_real_part3);
-      thrust_device::vector<real_t> &n_HNO3_old(tmp_device_real_part4);
-      thrust_device::vector<real_t> &n_NH3_old(tmp_device_real_part5);
-
-      typedef thrust::zip_iterator<
-        thrust::tuple<
-          typename thrust_device::vector<real_t>::const_iterator, // SO2   CO2
-          typename thrust_device::vector<real_t>::const_iterator, // HSO3  HCO3
-          typename thrust_device::vector<real_t>::const_iterator  // SO3   CO3
-        >
-      > zip_it_t_3;
-
-      thrust::transform(
-        zip_it_t_3(thrust::make_tuple(chem_bgn[SO2], chem_bgn[HSO3], chem_bgn[SO3])),  //input begin
-        zip_it_t_3(thrust::make_tuple(chem_end[SO2], chem_end[HSO3], chem_end[SO3])),  //input end
-        n_SO2_old.begin(),                                                             //output
-        detail::chem_save_moles_2<real_t>(M_SO2_H2O<real_t>(), M_HSO3<real_t>(), M_SO3<real_t>()) //op
-      );
-
-      thrust::transform(
-        zip_it_t_3(thrust::make_tuple(chem_bgn[CO2], chem_bgn[HCO3], chem_bgn[CO3])),  //input begin
-        zip_it_t_3(thrust::make_tuple(chem_end[CO2], chem_end[HCO3], chem_end[CO3])),  //input end
-        n_CO2_old.begin(),                                                             //output
-        detail::chem_save_moles_2<real_t>(M_CO2_H2O<real_t>(), M_HCO3<real_t>(), M_CO3<real_t>()) //op
-      );
-
-      typedef thrust::zip_iterator<
-        thrust::tuple<
-          typename thrust_device::vector<real_t>::const_iterator, // HNO3  NH3
-          typename thrust_device::vector<real_t>::const_iterator  // NO3   NH4
-        >
-      > zip_it_t_2;
-
-      thrust::transform(
-        zip_it_t_2(thrust::make_tuple(chem_bgn[HNO3], chem_bgn[NO3])),       //input begin
-        zip_it_t_2(thrust::make_tuple(chem_end[HNO3], chem_end[NO3])),       //input end
-        n_HNO3_old.begin(),                                                  //output
-        detail::chem_save_moles_1<real_t>(M_HNO3<real_t>(), M_NO3<real_t>()) //op
-      );
-
-      thrust::transform(
-        zip_it_t_2(thrust::make_tuple(chem_bgn[NH3], chem_bgn[NH4])),           //input begin
-        zip_it_t_2(thrust::make_tuple(chem_end[NH3], chem_end[NH4])),           //input end
-        n_NH3_old.begin(),                                                      //output
-        detail::chem_save_moles_1<real_t>(M_NH3_H2O<real_t>(), M_NH4<real_t>()) //op
-      );
-
       typedef thrust::permutation_iterator<
         typename thrust_device::vector<real_t>::iterator,
         typename thrust_device::vector<thrust_size_t>::iterator
