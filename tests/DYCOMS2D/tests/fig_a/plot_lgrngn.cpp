@@ -20,7 +20,7 @@ int main(int ac, char** av)
 
   for (int at = 0; at < n["t"]; ++at) // TODO: mark what time does it actually mean!
   {
-    for (auto &plt : std::unordered_set<std::string>({"rl", "rr", "nc", "nr", "ef", "na", "th", "rv", "u", "w", "sd_conc", "r_dry"}))
+    for (auto &plt : std::unordered_set<std::string>({"rl", "rr", "nc", "nr", "ef", "na", "th", "rv", "u", "w", "sd_conc", "r_dry", "RH"}))
     {
       std::cout << at * n["outfreq"] << " : " << plt << std::endl;
       Gnuplot gp;
@@ -136,6 +136,13 @@ int main(int ac, char** av)
 	std::string title = "velocity in z [m/s]"; 
 	gp << "set title '" + title + " t = " << std::fixed << std::setprecision(2) << (double(at) * n["outfreq"] * n["dt"] / 60.) << "min'\n";
         auto tmp = h5load(h5, "w", at * n["outfreq"]);
+        plot(gp, tmp);
+      }   
+      else if (plt == "RH")
+      {   
+	std::string title = "relative humidity"; 
+	gp << "set title '" + title + " t = " << std::fixed << std::setprecision(2) << (double(at) * n["outfreq"] * n["dt"] / 60.) << "min'\n";
+        auto tmp = h5load(h5, "RH", at * n["outfreq"]);
         plot(gp, tmp);
       }   
       else if (plt == "sd_conc")
