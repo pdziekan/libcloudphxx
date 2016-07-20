@@ -14,12 +14,15 @@ void init_prof(
   boost::filesystem::create_directories(
     boost::filesystem::path(file).parent_path()
   );
-  gp << "set term svg dynamic enhanced fsize 13 size " << nx * 500 << "," << ny * 500 << "\n";
+  gp << "set term svg dynamic enhanced fsize 16 size " << nx * 500 << "," << ny * 500 << "\n";
   gp << "set size square\n";
   gp << "set output '" << file << "'\n";
   gp << "set grid\n";
   gp << "set multiplot layout " << ny << "," << nx << "\n";
   gp << "set yrange[0:1.2]\n";
+  gp << "set border lw 1.5\n";
+  gp << "set linetype 1 lw 2 lc rgb \"blue\" pointtype 6\n";
+  gp << "set linetype 2 lw 2 lc rgb \"forest-green\" pointtype 8\n";
 }
 
 void init(
