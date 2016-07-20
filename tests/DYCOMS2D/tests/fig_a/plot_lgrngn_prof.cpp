@@ -87,7 +87,7 @@ int main(int ac, char** av)
     h5d.read(rhod.data(), H5::PredType::NATIVE_FLOAT, H5::DataSpace(2, ext), h5s);
   }
 
-  for (auto &plt : std::set<std::string>({"00rtot", "rliq", "thl", "wvar", "w3rd", "prflux", "actrw_rd", "actRH_rd", "clfrac", "N_c", "gccn_rw", "non_gccn_rw", "ugccn_rw_down", "sat_RH"})) // rtot has to be first
+  for (auto &plt : std::set<std::string>({"00rtot", "rliq", "thl", "wvar", "w3rd", "prflux", "act_conc", "clfrac", "N_c", "gccn_rw", "non_gccn_rw", "sat_RH"})) // rtot has to be first
   {
     blitz::firstIndex i;
     blitz::secondIndex j;
@@ -95,10 +95,12 @@ int main(int ac, char** av)
     blitz::Array<float, 2> res_tmp(n["x"], n["z"]);
     blitz::Array<float, 2> res_tmp2(n["x"], n["z"]);
     blitz::Array<float, 1> res_prof(n["z"]);
+    blitz::Array<float, 1> res_prof2(n["z"]);
     blitz::Array<float, 1> res_pos(n["z"]);
     blitz::Range all = blitz::Range::all();
     res = 0;
     res_prof = 0;
+    res_prof2 = 0;
 
     for (int at = first_timestep; at <= last_timestep; ++at) // TODO: mark what time does it actually mean!
     {
@@ -174,21 +176,93 @@ int main(int ac, char** av)
         res_prof += where(res_pos > 0 , blitz::sum(res_tmp(j, i), j) / res_pos, 0);
         gp << "set title 'ultra-gccn-based droplets mean wet radius (downdraughts only)'\n";
       }
-      if (plt == "actRH_rd")
+      if (plt == "act_conc")
       {
-	// activated droplets dry radius
-/*
+        // 0th-mom (concentration) of droplets with RH > Sc
+        {
+          auto tmp = h5load(h5, "actRH_rd_mom0", at * n["outfreq"]);
+          blitz::Array<float, 2> snap(tmp);
+          res_tmp = snap;
+          res_tmp *= rhod / 1e6; // per cm^3
+        }
+        // updraft only
+        {
+          auto tmp = h5load(h5, "w", at * n["outfreq"]);
+          blitz::Array<float, 2> snap(tmp);
+          res_tmp2 = isupdraught(snap);
+          res_tmp *= res_tmp2;
+        }
+        // mean only over updraught cells
+        res_pos = blitz::sum(res_tmp2(j, i), j);
+        res_prof += where(res_pos > 0 , blitz::sum(res_tmp(j, i), j) / res_pos, 0);
+
+        // 0th-mom of droplets with rw>rc
+        {
+          auto tmp = h5load(h5, "actrw_rd_mom0", at * n["outfreq"]);
+          blitz::Array<float, 2> snap(tmp);
+          res_tmp = snap;
+          res_tmp *= rhod / 1e6; // per cm^3
+        }
+        // updraft only
+        res_tmp *= res_tmp2;
+        res_prof2 += where(res_pos > 0 , blitz::sum(res_tmp(j, i), j) / res_pos, 0);
+        gp << "set title 'activated droplets concentation [1/cm^3] (updrafts)'\n";
+      }
+      if (plt == "act_rd")
+      {
+	// RH > Sc droplets first dry mom
         {
           auto tmp = h5load(h5, "actRH_rd_mom1", at * n["outfreq"]) * 1e6;
           blitz::Array<float, 2> snap(tmp);
           res_tmp = snap; 
         }
-*/
+        // divide by 0th-mom (number of droplets)
         {
           auto tmp = h5load(h5, "actRH_rd_mom0", at * n["outfreq"]);
           blitz::Array<float, 2> snap(tmp);
+          res_tmp = where(snap > 0 , res_tmp / snap, res_tmp);
+        }
+        // updraft only
+        {
+          auto tmp = h5load(h5, "w", at * n["outfreq"]);
+          blitz::Array<float, 2> snap(tmp);
+          res_tmp2 = isupdraught(snap);
+          res_tmp *= res_tmp2;
+        }
+        // mean only over updraught cells
+        res_pos = blitz::sum(res_tmp2(j, i), j);
+        res_prof += where(res_pos > 0 , blitz::sum(res_tmp(j, i), j) / res_pos, 0);
+
+	// rw > rc droplets first dry mom
+        {
+          auto tmp = h5load(h5, "actrw_rd_mom1", at * n["outfreq"]) * 1e6;
+          blitz::Array<float, 2> snap(tmp);
+          res_tmp = snap; 
+        }
+        // divide by 0th-mom (number of droplets)
+        {
+          auto tmp = h5load(h5, "actrw_rd_mom0", at * n["outfreq"]);
+          blitz::Array<float, 2> snap(tmp);
+          res_tmp = where(snap > 0 , res_tmp / snap, res_tmp);
+        }
+        // updraft only
+        res_tmp *= res_tmp2;
+        res_prof2 += where(res_pos > 0 , blitz::sum(res_tmp(j, i), j) / res_pos, 0);
+        gp << "set title 'activated droplets mean dry radius (updrafts)'\n";
+      }
+      if (plt == "actRH_rd")
+      {
+	// activated droplets dry radius
+        {
+          auto tmp = h5load(h5, "actRH_rd_mom1", at * n["outfreq"]) * 1e6;
+          blitz::Array<float, 2> snap(tmp);
+          res_tmp = snap; 
+        }
+        {
+          auto tmp = h5load(h5, "actRH_rd_mom0", at * n["outfreq"]);
+          blitz::Array<float, 2> snap(tmp);
+          res_tmp = where(snap > 0 , res_tmp / snap, res_tmp);
           res_tmp = snap;
-//          res_tmp = where(res_tmp > 0 , res_tmp / snap, res_tmp);
         }
         res += res_tmp;
         gp << "set title 'activated (RH>Sc) droplets mean dry radius'\n";
@@ -196,31 +270,19 @@ int main(int ac, char** av)
       if (plt == "actrw_rd")
       {
 	// activated droplets dry radius
-/*
         {
           auto tmp = h5load(h5, "actrw_rd_mom1", at * n["outfreq"]) * 1e6;
           blitz::Array<float, 2> snap(tmp);
           res_tmp = snap; 
         }
-*/
         {
           auto tmp = h5load(h5, "actrw_rd_mom0", at * n["outfreq"]);
           blitz::Array<float, 2> snap(tmp);
+          res_tmp = where(snap > 0 , res_tmp / snap, res_tmp);
           res_tmp = snap;
-//          res_tmp = where(res_tmp > 0 , res_tmp / snap, res_tmp);
         }
         res += res_tmp;
         gp << "set title 'activated (rw>rc) droplets mean dry radius'\n";
-      }
-      if (plt == "act_conc")
-      {
-        {
-          auto tmp = h5load(h5, "act_rd_mom0", at * n["outfreq"]);
-          blitz::Array<float, 2> snap(tmp);
-          res_tmp = snap;
-        }
-        res += res_tmp;
-        gp << "set title 'activated droplets concentration'\n";
       }
       else if (plt == "rv")
       {
@@ -421,20 +483,33 @@ int main(int ac, char** av)
     z_i = (double(k_i)-0.5) / (last_timestep - first_timestep + 1) * n["dz"];
     std::cout << "average inversion height " << z_i;
     res_pos = (i-0.5) * n["dz"] / z_i; 
-    if (plt == "ugccn_rw_down" || plt == "sat_RH")
-      res_prof /= last_timestep - first_timestep + 1;
-    else
-      res_prof = blitz::mean(res(j, i), j); // average in x
-
-    gp << "plot '-' with line\n";
-    gp.send1d(boost::make_tuple(res_prof, res_pos));
-
-    oprof_file << res_prof ;
-
-    if(plt == "rv" || plt == "sat" || plt == "sat_RH")
+    if (plt != "act_rd" && plt != "act_conc")
     {
-      gp << "set yrange [0.:1.2]\n";
-      gp << "set xrange [*:*]\n";
+      if (plt == "ugccn_rw_down" || plt == "sat_RH")
+        res_prof /= last_timestep - first_timestep + 1;
+      else
+        res_prof = blitz::mean(res(j, i), j); // average in x
+
+      gp << "plot '-' with line\n";
+      gp.send1d(boost::make_tuple(res_prof, res_pos));
+
+      oprof_file << res_prof ;
+
+      if(plt == "rv" || plt == "sat" || plt == "sat_RH")
+      {
+        gp << "set yrange [0.:1.2]\n";
+        gp << "set xrange [*:*]\n";
+      }
+    }
+    else 
+    {
+      gp << "plot '-' with line, '-' w l\n";
+      res_prof /= last_timestep - first_timestep + 1;
+      res_prof2 /= last_timestep - first_timestep + 1;
+      gp.send1d(boost::make_tuple(res_prof, res_pos));
+      gp.send1d(boost::make_tuple(res_prof2, res_pos));
+      oprof_file << res_prof ;
+      oprof_file << res_prof2 ;
     }
 
 //    plot(gp, res);
