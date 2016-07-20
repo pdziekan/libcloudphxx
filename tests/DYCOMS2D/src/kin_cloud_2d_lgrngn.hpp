@@ -49,20 +49,14 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
     prtcls->diag_sd_conc();
     this->record_aux("sd_conc", prtcls->outbuf());
 
+    // recording relative humidity
+    prtcls->diag_RH();
+    this->record_aux("RH", prtcls->outbuf());
+
     // recording precipitation rate per grid cel
     prtcls->diag_all();
     prtcls->diag_precip_rate();
     this->record_aux("precip_rate", prtcls->outbuf());
-
-    // recording 1st mom of rd of activated drops
-    prtcls->diag_rw_ge_rc();
-    prtcls->diag_dry_mom(1);
-    this->record_aux("act_rd_mom1", prtcls->outbuf());
-
-    // recording 0th mom of rd of activated drops
-    prtcls->diag_rw_ge_rc();
-    prtcls->diag_dry_mom(0);
-    this->record_aux("act_rd_mom0", prtcls->outbuf());
 
     // recording 1st mom of rw of gccns
     prtcls->diag_dry_rng(2e-6, 1);
@@ -73,6 +67,36 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
     prtcls->diag_dry_rng(2e-6, 1);
     prtcls->diag_wet_mom(0);
     this->record_aux("gccn_rw_mom0", prtcls->outbuf());
+
+    // recording 1st mom of rw of non-gccns
+    prtcls->diag_dry_rng(0., 2e-6);
+    prtcls->diag_wet_mom(1);
+    this->record_aux("non_gccn_rw_mom1", prtcls->outbuf());
+
+    // recording 0th mom of rw of gccns
+    prtcls->diag_dry_rng(0., 2e-6);
+    prtcls->diag_wet_mom(0);
+    this->record_aux("non_gccn_rw_mom0", prtcls->outbuf());
+
+    // recording 1st mom of rd of activated drops
+    prtcls->diag_rw_ge_rc();
+    prtcls->diag_dry_mom(1);
+    this->record_aux("actrw_rd_mom1", prtcls->outbuf());
+
+    // recording 0th mom of rd of activated drops
+    prtcls->diag_rw_ge_rc();
+    prtcls->diag_dry_mom(0);
+    this->record_aux("actrw_rd_mom0", prtcls->outbuf());
+   
+    // recording 1st mom of rd of activated drops
+    prtcls->diag_RH_ge_Sc();
+    prtcls->diag_dry_mom(1);
+    this->record_aux("actRH_rd_mom1", prtcls->outbuf());
+
+    // recording 0th mom of rd of activated drops
+    prtcls->diag_RH_ge_Sc();
+    prtcls->diag_dry_mom(0);
+    this->record_aux("actRH_rd_mom0", prtcls->outbuf());
    
     // recording total precipitation volume through the lower boundary
     f_prec << this->timestep << " "  << prec_vol << "\n";
