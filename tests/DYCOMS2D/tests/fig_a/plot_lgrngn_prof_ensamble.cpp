@@ -16,9 +16,9 @@ int main(int argc, char* argv[])
   int ctr = 0;
 
   std::string prof_file_name="/out_lgrngn_profiles.dat";
-  std::set<std::string> profs({"00rtot", "rliq", "thl", "wvar", "w3rd", "prflux", "clfrac", "N_c", "act_rd", "gccn_rw", "gccn_rw_down"});
+  std::set<std::string> profs({"00rtot", "rliq", "thl", "wvar", "w3rd", "prflux", "act_conc", "clfrac", "N_c", "gccn_rw", "non_gccn_rw", "sat_RH"});
 
-  std::vector<Array<double, 1>> sums(profs.size());
+  std::vector<Array<double, 1>> sums(profs.size() + 1); //act_conc has two plots
 
   Gnuplot gp;
   std::string file = argv[1] + std::string("/out_lgrngn_mean_profiles.svg");
@@ -43,14 +43,18 @@ int main(int argc, char* argv[])
     int prof_ctr = 0;
     for (auto &plt : profs) 
     {
-      iprof_file >> snap;
-      if(i==1)
+      const int lines_per_plot = plt == "act_conc" ? 2 : 1;
+      for(int lpp = 0; lpp < lines_per_plot; ++lpp)
       {
-        sums.at(prof_ctr).resize(snap.size());
-        sums.at(prof_ctr)+=0;
+        iprof_file >> snap;
+        if(i==1)
+        {
+          sums.at(prof_ctr).resize(snap.size());
+          sums.at(prof_ctr)+=0;
+        }
+        sums.at(prof_ctr)+=snap;
+        prof_ctr++;
       }
-      sums.at(prof_ctr)+=snap;
-      prof_ctr++;
     }
     double z_i;
     iprof_file >> z_i;
@@ -84,24 +88,38 @@ int main(int argc, char* argv[])
       gp << "set title 'GCCN-based droplets mean wet radius [um]'\n";
     else if (plt == "gccn_rw_down")
       gp << "set title 'GCCN-based droplets mean wet radius [um] in downdraught regions'\n";
-    sums.at(i) /= ctr;
 
-    oprof_file << sums.at(i);
+    const int lines_per_plot = plt == "act_conc" ? 2 : 1;
 
-    gp << "plot '-' with line lw 3";
-    for(int j=1; j<argc; ++j)
-      gp << ", '-' with line";
-    gp << "\n";
-    gp.send1d(boost::make_tuple(sums.at(i), res_pos));
-    for(int j=1; j<argc; ++j)
+    // inform gnuplot about number of lines to plot
+    for(int lpp = 0; lpp < lines_per_plot; ++lpp)
     {
-      std::string prof_file = argv[j] + prof_file_name;
-      ifstream iprof_file(prof_file);
-      for(int k=0; k <= i;++k)
-        iprof_file >> snap;
-      gp.send1d(boost::make_tuple(snap, res_pos));
+      if(lpp == 0)
+        gp << "plot '-' with line lw 4";
+      else
+        gp << ", '-' with line lw 4";
+      for(int j=1; j<argc; ++j)
+        gp << ", '-' with line";
     }
-    ++i;
+    gp << "\n";
+
+    for(int lpp = 0; lpp < lines_per_plot; ++lpp)
+    {
+      sums.at(i) /= ctr;
+
+      oprof_file << sums.at(i);
+
+      gp.send1d(boost::make_tuple(sums.at(i), res_pos));
+      for(int j=1; j<argc; ++j)
+      {
+        std::string prof_file = argv[j] + prof_file_name;
+        ifstream iprof_file(prof_file);
+        for(int k=0; k <= i;++k)
+          iprof_file >> snap;
+        gp.send1d(boost::make_tuple(snap, res_pos));
+      }
+      ++i;
+    }
   }
   oprof_file << mean_z_i;
 }
