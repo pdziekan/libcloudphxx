@@ -43,7 +43,10 @@ int main(int argc, char* argv[])
     else if (plt == "surf_precip")
       gp << "set ylabel 'surface precipitation [mm/d]'\n";
     else if (plt == "acc_precip")
+    {
+      gp << "set key left top\n";
       gp << "set ylabel 'accumulated surface precipitation [mm]'\n";
+    }
     else if (plt == "mass_dry")
       gp << "set ylabel 'total dry mass [g]'\n";
     else if (plt == "lwp")
@@ -82,6 +85,8 @@ int main(int argc, char* argv[])
       std::cout << i << " " << plt << " res_pos: " << res_pos;
       gp.send1d(boost::make_tuple(res_pos, res));
     }
+    if (plt == "acc_precip")
+      gp << "set key right top'\n";
     prof_ctr++;
   }
 }
