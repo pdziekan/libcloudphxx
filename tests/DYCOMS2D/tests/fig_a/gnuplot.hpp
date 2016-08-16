@@ -21,8 +21,12 @@ void init_prof(
   gp << "set multiplot layout " << ny << "," << nx << "\n";
   gp << "set yrange[0:1.2]\n";
   gp << "set border lw 1.5\n";
-  gp << "set linetype 1 lw 2 lc rgb \"blue\" pointtype 6\n";
-  gp << "set linetype 2 lw 2 lc rgb \"forest-green\" pointtype 8\n";
+  gp << "set linetype 1 lw 2\n";
+  gp << "set linetype 2 lw 2\n";
+  gp << "set linetype 3 lw 2\n";
+  gp << "set linetype 4 lw 2 lc rgb 'violet'\n";
+  gp << "set linetype 5 lw 2\n";
+  gp << "set linetype 6 lw 2\n";
 }
 
 void init(

@@ -37,8 +37,8 @@ int main(int ac, char** av)
   int k_i = 0; // inversion cell
 
   // average profile between 2h and 6h (in paper its between 2h and 6h! - do longer sims)
-  int first_timestep = 3000. / n["dt"] / n["outfreq"];
-  int last_timestep = 3600. /  n["dt"] / n["outfreq"];
+  int first_timestep = 2.5 * 3600. / n["dt"] / n["outfreq"];
+  int last_timestep = 4. * 3600. /  n["dt"] / n["outfreq"];
 
   const double p_1000 = 1000.;
   const double L = 2.5e6;
@@ -87,7 +87,7 @@ int main(int ac, char** av)
     h5d.read(rhod.data(), H5::PredType::NATIVE_FLOAT, H5::DataSpace(2, ext), h5s);
   }
 
-  for (auto &plt : std::set<std::string>({"00rtot", "rliq", "thl", "wvar", "w3rd", "prflux", "act_conc", "clfrac", "N_c", "gccn_rw", "non_gccn_rw", "sat_RH"})) // rtot has to be first
+  for (auto &plt : std::set<std::string>({"00rtot", "rliq", "thl", "wvar", "w3rd", "prflux", "act_conc", "clfrac", "N_c", "non_gccn_rw_up", "gccn_rw_up", "non_gccn_rw_down", "gccn_rw_down", "sat_RH"})) // rtot has to be first
   {
     blitz::firstIndex i;
     blitz::secondIndex j;
@@ -151,6 +151,102 @@ int main(int ac, char** av)
         }
         res += res_tmp;
         gp << "set title 'non-gccn-based droplets mean wet radius'\n";
+      }
+      if (plt == "non_gccn_rw_down")
+      {
+	// non-gccn (rd<2um) droplets dry radius in downdraughts
+        {
+          auto tmp = h5load(h5, "non_gccn_rw_mom1", at * n["outfreq"]) * 1e6;
+          blitz::Array<float, 2> snap(tmp);
+          res_tmp = snap; 
+        }
+        {
+          auto tmp = h5load(h5, "non_gccn_rw_mom0", at * n["outfreq"]);
+          blitz::Array<float, 2> snap(tmp);
+          res_tmp = where(res_tmp > 0 , res_tmp / snap, res_tmp);
+        }
+        {
+          auto tmp = h5load(h5, "w", at * n["outfreq"]);
+          blitz::Array<float, 2> snap(tmp);
+          res_tmp2 = isdowndraught(snap);
+          res_tmp *= res_tmp2;
+        }
+        // mean only over downdraught cells
+        res_pos = blitz::sum(res_tmp2(j, i), j);
+        res_prof += where(res_pos > 0 , blitz::sum(res_tmp(j, i), j) / res_pos, 0);
+        gp << "set title 'non-gccn-based droplets mean wet radius (downdraughts only)'\n";
+      }
+      if (plt == "gccn_rw_down")
+      {
+	// gccn (rd>2um) droplets dry radius in downdraughts
+        {
+          auto tmp = h5load(h5, "gccn_rw_mom1", at * n["outfreq"]) * 1e6;
+          blitz::Array<float, 2> snap(tmp);
+          res_tmp = snap; 
+        }
+        {
+          auto tmp = h5load(h5, "gccn_rw_mom0", at * n["outfreq"]);
+          blitz::Array<float, 2> snap(tmp);
+          res_tmp = where(res_tmp > 0 , res_tmp / snap, res_tmp);
+        }
+        {
+          auto tmp = h5load(h5, "w", at * n["outfreq"]);
+          blitz::Array<float, 2> snap(tmp);
+          res_tmp2 = isdowndraught(snap);
+          res_tmp *= res_tmp2;
+        }
+        // mean only over downdraught cells
+        res_pos = blitz::sum(res_tmp2(j, i), j);
+        res_prof += where(res_pos > 0 , blitz::sum(res_tmp(j, i), j) / res_pos, 0);
+        gp << "set title 'gccn-based droplets mean wet radius (downdraughts only)'\n";
+      }
+      if (plt == "non_gccn_rw_up")
+      {
+	// non-gccn (rd<2um) droplets dry radius in updraughts
+        {
+          auto tmp = h5load(h5, "non_gccn_rw_mom1", at * n["outfreq"]) * 1e6;
+          blitz::Array<float, 2> snap(tmp);
+          res_tmp = snap; 
+        }
+        {
+          auto tmp = h5load(h5, "non_gccn_rw_mom0", at * n["outfreq"]);
+          blitz::Array<float, 2> snap(tmp);
+          res_tmp = where(res_tmp > 0 , res_tmp / snap, res_tmp);
+        }
+        {
+          auto tmp = h5load(h5, "w", at * n["outfreq"]);
+          blitz::Array<float, 2> snap(tmp);
+          res_tmp2 = isupdraught(snap);
+          res_tmp *= res_tmp2;
+        }
+        // mean only over updraught cells
+        res_pos = blitz::sum(res_tmp2(j, i), j);
+        res_prof += where(res_pos > 0 , blitz::sum(res_tmp(j, i), j) / res_pos, 0);
+        gp << "set title 'non-gccn-based droplets mean wet radius (updraughts only)'\n";
+      }
+      if (plt == "gccn_rw_up")
+      {
+	// gccn (rd>2um) droplets dry radius in updraughts
+        {
+          auto tmp = h5load(h5, "gccn_rw_mom1", at * n["outfreq"]) * 1e6;
+          blitz::Array<float, 2> snap(tmp);
+          res_tmp = snap; 
+        }
+        {
+          auto tmp = h5load(h5, "gccn_rw_mom0", at * n["outfreq"]);
+          blitz::Array<float, 2> snap(tmp);
+          res_tmp = where(res_tmp > 0 , res_tmp / snap, res_tmp);
+        }
+        {
+          auto tmp = h5load(h5, "w", at * n["outfreq"]);
+          blitz::Array<float, 2> snap(tmp);
+          res_tmp2 = isupdraught(snap);
+          res_tmp *= res_tmp2;
+        }
+        // mean only over updraught cells
+        res_pos = blitz::sum(res_tmp2(j, i), j);
+        res_prof += where(res_pos > 0 , blitz::sum(res_tmp(j, i), j) / res_pos, 0);
+        gp << "set title 'gccn-based droplets mean wet radius (updraughts only)'\n";
       }
       if (plt == "ugccn_rw_down")
       {
@@ -485,7 +581,7 @@ int main(int ac, char** av)
     res_pos = (i-0.5) * n["dz"] / z_i; 
     if (plt != "act_rd" && plt != "act_conc")
     {
-      if (plt == "ugccn_rw_down" || plt == "sat_RH")
+      if (plt == "ugccn_rw_down" || plt == "sat_RH" || plt=="gccn_rw_down" || plt=="non_gccn_rw_down" || plt=="gccn_rw_up" || plt=="non_gccn_rw_up")
         res_prof /= last_timestep - first_timestep + 1;
       else
         res_prof = blitz::mean(res(j, i), j); // average in x

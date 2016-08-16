@@ -16,14 +16,14 @@ int main(int argc, char* argv[])
   int ctr = 0;
 
   std::string prof_file_name="/out_lgrngn_profiles.dat";
-  std::set<std::string> profs({"00rtot", "rliq", "thl", "wvar", "w3rd", "prflux", "act_conc", "clfrac", "N_c", "gccn_rw", "non_gccn_rw", "sat_RH"});
+  std::set<std::string> profs({"00rtot", "rliq", "thl", "wvar", "w3rd", "prflux", "act_conc", "clfrac", "N_c", "non_gccn_rw_up", "gccn_rw_up", "non_gccn_rw_down", "gccn_rw_down", "sat_RH"});
 
   std::vector<Array<double, 1>> sums(profs.size() + 1); //act_conc has two plots
 
   Gnuplot gp;
   std::string file = argv[1] + std::string("/out_lgrngn_mean_profiles.svg");
   auto n = h5n(argv[1] + std::string("out_lgrngn"));
-  init_prof(gp, file, 3, 3);
+  init_prof(gp, file, 3, 5);
   blitz::Array<float, 1> res_pos(n["z"]);
   blitz::firstIndex fi;
 
@@ -88,6 +88,13 @@ int main(int argc, char* argv[])
       gp << "set title 'GCCN-based droplets mean wet radius [um]'\n";
     else if (plt == "gccn_rw_down")
       gp << "set title 'GCCN-based droplets mean wet radius [um] in downdraught regions'\n";
+    else if (plt == "sat_RH")
+    {
+      gp << "set title 'supersaturation in updrafts'\n";
+      gp << "set yrange [0.45:1.]\n";
+      gp << "set xrange [0.000:0.005]\n";
+    }
+
 
     const int lines_per_plot = plt == "act_conc" ? 2 : 1;
 
@@ -95,11 +102,12 @@ int main(int argc, char* argv[])
     for(int lpp = 0; lpp < lines_per_plot; ++lpp)
     {
       if(lpp == 0)
-        gp << "plot '-' with line lw 4";
+        gp << "plot '-' with line";
       else
-        gp << ", '-' with line lw 4";
-      for(int j=1; j<argc; ++j)
         gp << ", '-' with line";
+      for(int j=1; j<argc-1; ++j)
+        gp << ", '-' with line";
+      gp << ", '-' with line lw 4";
     }
     gp << "\n";
 
@@ -109,7 +117,6 @@ int main(int argc, char* argv[])
 
       oprof_file << sums.at(i);
 
-      gp.send1d(boost::make_tuple(sums.at(i), res_pos));
       for(int j=1; j<argc; ++j)
       {
         std::string prof_file = argv[j] + prof_file_name;
@@ -118,8 +125,15 @@ int main(int argc, char* argv[])
           iprof_file >> snap;
         gp.send1d(boost::make_tuple(snap, res_pos));
       }
+      gp.send1d(boost::make_tuple(sums.at(i), res_pos));
       ++i;
     }
+    if(plt == "rv" || plt == "sat" || plt == "sat_RH")
+    {
+      gp << "set yrange [0.:1.2]\n";
+      gp << "set xrange [*:*]\n";
+    }
+
   }
   oprof_file << mean_z_i;
 }
