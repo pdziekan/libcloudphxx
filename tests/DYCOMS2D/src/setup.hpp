@@ -144,8 +144,8 @@ namespace setup
     n1_stp = real_t(125e6*2) / si::cubic_metres, // 125 || 31
     n2_stp = real_t(65e6*2) / si::cubic_metres;  // 65 || 16
   const quantity<power_typeof_helper<si::length, static_rational<-3>>::type, real_t>
-    n1_stp_pristine = real_t(52e6) / si::cubic_metres, // 125 || 31
-    n2_stp_pristine = real_t(27e6) / si::cubic_metres;  // 65 || 16
+    n1_stp_pristine = real_t(125e6 * 2 * 0.5) / si::cubic_metres, // 125 || 31
+    n2_stp_pristine = real_t(65e6 * 2 * 0.5) / si::cubic_metres;  // 65 || 16
 
   //aerosol lognormal dist. for GCCN from Jorgen Jensen
   const quantity<si::length, real_t>
