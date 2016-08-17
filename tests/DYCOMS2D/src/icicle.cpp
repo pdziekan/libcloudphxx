@@ -21,7 +21,7 @@
 
 // model run logic - the same for any microphysics
 template <class solver_t>
-void run(int nx, int nz, int nt, setup::real_t dt, const std::string &outdir, const int &outfreq, int spinup, bool serial, bool relax_th_rv, bool gccn, bool onishi, bool pristine, setup::real_t eps, setup::real_t ReL, setup::real_t z_rlx_sclr)
+void run(int nx, int nz, int nt, setup::real_t dt, const std::string &outdir, const int &outfreq, int spinup, bool serial, bool relax_th_rv, bool gccn, bool onishi, bool pristine, setup::real_t eps, setup::real_t ReL, setup::real_t z_rlx_sclr, int rng_seed)
 {
   // instantiation of structure containing simulation parameters
   typename solver_t::rt_params_t p;
@@ -65,7 +65,7 @@ void run(int nx, int nz, int nt, setup::real_t dt, const std::string &outdir, co
     slv.reset(new concurr_t(p));
 
     // initial condition
-    setup::intcond(*static_cast<concurr_t*>(slv.get()), rhod);
+    setup::intcond(*static_cast<concurr_t*>(slv.get()), rhod, rng_seed);
   }
   else
   {
@@ -77,7 +77,7 @@ void run(int nx, int nz, int nt, setup::real_t dt, const std::string &outdir, co
     slv.reset(new concurr_t(p));
 
     // initial condition
-    setup::intcond(*static_cast<concurr_t*>(slv.get()), rhod);
+    setup::intcond(*static_cast<concurr_t*>(slv.get()), rhod, rng_seed);
   }
 
 
@@ -116,6 +116,7 @@ int main(int argc, char** argv)
       ("nx", po::value<int>()->default_value(76) , "grid cell count in horizontal")
       ("nz", po::value<int>()->default_value(76) , "grid cell count in vertical")
       ("nt", po::value<int>()->default_value(3600) , "timestep count")
+      ("rng_seed", po::value<int>()->default_value(-1) , "rng seed, negative for random")
       ("dt", po::value<setup::real_t>()->required() , "timestep length")
       ("z_rlx_sclr", po::value<setup::real_t>()->default_value(10) , "scalars surface flux charasteristic heihjt")
       ("outdir", po::value<std::string>(), "output file name (netCDF-compatible HDF5)")
@@ -160,6 +161,9 @@ int main(int argc, char** argv)
       nz = vm["nz"].as<int>(),
       nt = vm["nt"].as<int>(),
       spinup = vm["spinup"].as<int>();
+ 
+    // handling rng_seed
+    int rng_seed = vm["rng_seed"].as<int>();
    
     //handling timestep length
     setup::real_t dt = vm["dt"].as<setup::real_t>();
@@ -201,7 +205,7 @@ int main(int argc, char** argv)
           vip_i=u, vip_j=w, vip_den=-1
         }; };
       };
-      run<kin_cloud_2d_lgrngn<ct_params_t>>(nx, nz, nt, dt, outdir, outfreq, spinup, adv_serial, relax_th_rv, gccn, onishi, pristine, eps, ReL, z_rlx_sclr);
+      run<kin_cloud_2d_lgrngn<ct_params_t>>(nx, nz, nt, dt, outdir, outfreq, spinup, adv_serial, relax_th_rv, gccn, onishi, pristine, eps, ReL, z_rlx_sclr, rng_seed);
     }
     else throw
       po::validation_error(

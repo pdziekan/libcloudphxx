@@ -179,7 +179,7 @@ namespace setup
 
   // function expecting a libmpdata++ solver as argument
   template <class concurr_t>
-  void intcond(concurr_t &solver, blitz::Array<setup::real_t, 2> &rhod)
+  void intcond(concurr_t &solver, blitz::Array<setup::real_t, 2> &rhod, int rng_seed)
   {
     using ix = typename concurr_t::solver_t::ix;
 
@@ -200,6 +200,8 @@ namespace setup
     // randomly prtrb tht
     std::random_device rd;
     auto seed = rd();
+    if(rng_seed > 0)
+      seed = rng_seed;
     std::mt19937 gen(seed);
     std::uniform_real_distribution<> dis(-0.1, 0.1);
 
