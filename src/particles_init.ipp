@@ -185,6 +185,9 @@ namespace libcloudphxx
 
       //initialising vterm
       if(pimpl->opts_init.coal_switch || pimpl->opts_init.sedi_switch) pimpl->init_vterm();
+
+      // init count_num and count_ijk
+      pimpl->hskpng_count();
     }
   };
 };

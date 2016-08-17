@@ -460,6 +460,9 @@ namespace libcloudphxx
 
       // update th and rv
       update_th_rv(drv);
+
+      // update count_ijk and count_num
+      hskpng_count();
     }
   };  
 };
