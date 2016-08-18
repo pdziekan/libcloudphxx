@@ -326,11 +326,9 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
   std::future<real_t> ftr;
 #endif
 
-  // 
-  void hook_post_step()
+  void hook_ante_step()
   {
-    parent_t::hook_post_step(); // includes output
-
+    parent_t::hook_ante_step(); // includes output
     this->mem->barrier();
     if (this->rank == 0) 
     {
@@ -339,7 +337,7 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
       if (
         params.async && 
         this->timestep != 0 && // ... but not in first timestep ...
-        ((this->timestep - 1) % this->outfreq != 0) // ... and not after diag call
+        ((this->timestep ) % this->outfreq != 0) // ... and not after diag call, note: timestep is updated after ante_step
       ) {
         assert(ftr.valid());
         prec_vol += ftr.get();
@@ -392,7 +390,6 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
         // artificially remove negative rv...
         // this->mem->advectee(ix::rv) = where(this->mem->advectee(ix::rv) < 0., 0., this->mem->advectee(ix::rv));
       } 
-
       // running asynchronous stuff
       {
         using libcloudphxx::lgrngn::particles_t;
@@ -421,6 +418,16 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
 #endif
           prec_vol += prtcls->step_async(params.cloudph_opts);
       }
+    }
+  }
+  // 
+  void hook_post_step()
+  {
+    parent_t::hook_post_step(); // includes output
+    this->mem->barrier();
+
+    if (this->rank == 0) 
+    {
       // performing diagnostics
       if (this->timestep % this->outfreq == 0) 
       { 
