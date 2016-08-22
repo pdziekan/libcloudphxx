@@ -599,7 +599,7 @@ int main(int ac, char** av)
     }
     else 
     {
-      gp << "plot '-' with line, '-' w l\n";
+      gp << "plot '-' with line title 'RH > Sc', '-' w l t 'rw > rc'\n";
       res_prof /= last_timestep - first_timestep + 1;
       res_prof2 /= last_timestep - first_timestep + 1;
       gp.send1d(boost::make_tuple(res_prof, res_pos));
