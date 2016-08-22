@@ -7,7 +7,6 @@ void kin_cloud_2d_lgrngn<ct_params_t>::rv_src()
   const auto &ijk = this->ijk;
   const auto &i = this->i;
   const auto &j = this->j;
-  if(this->timestep >= this->spinup)
   {
     // surface flux
     surf_latent();
@@ -27,8 +26,6 @@ void kin_cloud_2d_lgrngn<ct_params_t>::rv_src()
     // change of rv[1/s] = latent heating[W/m^3] / lat_heat_of_evap[J/kg] / density[kg/m^3]
     alpha(ijk)/=(libcloudphxx::common::const_cp::l_tri<real_t>() * si::kilograms / si::joules) * this->rhod(ijk);
   }
-  else
-    alpha(ijk) = 0;
   // large-scale vertical wind
   subsidence(ix::rv);
   alpha(ijk) += F(ijk);
