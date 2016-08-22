@@ -153,8 +153,7 @@ int main(int ac, char** av)
         // surface precipitation [mm/day]
         try
         {
-          res_prof(at) = prec_vol / (double(n["dx"]) * rhod.extent(0)) / (double(n["outfreq"]) * n["dt"] / 3600. / 24.) * 1e3 - 0.15;  // the -0.15 constant is associated with condensation in lowest cell due to surf fluxes (to be fixed), it is the rainfall rate we get without coal
-          res_prof(at) = res_prof(at) < 0 ? 0 : res_prof(at);
+          res_prof(at) = prec_vol / (double(n["dx"]) * rhod.extent(0)) / (double(n["outfreq"]) * n["dt"] / 3600. / 24.) * 1e3;
         }
         catch(...) {;}
       }

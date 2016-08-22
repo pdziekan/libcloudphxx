@@ -138,7 +138,7 @@ int main(int argc, char* argv[])
       // read in inversion height
       iprof_file >> z_i;
       std::cout << z_i << std::endl;
-      res_pos = (fi-1.5) * 5. / z_i; // hardcoded dz = 5m !!
+      res_pos = fi * 5. / z_i; // hardcoded dz = 5m !!
       std::cout << i << " " << plt << " res_pos: " << res_pos;
       for(int lpp=0; lpp<lines_per_plot;++lpp)
       {

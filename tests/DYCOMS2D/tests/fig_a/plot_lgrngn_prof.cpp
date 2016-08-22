@@ -37,8 +37,8 @@ int main(int ac, char** av)
   int k_i = 0; // inversion cell
 
   // average profile between 2h and 6h (in paper its between 2h and 6h! - do longer sims)
-  int first_timestep = 2.5 * 3600. / n["dt"] / n["outfreq"];
-  int last_timestep = 4. * 3600. /  n["dt"] / n["outfreq"];
+  int first_timestep = 3000. / n["dt"] / n["outfreq"];
+  int last_timestep  = 3600. / n["dt"] / n["outfreq"];
 
   const double p_1000 = 1000.;
   const double L = 2.5e6;
@@ -578,7 +578,7 @@ int main(int ac, char** av)
     
     z_i = (double(k_i)-0.5) / (last_timestep - first_timestep + 1) * n["dz"];
     std::cout << "average inversion height " << z_i;
-    res_pos = (i-0.5) * n["dz"] / z_i; 
+    res_pos = i * n["dz"] / z_i; 
     if (plt != "act_rd" && plt != "act_conc")
     {
       if (plt == "ugccn_rw_down" || plt == "sat_RH" || plt=="gccn_rw_down" || plt=="non_gccn_rw_down" || plt=="gccn_rw_up" || plt=="non_gccn_rw_up")
