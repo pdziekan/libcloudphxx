@@ -255,7 +255,7 @@ int main(int ac, char** av)
     else if (plt == "lwp")
     {
       gp << "set title 'liquid water path [g / m^2]'\n";
-      res_prof *= n["dz"] * n["z"];
+      res_prof *= (n["dz"] - 1) * n["z"]; // top and bottom cells are smaller
     }
     else if (plt == "er")
     {
