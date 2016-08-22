@@ -162,7 +162,7 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
   void set_rain(bool val) 
   { 
     params.cloudph_opts.coal = val ? coal : false;
-    params.cloudph_opts.sedi = val ? sedi : false; 
+//    params.cloudph_opts.sedi = val ? sedi : false; 
     params.cloudph_opts.RH_max = val ? 44 : 1.06; // 0.5% limit during spinup // TODO: specify it somewhere else, dup in blk_2m
   };
 
