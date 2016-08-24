@@ -37,19 +37,20 @@ int main(int ac, char** av)
   std::cout << "output directory: " << outdir << std::endl;
 */
   string opts_common = 
-    "--outfreq=1 --nt=2 --spinup=1 --nx=32 --nz=75 --dt=0.5 --relax_th_rv=false"; // DYCOMS: 128x300 ; 600 21600 3600
+    "--outfreq=600 --nt=28800 --spinup=7200 --nx=129 --nz=301 --dt=1. --relax_th_rv=false --rng_seed=-1"; // DYCOMS: 129x301 ; 600 21600 3600
   set<string> opts_micro({
 //    "--micro=blk_1m --outdir=out_blk_1m",
 //    "--micro=blk_2m --outdir=out_blk_2m",
-    "--adv_serial=false --async=true --micro=lgrngn --outdir=out_lgrngn --backend=OpenMP --sd_conc=8 --sstp_cond=5 --sstp_coal=1"  
+    "--adv_serial=false --async=false --micro=lgrngn --outdir=out_lgrngn --backend=CUDA --sd_conc=128 --sstp_cond=20 --sstp_coal=1 --coal=false --sedi=true --dev_id=0 --z_rlx_sclr=100 --gccn=false --onishi=false --pristine=false --eps=0.001 --ReL=5000"  
       " --out_wet=\""
         ".5e-6:25e-6|0,1,2,3;" // FSSP
         "25e-6:1|0,3;"         // "rain"
-//        + bins_wet_str + // aerosol spectrum (wet)
+        + bins_wet_str + // aerosol spectrum (wet)
         "\""
-//      " --out_dry=\""
-//        + bins_dry_str + // aerosol spectrum (dry)
-//      "\""
+      " --out_dry=\""
+      " 0:1|0,1,2,3;"    // total dry statistics
+        + bins_dry_str + // aerosol spectrum (dry)
+      "\""
   });
 
   for (auto &opts_m : opts_micro)
