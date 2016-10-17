@@ -4,11 +4,26 @@
   * @section LICENSE
   * GPLv3+ (see the COPYING file or http://www.gnu.org/licenses/)
   */
+#include <thrust/execution_policy.h>
+#include <thrust/logical.h>
 
 namespace libcloudphxx
 {
   namespace lgrngn
   {
+
+// --- Operator for testing nan values
+struct isnan_test { 
+    template<class real_t>
+    BOOST_GPU_ENABLED bool operator()(const real_t a) const {
+#if !defined(__NVCC__)
+          using std::isnan;
+          using std::isinf;
+#endif
+        return isnan(a) || isinf(a);
+    }
+};
+
     template <typename real_t, backend_t device>
     void particles_t<real_t, device>::impl::cond(
       const real_t &dt,
@@ -62,6 +77,7 @@ namespace libcloudphxx
         thrust::make_permutation_iterator(drv.begin(), count_ijk.begin()), // output
         thrust::plus<real_t>()
       );
+      assert(thrust::none_of(thrust::seq, drv.begin(), drv.end(), isnan_test())); // run sequentially in this context (requires thrust 1.8.0)
 
       // update th and rv according to changes in third specific wet moment
       update_th_rv(drv);

@@ -310,7 +310,13 @@ T toms748_solve(F f, const T& ax, const T& bx, const T& fax, const T& fbx, Tol t
       return (a + b)/2;
    }
 
-   assert(copysign(T(1), fa * fb) < 0);
+   if(!(copysign(T(1), fa * fb) < 0))
+     printf("1: fa: %.10lf fb: %.10lf\n", fa, fb);
+
+   if(!((copysign(T(1), fa) * copysign(T(1), fb)) < 0))
+     printf("2: fa: %.10lf fb: %.10lf\n", fa, fb);
+
+   assert((copysign(T(1), fa) * copysign(T(1), fb)) < 0);
 
    // dummy value for fd, e and fe:
    fe = e = fd = 1e5F;

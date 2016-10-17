@@ -101,6 +101,7 @@ namespace libcloudphxx
           using common::ventil::Sh;
           using common::ventil::Nu;
           using std::sqrt;
+          using std::isnan;
 
           const quantity<si::length, real_t> rw  = sqrt(real_t(rw2 / si::square_metres)) * si::metres; 
           const quantity<si::volume, real_t> rw3 = rw * rw * rw;;
@@ -189,7 +190,13 @@ namespace libcloudphxx
             fb = drw2; // for implicit Euler its equal to min_fun(x_old) 
           }
 
+          if(isnan(fa))
+            printf("fa nan %lf %lf %lf %lf %lf %lf %lf %lf %lf\n", fa, a, fb, b, drw2, rd2, rw2_old, thrust::get<1>(tpl), thrust::get<2>(tpl));
+          if(isnan(fb))
+            printf("fb nan %lf %lf %lf %lf %lf %lf %lf %lf %lf\n", fa, a, fb, b, drw2, rd2, rw2_old, thrust::get<1>(tpl), thrust::get<2>(tpl));
+
           // root-finding ill posed => explicit Euler 
+//          if (fa * fb >= 0) return max(rd2, rw2_old + drw2);
           if (fa * fb > 0) return rw2_old + drw2;
 
           // otherwise implicit Euler
