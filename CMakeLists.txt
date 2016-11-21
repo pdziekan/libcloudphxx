@@ -105,6 +105,9 @@ if (CUDA_FOUND)
   unset(status)
 
   set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -I${CMAKE_SOURCE_DIR}/include")
+
+  # use per-thread default stream to run concurrently async copies and thrust calls in multi_gpu_step:step_async()
+  set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} --default-stream per-thread")
   
   # Release with debug info mode cuda flags
   if(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
@@ -114,10 +117,6 @@ if (CUDA_FOUND)
   elseif(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -g -DTHRUST_DEBUG -lineinfo
         \"-DBOOST_NOINLINE=__attribute__((noinline))\" -Xcompiler=-fopenmp,-g,-rdynamic")  
-    # do not use -G flag on travis since it causes build to fail; probably due to memory shortage
-    if(NOT DEFINED ENV{TRAVIS})
-      set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -G")
-    endif()
   # Release mode cuda flags
   else()
     set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -DNDEBUG -O3 -use_fast_math
@@ -129,60 +128,60 @@ endif()
 
 ############################################################################################
 # BOOST ODEINT VERSION TEST
-#message(STATUS "Testing if Boost ODEINT version >= 1.58")
-#set(pfx "boost odeint check")
-#execute_process(COMMAND "mktemp" "-d" "/tmp/tmp.XXX" RESULT_VARIABLE status OUTPUT_VARIABLE tmpdir)
-#if (NOT status EQUAL 0) 
-#  message(FATAL_ERROR "${pfx}: mkdtemp failed")
-#endif()
-#file(WRITE "${tmpdir}/test.cpp" "
-#  #define THRUST_DEVICE_SYSTEM THRUST_DEVICE_SYSTEM_CPP
-#  
-#  #include <thrust/system/cpp/vector.h>
-#  
-#  #include <boost/numeric/odeint.hpp>
-#  #include <boost/numeric/odeint/external/thrust/thrust_algebra.hpp>
-#  #include <boost/numeric/odeint/external/thrust/thrust_operations.hpp>
-#  #include <boost/numeric/odeint/external/thrust/thrust_resize.hpp>
-#  
-#  struct rhs 
-#  {
-#    void operator()(
-#      const thrust::cpp::vector<float> &psi,
-#      thrust::cpp::vector<float> &dot_psi,
-#      const float /* t */
-#    )  
-#    {
-#    }  
-#  };
-#  
-#  int main() 
-#  { 
-#    boost::numeric::odeint::euler<
-#      thrust::cpp::vector<float>, // state_type
-#      float,                      // value_type
-#      thrust::cpp::vector<float>, // deriv_type
-#      float,                      // time_type
-#      boost::numeric::odeint::thrust_algebra,
-#      boost::numeric::odeint::thrust_operations 
-#    > chem_stepper;
-#  
-#    thrust::cpp::vector<float> v(11);
-#    chem_stepper.do_step(rhs(), v, 0, 1);
-#  }
-#")
-#execute_process(COMMAND "${CMAKE_CXX_COMPILER}" "test.cpp" WORKING_DIRECTORY ${tmpdir} RESULT_VARIABLE status ERROR_VARIABLE msg)
-#if (NOT status EQUAL 0) 
-#  message(FATAL_ERROR "${pfx}: c++ compiler failed\n ${msg}")
-#endif()
-#execute_process(COMMAND "./a.out" WORKING_DIRECTORY ${tmpdir} RESULT_VARIABLE status OUTPUT_VARIABLE msg)
-#if (NOT status EQUAL 0)
-#  message(FATAL_ERROR "${pfx}: test program failed, install Boost odeint version >= 1.58")
-#endif()
-#unset(pfx)
-#unset(tmpdir)
-#unset(msg)
-#unset(status)
+message(STATUS "Testing if Boost ODEINT version >= 1.58")
+set(pfx "boost odeint check")
+execute_process(COMMAND "mktemp" "-d" "/tmp/tmp.XXX" RESULT_VARIABLE status OUTPUT_VARIABLE tmpdir)
+if (NOT status EQUAL 0) 
+  message(FATAL_ERROR "${pfx}: mkdtemp failed")
+endif()
+file(WRITE "${tmpdir}/test.cpp" "
+  #define THRUST_DEVICE_SYSTEM THRUST_DEVICE_SYSTEM_CPP
+  
+  #include <thrust/system/cpp/vector.h>
+
+  #include <boost/numeric/odeint.hpp>
+  #include <boost/numeric/odeint/external/thrust/thrust_algebra.hpp>
+  #include <boost/numeric/odeint/external/thrust/thrust_operations.hpp>
+  #include <boost/numeric/odeint/external/thrust/thrust_resize.hpp>
+  
+  struct rhs 
+  {
+    void operator()(
+      const thrust::cpp::vector<float> &psi,
+      thrust::cpp::vector<float> &dot_psi,
+      const float /* t */
+    )  
+    {
+    }  
+  };
+  
+  int main() 
+  { 
+    boost::numeric::odeint::euler<
+      thrust::cpp::vector<float>, // state_type
+      float,                      // value_type
+      thrust::cpp::vector<float>, // deriv_type
+      float,                      // time_type
+      boost::numeric::odeint::thrust_algebra,
+      boost::numeric::odeint::thrust_operations 
+    > chem_stepper;
+  
+    thrust::cpp::vector<float> v(11);
+    chem_stepper.do_step(rhs(), v, 0, 1);
+  }
+")
+execute_process(COMMAND "${CMAKE_CXX_COMPILER}" "test.cpp" "-I${Boost_INCLUDE_DIR}" WORKING_DIRECTORY ${tmpdir} RESULT_VARIABLE status ERROR_VARIABLE msg)
+if (NOT status EQUAL 0) 
+  message(FATAL_ERROR "${pfx}: c++ compiler failed\n ${msg}")
+endif()
+execute_process(COMMAND "./a.out" WORKING_DIRECTORY ${tmpdir} RESULT_VARIABLE status OUTPUT_VARIABLE msg)
+if (NOT status EQUAL 0)
+  message(FATAL_ERROR "${pfx}: test program failed, install Boost odeint version >= 1.58")
+endif()
+unset(pfx)
+unset(tmpdir)
+unset(msg)
+unset(status)
 
 # generate a header file with git revision id
 if (EXISTS "${CMAKE_SOURCE_DIR}/.git")
