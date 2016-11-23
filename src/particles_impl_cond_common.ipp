@@ -189,10 +189,10 @@ namespace libcloudphxx
             fb = drw2; // for implicit Euler its equal to min_fun(x_old) 
           }
 
-          if(isnan(fa))
-            printf("fa nan %lf %lf %lf %lf %lf %lf %lf %lf %lf\n", fa, a, fb, b, drw2, rd2, rw2_old, thrust::get<1>(tpl), thrust::get<2>(tpl));
-          if(isnan(fb))
-            printf("fb nan %lf %lf %lf %lf %lf %lf %lf %lf %lf\n", fa, a, fb, b, drw2, rd2, rw2_old, thrust::get<1>(tpl), thrust::get<2>(tpl));
+//          if(isnan(fa))
+            printf("fa nan %.10lf %.10lf %.10lf %.10lf %.10lf %.10lf %.10lf %.10lf %.10lf\n", fa, a, fb, b, drw2, rd2, rw2_old, thrust::get<1>(tpl), thrust::get<2>(tpl));
+  //        if(isnan(fb))
+            printf("fb nan %.10lf %.10lf %.10lf %.10lf %.10lf %.10lf %.10lf %.10lf %.10lf\n", fa, a, fb, b, drw2, rd2, rw2_old, thrust::get<1>(tpl), thrust::get<2>(tpl));
 
           // root-finding ill posed => explicit Euler 
 //          if (fa * fb >= 0) return max(rd2, rw2_old + drw2);

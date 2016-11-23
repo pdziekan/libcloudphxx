@@ -288,6 +288,7 @@ template <class F, class T, class Tol>
 BOOST_GPU_ENABLED
 T toms748_solve(F f, const T& ax, const T& bx, const T& fax, const T& fbx, Tol tol, uintmax_t &max_iter)
 {
+     printf("1: fax: %.10lf fbx: %.10lf\n", fax, fbx);
    uintmax_t count = max_iter;
    T a, b, fa, fb, c, u, fu, a0, b0, d, fd, e, fe;
    const T mu = 0.5f;
