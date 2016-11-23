@@ -288,7 +288,7 @@ template <class F, class T, class Tol>
 BOOST_GPU_ENABLED
 T toms748_solve(F f, const T& ax, const T& bx, const T& fax, const T& fbx, Tol tol, uintmax_t &max_iter)
 {
-     printf("1: fax: %.10lf fbx: %.10lf\n", fax, fbx);
+     printf("1: fax: %G fbx: %G\n", fax, fbx);
    uintmax_t count = max_iter;
    T a, b, fa, fb, c, u, fu, a0, b0, d, fd, e, fe;
    const T mu = 0.5f;
@@ -312,10 +312,10 @@ T toms748_solve(F f, const T& ax, const T& bx, const T& fax, const T& fbx, Tol t
    }
 
    if(!(copysign(T(1), fa * fb) < 0))
-     printf("1: fa: %.10lf fb: %.10lf\n", fa, fb);
+     printf("1: fa: %G fb: %G\n", fa, fb);
 
    if(!((copysign(T(1), fa) * copysign(T(1), fb)) < 0))
-     printf("2: fa: %.10lf fb: %.10lf\n", fa, fb);
+     printf("2: fa: %G fb: %G\n", fa, fb);
 
    assert((copysign(T(1), fa) * copysign(T(1), fb)) < 0);
 
