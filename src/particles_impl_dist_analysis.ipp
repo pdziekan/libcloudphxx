@@ -71,6 +71,7 @@ namespace libcloudphxx
       real_t init_dist_bound_value = -init_distr_max.second / config.threshold; // value of the distribution at which we bind it
       n_iter = config.n_iter;
       // TODO: it could be written more clearly by creating an object detail::eval_and_oper<real_t>(*n_of_lnrd_stp, -init_dist_bound_value, 1), but for some reason it doesnt give the correct values
+      printf("dist anal toms call 1\n");
       log_rd_min = 
         common::detail::toms748_solve(
           detail::eval_and_oper<real_t>(*n_of_lnrd_stp, -init_dist_bound_value, 1),
@@ -81,6 +82,7 @@ namespace libcloudphxx
         );
 
       n_iter = config.n_iter;
+      printf("dist anal toms call 2\n");
       log_rd_max = 
         common::detail::toms748_solve(
           detail::eval_and_oper<real_t>(*n_of_lnrd_stp, -init_dist_bound_value, 1),

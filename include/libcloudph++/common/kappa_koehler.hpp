@@ -134,6 +134,7 @@ namespace libcloudphxx
         assert(RH < 1); // no equilibrium over RH=100%
         assert(kappa > 0); // pure-water case left out
 
+      printf("kappa-koehler toms call 1\n");
         return common::detail::toms748_solve(
 	  detail::rw3_eq_minfun<real_t>(RH, rd3, kappa, T), // the above-defined functor
 	  real_t(rd3 / si::cubic_metres), // min
@@ -157,6 +158,7 @@ namespace libcloudphxx
         quantity<si::volume, double> rd3_dbl = static_cast<quantity<si::volume, double> >(rd3);
         quantity<si::temperature, double> T_dbl = static_cast<quantity<si::temperature, double> >(T);
 
+      printf("kappa-koehler toms call 2\n");
         return real_t(common::detail::toms748_solve(
 	  detail::rw3_cr_minfun<double>(rd3_dbl, double(kappa), T_dbl), // the above-defined functor
 	  double(1e0 * (rd3 / si::cubic_metres)), // min

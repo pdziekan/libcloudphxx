@@ -200,6 +200,7 @@ namespace libcloudphxx
 
           // otherwise implicit Euler
           uintmax_t n_iter = config.n_iter;
+      printf("cons common toms call\n");
           return common::detail::toms748_solve(f, a, b, fa, fb, config.eps_tolerance, n_iter);
         }
       };

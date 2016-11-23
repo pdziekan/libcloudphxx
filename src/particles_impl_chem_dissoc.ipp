@@ -121,7 +121,7 @@ namespace libcloudphxx
           real_t m_H_lft = ((real_t(1e-8 * 1e3) * si::moles / si::cubic_metres) * V * M_H<real_t>()) / si::kilograms;
 
           uintmax_t max_iter = 100;
-
+printf("chem dissoc toms call\n");
           real_t m_H = common::detail::toms748_solve(
 	    detail::chem_minfun<real_t>(m_S_IV, m_C_IV, m_N_V, m_N_III, m_S_VI, V, T),
             m_H_lft,
