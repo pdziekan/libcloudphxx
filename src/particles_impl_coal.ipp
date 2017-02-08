@@ -14,18 +14,6 @@ namespace libcloudphxx
     namespace detail
     {
       enum{na_ge_nb = -2, nb_gt_na = -1};
-
-      struct positive 
-      {
-        template <class real_t>
-        BOOST_GPU_ENABLED
-        bool operator()(const real_t &val)
-        {
-          if(val > 0.) return true;
-          else return false;
-        }
-      };
-
       struct summator
       {
         template<class tpl_t>
@@ -171,6 +159,14 @@ namespace libcloudphxx
 #if !defined(__NVCC__)
           assert(thrust::get<ix_a_ix>(tpl_ro) + 1 == thrust::get<ix_b_ix>(tpl_ro));
 #endif
+
+#if !defined(__NVCC__)
+          using std::min;
+          using std::max;
+#endif
+
+          // collision timestep is the longer t_coal
+          real_t dt = max(thrust::get<t_coal_a_ix>(tpl_ro), thrust::get<t_coal_b_ix>(tpl_ro));
  
           // checking if valid candidates for collision
           {
@@ -185,19 +181,13 @@ namespace libcloudphxx
             if (cix_a != cix_b - 1)
             {
               thrust::get<col_a_ix>(thrust::get<1>(tpl_ro_rw)) = real_t(0.);
+              thrust::get<t_coal_a_ix>(thrust::get<0>(tpl_ro_rw)) -= dt;
               return;
             }
           }
 
           //wrap the tpl_rw and tpl_ro_calc tuples to pass it to kernel
           tpl_calc_wrap<real_t,n_t> tpl_wrap(tpl_rw, tpl_ro_calc);
-
-#if !defined(__NVCC__)
-          using std::min;
-          using std::max;
-#endif
-          // collision timestep is the longer t_coal
-          real_t dt = max(thrust::get<t_coal_a_ix>(tpl_ro), thrust::get<t_coal_b_ix>(tpl_ro));
 
           // computing the probability of collision
           real_t prob = dt / thrust::get<dv_ix>(tpl_ro)
@@ -230,7 +220,7 @@ namespace libcloudphxx
           if (thrust::get<n_a_ix>(tpl_rw) >= thrust::get<n_b_ix>(tpl_rw)) 
           {
             if(thrust::get<n_b_ix>(tpl_rw) > 0) 
-              n_t col_no_done = min( col_no, n_t(thrust::get<n_a_ix>(tpl_rw) / thrust::get<n_b_ix>(tpl_rw)));
+              col_no_done = min( col_no, n_t(thrust::get<n_a_ix>(tpl_rw) / thrust::get<n_b_ix>(tpl_rw)));
             collide<real_t, n_t,
                 n_a_ix,   n_b_ix,
               rw2_a_ix, rw2_b_ix,
@@ -242,7 +232,7 @@ namespace libcloudphxx
           else
           {
             if(thrust::get<n_a_ix>(tpl_rw) > 0) 
-              n_t col_no_done = min( col_no, n_t(thrust::get<n_b_ix>(tpl_rw) / thrust::get<n_a_ix>(tpl_rw)));
+              col_no_done = min( col_no, n_t(thrust::get<n_b_ix>(tpl_rw) / thrust::get<n_a_ix>(tpl_rw)));
             collide<real_t, n_t,
                 n_b_ix,   n_a_ix,
               rw2_b_ix, rw2_a_ix,
@@ -275,13 +265,13 @@ namespace libcloudphxx
       thrust::stable_partition(
         sorted_ijk.begin(), sorted_ijk.end(),
         thrust::make_permutation_iterator(t_coal.begin(), sorted_id.begin()),
-        detail::positive()
+        arg::_1 > 0.
       );
       // then change sorted_id, TODO: do it all in one call to partition
       typename thrust_device::vector<thrust_size_t>::iterator middle = thrust::stable_partition(
         sorted_id.begin(), sorted_id.end(),
         thrust::make_permutation_iterator(t_coal.begin(), sorted_id.begin()),
-        detail::positive()
+        arg::_1 > 0.
       );
       // total number of SDs that can collide (i.e. those with t_coal > 0)
       thrust_size_t n_part_to_coal = middle - sorted_id.begin();
@@ -332,8 +322,8 @@ namespace libcloudphxx
         off.begin()
       );
 
-      // tossing n_part/2 random numbers for comparing with probability of collisions in a pair of droplets
-      rand_u01(n_part);
+      // tossing random numbers for comparing with probability of collisions in a pair of droplets
+      rand_u01(n_part_to_coal);
 
       // colliding
       typedef thrust::permutation_iterator<
