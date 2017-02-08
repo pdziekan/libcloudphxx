@@ -5,6 +5,7 @@
   * GPLv3+ (see the COPYING file or http://www.gnu.org/licenses/)
   */
 
+#include <thrust/partition.h>
 
 namespace libcloudphxx
 {
@@ -13,6 +14,17 @@ namespace libcloudphxx
     namespace detail
     {
       enum{na_ge_nb = -2, nb_gt_na = -1};
+
+      struct positive 
+      {
+        template <class real_t>
+        BOOST_GPU_ENABLED
+        bool operator()(const real_t &val)
+        {
+          if(val > 0.) return true;
+          else return false;
+        }
+      };
 
       struct summator
       {
@@ -118,9 +130,10 @@ namespace libcloudphxx
           real_t,                       // scaling factor
           thrust_size_t, thrust_size_t, // ix
           thrust_size_t, thrust_size_t, // off (index within cell)
-          real_t                       // dv
+          real_t,                       // dv
+          real_t, real_t                // t_coal_a & t_coal_b
         > tpl_ro_t;
-        enum { u01_ix, scl_ix, ix_a_ix, ix_b_ix, off_a_ix, off_b_ix, dv_ix };
+        enum { u01_ix, scl_ix, ix_a_ix, ix_b_ix, off_a_ix, off_b_ix, dv_ix, t_coal_a_ix, t_coal_b_ix };
 
         // read-write parameters = return type
         typedef thrust::tuple<
@@ -139,13 +152,12 @@ namespace libcloudphxx
         > tpl_ro_calc_t;
         enum { rhod_ix, eta_ix };
 
-        const real_t dt;
         const kernel_base<real_t, n_t> *p_kernel;
         const n_t sd_const_multi;
         bool *increase_sstp_coal;
 
         //ctor
-        collider(const real_t &dt, kernel_base<real_t, n_t> *p_kernel, const n_t &sd_const_multi, bool *increase_sstp_coal) : dt(dt), p_kernel(p_kernel), sd_const_multi(sd_const_multi), increase_sstp_coal(increase_sstp_coal) {}
+        collider(kernel_base<real_t, n_t> *p_kernel, const n_t &sd_const_multi, bool *increase_sstp_coal) : p_kernel(p_kernel), sd_const_multi(sd_const_multi), increase_sstp_coal(increase_sstp_coal) {}
 
         template <class tup_ro_rw_t>
         BOOST_GPU_ENABLED
@@ -180,12 +192,20 @@ namespace libcloudphxx
           //wrap the tpl_rw and tpl_ro_calc tuples to pass it to kernel
           tpl_calc_wrap<real_t,n_t> tpl_wrap(tpl_rw, tpl_ro_calc);
 
+#if !defined(__NVCC__)
+          using std::min;
+          using std::max;
+#endif
+          // collision timestep is the longer t_coal
+          real_t dt = max(thrust::get<t_coal_a_ix>(tpl_ro), thrust::get<t_coal_b_ix>(tpl_ro));
+
           // computing the probability of collision
           real_t prob = dt / thrust::get<dv_ix>(tpl_ro)
             * thrust::get<scl_ix>(tpl_ro)
             * p_kernel->calc(tpl_wrap);
   
           n_t col_no = n_t(prob); //number of collisions between the pair; rint?
+          n_t col_no_done; // number of collisions that actually happened
 
           if(sd_const_multi > 0 && col_no >= 1) //TODO: do sth similar for sd_conc_mean version?
           {
@@ -196,41 +216,46 @@ namespace libcloudphxx
           if (thrust::get<u01_ix>(tpl_ro) < prob - col_no) ++col_no;
           if(col_no == 0) 
           {
+            // save number of collisions
             thrust::get<col_a_ix>(thrust::get<1>(tpl_ro_rw)) = real_t(0.);
             thrust::get<col_b_ix>(thrust::get<1>(tpl_ro_rw)) = real_t(0.);
+            // dt time passed
+            thrust::get<t_coal_a_ix>(thrust::get<0>(tpl_ro_rw)) -= dt;
+            thrust::get<t_coal_b_ix>(thrust::get<0>(tpl_ro_rw)) -= dt;
             return;
           }
 
-#if !defined(__NVCC__)
-          using std::min;
-#endif
           // performing the coalescence event if lucky
           // note: >= causes equal-multiplicity collisions to result in flagging for recycling
           if (thrust::get<n_a_ix>(tpl_rw) >= thrust::get<n_b_ix>(tpl_rw)) 
           {
             if(thrust::get<n_b_ix>(tpl_rw) > 0) 
-              col_no = min( col_no, n_t(thrust::get<n_a_ix>(tpl_rw) / thrust::get<n_b_ix>(tpl_rw)));
+              n_t col_no_done = min( col_no, n_t(thrust::get<n_a_ix>(tpl_rw) / thrust::get<n_b_ix>(tpl_rw)));
             collide<real_t, n_t,
                 n_a_ix,   n_b_ix,
               rw2_a_ix, rw2_b_ix,
               rd3_a_ix, rd3_b_ix,
                vt_a_ix,  vt_b_ix
-            >(thrust::get<1>(tpl_ro_rw), col_no);
+            >(thrust::get<1>(tpl_ro_rw), col_no_done);
             thrust::get<col_b_ix>(thrust::get<1>(tpl_ro_rw)) = real_t(na_ge_nb); // col vector for the second in a pair stores info on which one has greater multiplicity
           }
           else
           {
             if(thrust::get<n_a_ix>(tpl_rw) > 0) 
-              col_no = min( col_no, n_t(thrust::get<n_b_ix>(tpl_rw) / thrust::get<n_a_ix>(tpl_rw)));
+              n_t col_no_done = min( col_no, n_t(thrust::get<n_b_ix>(tpl_rw) / thrust::get<n_a_ix>(tpl_rw)));
             collide<real_t, n_t,
                 n_b_ix,   n_a_ix,
               rw2_b_ix, rw2_a_ix,
               rd3_b_ix, rd3_a_ix,
                vt_b_ix,  vt_a_ix
-            >(thrust::get<1>(tpl_ro_rw), col_no);
+            >(thrust::get<1>(tpl_ro_rw), col_no_done);
             thrust::get<col_b_ix>(thrust::get<1>(tpl_ro_rw)) = real_t(nb_gt_na); // col vector for the second in a pair stores info on which one has greater multiplicity
           }
-          thrust::get<col_a_ix>(thrust::get<1>(tpl_ro_rw)) = real_t(col_no); // col vector for the first in a pair stores info on number of collisions
+          thrust::get<col_a_ix>(thrust::get<1>(tpl_ro_rw)) = real_t(col_no_done); // col vector for the first in a pair stores info on number of collisions
+          // dt * (col_no_done / col_no) time passed
+          real_t dt_done = dt * (real_t(col_no_done) / real_t(col_no));
+          thrust::get<t_coal_a_ix>(thrust::get<0>(tpl_ro_rw)) -= dt_done;
+          thrust::get<t_coal_b_ix>(thrust::get<0>(tpl_ro_rw)) -= dt_done;
         }
       };
     };
@@ -238,9 +263,30 @@ namespace libcloudphxx
     template <typename real_t, backend_t device>
     void particles_t<real_t, device>::impl::coal(const real_t &dt)
     {   
+      namespace arg = thrust::placeholders;
+      // increase per-particle coal timestep
+      thrust::transform(t_coal.begin(), t_coal.end(), t_coal.begin(), arg::_1 + dt);
+
       // prerequisites
       hskpng_shuffle_and_sort(); // to get random neighbours by default
-      hskpng_count();            // no. of super-droplets per cell 
+
+      // move SDs that shouldn't collide to the end, TODO: merge it with shuffle_and_sort?
+      // adjust sorted_ijk first
+      thrust::stable_partition(
+        sorted_ijk.begin(), sorted_ijk.end(),
+        thrust::make_permutation_iterator(t_coal.begin(), sorted_id.begin()),
+        detail::positive()
+      );
+      // then change sorted_id, TODO: do it all in one call to partition
+      typename thrust_device::vector<thrust_size_t>::iterator middle = thrust::stable_partition(
+        sorted_id.begin(), sorted_id.end(),
+        thrust::make_permutation_iterator(t_coal.begin(), sorted_id.begin()),
+        detail::positive()
+      );
+      // total number of SDs that can collide (i.e. those with t_coal > 0)
+      thrust_size_t n_part_to_coal = middle - sorted_id.begin();
+
+      hskpng_count(n_part_to_coal); // no. of super-droplets per cell, but only those that can collide
       
       // placing scale_factors in count_mom (of size count_n!)
       thrust::transform(
@@ -314,7 +360,8 @@ namespace libcloudphxx
           thrust::counting_iterator<thrust_size_t>,                // ix_a
           thrust::counting_iterator<thrust_size_t>,                // ix_b
           pi_size_t, pi_size_t,                                    // off_a & off_b
-          pi_real_t                                                // dv
+          pi_real_t,                                               // dv
+          pi_real_t, pi_real_t                                     // t_coal_a & t_coal_b
         >
       > zip_ro_t;
 
@@ -348,7 +395,10 @@ namespace libcloudphxx
           thrust::make_permutation_iterator(off.begin(), sorted_ijk.begin()), 
           thrust::make_permutation_iterator(off.begin(), sorted_ijk.begin())+1,
           // dv
-          thrust::make_permutation_iterator(dv.begin(), sorted_ijk.begin())
+          thrust::make_permutation_iterator(dv.begin(), sorted_ijk.begin()),
+          // t_coal, not really read-only...
+          thrust::make_permutation_iterator(t_coal.begin(), sorted_id.begin()), 
+          thrust::make_permutation_iterator(t_coal.begin(), sorted_id.begin())+1
         )
       );
 
@@ -383,8 +433,8 @@ namespace libcloudphxx
 
       thrust::for_each(
         thrust::make_zip_iterator(thrust::make_tuple(zip_ro_it, zip_rw_it, zip_ro_calc_it)),
-        thrust::make_zip_iterator(thrust::make_tuple(zip_ro_it, zip_rw_it, zip_ro_calc_it)) + n_part - 1,
-        detail::collider<real_t, n_t>(dt, p_kernel, opts_init.sd_const_multi, increase_sstp_coal)
+        thrust::make_zip_iterator(thrust::make_tuple(zip_ro_it, zip_rw_it, zip_ro_calc_it)) + n_part_to_coal - 1,
+        detail::collider<real_t, n_t>(p_kernel, opts_init.sd_const_multi, increase_sstp_coal)
       );
 
       // add masses of chemicals
@@ -403,7 +453,7 @@ namespace libcloudphxx
               thrust::make_permutation_iterator(chem_bgn[i], sorted_id.begin())+1,
               col.begin(),
               col.begin()+1
-            )) + n_part -1,
+            )) + n_part_to_coal -1,
             detail::summator()
           );
       }
@@ -426,7 +476,7 @@ namespace libcloudphxx
             thrust::make_permutation_iterator(rd3.begin(), sorted_id.begin())+1,
             col.begin(),
             col.begin()+1
-          )) + n_part -1,
+          )) + n_part_to_coal -1,
           detail::weighted_summator<real_t>()
         );
       }

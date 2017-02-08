@@ -34,5 +34,23 @@ namespace libcloudphxx
       assert(count_n <= n_cell);
       counted = true;
     }   
+
+    template <typename real_t, backend_t device>
+    void particles_t<real_t, device>::impl::hskpng_count(thrust_size_t n_part)
+    {   
+      // computing count_* - number of particles per grid cell
+      thrust::pair<
+        thrust_device::vector<thrust_size_t>::iterator,
+        thrust_device::vector<n_t>::iterator
+      > n = thrust::reduce_by_key(
+        sorted_ijk.begin(), sorted_ijk.begin() + n_part,   // input - keys
+        thrust::make_constant_iterator(n_t(1)), // input - values
+        count_ijk.begin(),                      // output - keys
+        count_num.begin()                       // output - values
+      );
+      count_n = n.first - count_ijk.begin();
+      assert(count_n > 0);
+      assert(count_n <= n_cell);
+    }   
   };  
 };

@@ -375,6 +375,7 @@ namespace libcloudphxx
       void hskpng_sort();
       void hskpng_shuffle_and_sort();
       void hskpng_count();
+      void hskpng_count(thrust_size_t);
       void hskpng_ijk();
       void hskpng_Tpr();
 
