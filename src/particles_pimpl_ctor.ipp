@@ -73,6 +73,7 @@ namespace libcloudphxx
 	x,   // x spatial coordinate (for 1D, 2D and 3D)
 	y,   // y spatial coordinate (for 3D)
 	z,   // z spatial coordinate (for 2D and 3D)
+        t_coal,  // individual coalescence time
         sstp_tmp_rv, // either rv_old or advection-caused change in water vapour mixing ratio
         sstp_tmp_th, // ditto for theta_d
         sstp_tmp_rh; // ditto for rho

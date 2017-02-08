@@ -37,6 +37,7 @@ namespace libcloudphxx
       rw2.reserve(opts_init.n_sd_max);
       n.reserve(opts_init.n_sd_max);
       kpa.reserve(opts_init.n_sd_max);
+      t_coal.reserve(opts_init.n_sd_max);
 
       if(opts_init.chem_switch || opts_init.sstp_cond > 1 || n_dims >= 2)
       {

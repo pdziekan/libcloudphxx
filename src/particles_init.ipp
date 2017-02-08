@@ -83,6 +83,9 @@ namespace libcloudphxx
       else if(pimpl->opts_init.dry_sizes.size() > 0)
         pimpl->init_SD_with_sizes();
 
+      // initialise t_coal to 0., has to be done after hskpng_resize, i.e. after init_SD_with...
+      thrust::fill(pimpl->t_coal.begin(), pimpl->t_coal.end(), 0.);
+
       // --------  other inits  --------
       //initialising collision kernel
       if(pimpl->opts_init.coal_switch) pimpl->init_kernel();

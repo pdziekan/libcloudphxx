@@ -41,10 +41,10 @@ namespace libcloudphxx
       typedef thrust::detail::normal_iterator<thrust_device::pointer<real_t> > it_real_t;
       typedef thrust::detail::normal_iterator<thrust_device::pointer<n_t> > it_n_t;
       typedef thrust::detail::normal_iterator<thrust_device::pointer<thrust_size_t> > it_thrust_size_t;
-      typedef thrust::tuple<it_n_t, it_real_t, it_real_t, it_real_t, it_real_t, it_thrust_size_t> tup_params_t;
+      typedef thrust::tuple<it_n_t, it_real_t, it_real_t, it_real_t, it_real_t, it_thrust_size_t, it_real_t> tup_params_t;
       typedef thrust::tuple<it_real_t, it_real_t, it_real_t> tup_sstp_tmp_t;
  
-      tup_params_t tup_params = thrust::make_tuple(n.begin(), rw2.begin(), rd3.begin(), kpa.begin(), vt.begin(), ijk.begin());
+      tup_params_t tup_params = thrust::make_tuple(n.begin(), rw2.begin(), rd3.begin(), kpa.begin(), vt.begin(), ijk.begin(), t_coal.begin());
 
       if(opts_init.chem_switch)
       {
