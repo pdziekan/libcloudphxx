@@ -54,6 +54,12 @@ namespace libcloudphxx
       w[1] = x[1] - r1;
       w[2] = r2 - x[2];
       w[3] = x[3] - r2;
+if(w[0] > w[1]) {w[0]=dx;w[1]=0;}
+else            {w[0]=0;w[1]=dx;}
+if(w[2] > w[3]) {w[2]=dy;w[3]=0;}
+else            {w[2]=0;w[3]=dy;}
+
+
 
       return
       (

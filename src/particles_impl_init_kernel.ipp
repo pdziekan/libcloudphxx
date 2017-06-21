@@ -66,17 +66,17 @@ namespace libcloudphxx
             throw std::runtime_error("Hall kernel doesn't accept parameters.");
           }
           //read in kernel efficiencies to a temporary container
-          detail::hall_efficiencies<real_t> (tmp_kernel_eff);
+ //         detail::hall_efficiencies<real_t> (tmp_kernel_eff);
          
           //reserve device memory for kernel parameters vector
-          kernel_parameters.resize(opts_init.kernel_parameters.size() + tmp_kernel_eff.size());
+   //       kernel_parameters.resize(opts_init.kernel_parameters.size() + tmp_kernel_eff.size());
 
           //append efficiencies to device vector
-          thrust::copy(tmp_kernel_eff.begin(), tmp_kernel_eff.end(), kernel_parameters.begin()+n_user_params);
+     //     thrust::copy(tmp_kernel_eff.begin(), tmp_kernel_eff.end(), kernel_parameters.begin()+n_user_params);
 
           // init kernel
-          k_geometric_with_efficiencies.resize(1, kernel_geometric_with_efficiencies<real_t, n_t> (kernel_parameters.data(), detail::hall_r_max<real_t>()));
-          p_kernel = (&(k_geometric_with_efficiencies[0])).get();
+          k_hall.resize(1, kernel_hall<real_t, n_t> (kernel_parameters.data(), detail::hall_r_max<real_t>()));
+          p_kernel = (&(k_hall[0])).get();
           break;
 
 
