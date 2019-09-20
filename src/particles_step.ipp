@@ -343,6 +343,7 @@ namespace libcloudphxx
       {
 
         thrust::fill(pimpl->delta_acnv25.begin(), pimpl->delta_acnv25.end(), real_t(0));
+        thrust::fill(pimpl->acnv25.begin(), pimpl->acnv25.end(), real_t(0));
 
         for (int step = 0; step < pimpl->opts_init.sstp_coal; ++step) 
         {
