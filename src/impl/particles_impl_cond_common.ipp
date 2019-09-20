@@ -261,16 +261,6 @@ namespace libcloudphxx
           // check if it doesn't evaporate too much
           if(rw2_new < rd2) rw2_new = rd2;
 
-          // store rain evaporation rates
-          if(rw2_new < rw2_old)
-          {
-            if(rw2_old > 4e-10)       // r_rain > 20um
-              thrust::get<0>(thrust::get<3>(tpl_tpl)) += pow(rw2_old, real_t(3./2)) - pow(rw2_new, real_t(3./2));
-            if(rw2_old > 6.25e-10)    // r_rain > 25um
-              thrust::get<1>(thrust::get<3>(tpl_tpl)) += pow(rw2_old, real_t(3./2)) - pow(rw2_new, real_t(3./2));
-            if(rw2_old > 1.024e-9)    // r_rain > 32um
-              thrust::get<2>(thrust::get<3>(tpl_tpl)) += pow(rw2_old, real_t(3./2)) - pow(rw2_new, real_t(3./2));
-          }
 
 #if !defined(NDEBUG)
           if(isnan(rw2_new) || isinf(rw2_new))

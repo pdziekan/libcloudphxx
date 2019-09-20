@@ -59,14 +59,7 @@ namespace libcloudphxx
           // particle-specific p
           pi,
           // particle-specific RH
-          rhi, 
-          thrust::make_zip_iterator(   
-            thrust::make_tuple(
-              delta_revp20.begin(),
-              delta_revp25.begin(),
-              delta_revp32.begin()
-            )
-          )
+          rhi 
         )), 
         rw2.begin(),                    // output
         detail::advance_rw2<real_t>(dt, RH_max)
