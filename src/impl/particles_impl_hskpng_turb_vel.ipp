@@ -16,16 +16,12 @@ namespace libcloudphxx
       template<class real_t>
       struct common__turbulence__tau
       {
-        const quantity<si::length, real_t> lambda;
-        common__turbulence__tau(const real_t &lambda):
-          lambda(lambda * si::metres){}
-
         BOOST_GPU_ENABLED
-        real_t operator()(const real_t &tke)
+        real_t operator()(const real_t &tke, const real_t &lambda)
         {
           return common::GA17_turbulence::tau(
             tke * si::metres * si::metres / si::seconds / si::seconds,
-            lambda) / si::seconds;
+            lambda * si::meters) / si::seconds;
         }
       };
 
@@ -56,7 +52,12 @@ namespace libcloudphxx
     {   
       thrust_device::vector<real_t> &tau(tmp_device_real_cell);
       thrust_device::vector<real_t> &tke(diss_rate); // should be called after hskpng_tke, which replaces diss_rate with tke
-      thrust::transform(tke.begin(), tke.end(), tau.begin(), detail::common__turbulence__tau<real_t>(lambda));
+      thrust::transform(
+        tke.begin(), tke.end(), 
+        thrust::make_permutation_iterator(lambda.begin(), k_cell.begin()),
+        tau.begin(), 
+        detail::common__turbulence__tau<real_t>()
+      );
 
       thrust_device::vector<real_t> &r_normal(tmp_device_real_part);
       thrust_device::vector<real_t> * vel_turbs_vctrs_a[] = {&up, &wp, &vp};

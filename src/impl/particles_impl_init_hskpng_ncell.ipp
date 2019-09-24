@@ -16,6 +16,7 @@ namespace libcloudphxx
       T.resize(n_cell);
       RH.resize(n_cell); 
       eta.resize(n_cell); 
+      k_cell.resize(n_cell); 
 
       count_ijk.resize(n_cell);
       count_num.resize(n_cell);
@@ -28,6 +29,11 @@ namespace libcloudphxx
         sstp_tmp_th.resize(n_cell);
         sstp_tmp_rh.resize(n_cell);
       }
+
+      // make space for vertical profiles of dz and lambda
+      dz.resize(m1(opts_init.nz));
+      z_bot.resize(m1(opts_init.nz));
+      lambda.resize(m1(opts_init.nz));
     }
   };
 };

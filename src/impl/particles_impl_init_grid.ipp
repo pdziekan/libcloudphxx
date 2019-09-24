@@ -17,20 +17,21 @@ namespace libcloudphxx
         // note: having a copy of opts_init here causes CUDA crashes (alignment problems?)
         const int 
           nx, ny, nz;
-	const real_t 
-          dx, dy, dz,
+        const real_t 
+          dx, dy,
           x0, y0, z0,
           x1, y1, z1;
 
         dv_eval(const opts_init_t<real_t> &o) : 
           nx(o.nx), ny(o.ny), nz(o.nz),
-          dx(o.dx), dy(o.dy), dz(o.dz),
+          dx(o.dx), dy(o.dy),
           x0(o.x0), y0(o.y0), z0(o.z0),
-          x1(o.x1), y1(o.y1), z1(o.z1) 
+          x1(o.x1), y1(o.y1), z1(o.z1)
         {}
 
+        template<class tpl_t>
         BOOST_GPU_ENABLED
-        real_t operator()(const int &ijk)
+        real_t operator()(const int &ijk, tpl_t tpl) // tpl: 0 - dz, 1 - z_bot
         {
 #if !defined(__NVCC__)
           using std::min;
@@ -45,9 +46,9 @@ namespace libcloudphxx
              
           return 
             max(real_t(0),
-	      (min((i + 1) * dx, x1) - max(i * dx, x0)) *
-	      (min((j + 1) * dy, y1) - max(j * dy, y0)) *
-	      (min((k + 1) * dz, z1) - max(k * dz, z0))
+            (min((i + 1) * dx, x1) - max(i * dx, x0)) *
+            (min((j + 1) * dy, y1) - max(j * dy, y0)) *
+            (min(thrust::get<0>(tpl) + thrust::get<1>(tpl), z1) - max(thrust::get<1>(tpl), z0))
             );
         }
       };
@@ -65,22 +66,16 @@ namespace libcloudphxx
 
       if (n_dims > 0)
       {
-        // in parcel set-up hskpng_Tpr takes care of keeping dv up-to-date with rho (dealing with 1kg of dry air)
-	thrust::transform(
-	  zero, zero + n_cell, // input - 1st arg
-	  dv.begin(),          // output  
-	  detail::dv_eval<real_t>(opts_init)
-	);
-	// memory allocation
-	lft.resize(n_cell + n_cell_halo);
-	rgt.resize(n_cell + n_cell_halo);
+        // memory allocation
+        lft.resize(n_cell + n_cell_halo);
+        rgt.resize(n_cell + n_cell_halo);
       }
 
       if (n_dims > 1)
       {
-	// memory allocation
-	abv.resize(n_cell + n_cell_halo);
-	blw.resize(n_cell + n_cell_halo);
+        // memory allocation
+        abv.resize(n_cell + n_cell_halo);
+        blw.resize(n_cell + n_cell_halo);
       }
       
       if (n_dims == 3)
@@ -94,53 +89,53 @@ namespace libcloudphxx
       switch (n_dims)
       {
         case 0: break;
-	case 2:
-	  thrust::transform(
-            zero, zero + n_cell + n_cell_halo,    // input - 1st arg
-            blw.begin(),            // output
-            arg::_1 + (arg::_1 / opts_init.nz)
-	  );
-	  thrust::transform(
-            blw.begin(), blw.end(), // input - 1st arg
-            abv.begin(),            // output
-            arg::_1 + 1
-	  );
-          // intentionally no break!
-        case 1:
-	  thrust::transform(
-            zero, zero + n_cell + n_cell_halo,    // input - 1st arg
-            lft.begin(),            // output
-            arg::_1
-	  );
-	  thrust::transform(
-            lft.begin(), lft.end(), // input - 1st arg
-            rgt.begin(),            // output
-            arg::_1 + opts_init.nz
-	  );
-	  break;
-        case 3:
-	  thrust::transform(
-            zero, zero + n_cell + n_cell_halo,    // input - 1st arg
-            lft.begin(),            // output
-            arg::_1 
-	  );
-	  thrust::transform(
-            lft.begin(), lft.end(), // input - 1st arg
-            rgt.begin(),            // output
-            arg::_1 + opts_init.nz * opts_init.ny
-	  );
-	  thrust::transform(
-            zero, zero + n_cell + n_cell_halo,    // input - 1st arg
-            blw.begin(),            // output
-            arg::_1 
-            + opts_init.ny * (arg::_1 / (opts_init.nz * opts_init.ny)) 
-            + (arg::_1 - (arg::_1 / (opts_init.nz * opts_init.ny)) * (opts_init.nz * opts_init.ny)) / opts_init.nz
-	  );
-	  thrust::transform(
-            blw.begin(), blw.end(), // input - 1st arg
-            abv.begin(),            // output
-            arg::_1 + 1
-	  );
+        case 2:
+          thrust::transform(
+              zero, zero + n_cell + n_cell_halo,    // input - 1st arg
+              blw.begin(),            // output
+              arg::_1 + (arg::_1 / opts_init.nz)
+          );
+          thrust::transform(
+              blw.begin(), blw.end(), // input - 1st arg
+              abv.begin(),            // output
+              arg::_1 + 1
+          );
+            // intentionally no break!
+          case 1:
+          thrust::transform(
+              zero, zero + n_cell + n_cell_halo,    // input - 1st arg
+              lft.begin(),            // output
+              arg::_1
+          );
+          thrust::transform(
+              lft.begin(), lft.end(), // input - 1st arg
+              rgt.begin(),            // output
+              arg::_1 + opts_init.nz
+          );
+          break;
+          case 3:
+          thrust::transform(
+              zero, zero + n_cell + n_cell_halo,    // input - 1st arg
+              lft.begin(),            // output
+              arg::_1 
+          );
+          thrust::transform(
+              lft.begin(), lft.end(), // input - 1st arg
+              rgt.begin(),            // output
+              arg::_1 + opts_init.nz * opts_init.ny
+          );
+          thrust::transform(
+              zero, zero + n_cell + n_cell_halo,    // input - 1st arg
+              blw.begin(),            // output
+              arg::_1 
+              + opts_init.ny * (arg::_1 / (opts_init.nz * opts_init.ny)) 
+              + (arg::_1 - (arg::_1 / (opts_init.nz * opts_init.ny)) * (opts_init.nz * opts_init.ny)) / opts_init.nz
+          );
+          thrust::transform(
+              blw.begin(), blw.end(), // input - 1st arg
+              abv.begin(),            // output
+              arg::_1 + 1
+          );
           thrust::transform(
             zero, zero + n_cell + n_cell_halo,    // input - 1st arg
             fre.begin(),            // output
@@ -152,8 +147,67 @@ namespace libcloudphxx
             arg::_1 + opts_init.nz
           );
           break;
-	default: assert(false && "TODO");
+        default: assert(false && "TODO");
       }
+
+      // initialize dz, cell extent in z
+      // constant value
+      if(opts_init.dz > real_t(0))
+        thrust::fill(dz.begin(), dz.end(), opts_init.dz);
+      // profile
+      else
+      {
+        assert(opts_init.dz_prof.size() == dz.size() && "Sizes of opts_init.dz_prof and of dz are not equal.");
+        thrust::copy(opts_init.dz_prof.begin(), opts_init.dz_prof.end(), dz.begin());
+        assert(*thrust::min_element(dz.begin(), dz.end()) >= 0 && "Minimum of dz < 0.");
+      }
+
+      debug::print(dz);
+
+      // initialize z_bot
+      thrust::exclusive_scan(dz.begin(), dz.end(), z_bot.begin(), real_t(0));
+
+      debug::print(z_bot);
+      
+      // init index k of a cell
+#if !defined(__NVCC__)
+      using std::max;
+#endif
+
+      thrust::transform(
+        zero, zero + n_cell, // input - 1st arg
+        k_cell.begin(),           // output  
+        arg::_1 % max(1, opts_init.nz)
+      );
+
+      debug::print(k_cell);
+
+      // initialize dv
+      if (n_dims > 0)
+      {
+      // in parcel set-up hskpng_Tpr takes care of keeping dv up-to-date with rho (dealing with 1kg of dry air)
+        thrust::transform(
+          zero, zero + n_cell, // input - 1st arg
+          thrust::make_zip_iterator(thrust::make_tuple(
+            thrust::make_permutation_iterator(dz.begin(),    k_cell.begin()),
+            thrust::make_permutation_iterator(z_bot.begin(), k_cell.begin())
+          )),
+          dv.begin(),          // output  
+          detail::dv_eval<real_t>(opts_init)
+        );
+      }
+
+      debug::print(dv);
+
+      // initialize sgs mixing length
+      if(opts_init.turb_cond_switch || opts_init.turb_adve_switch || opts_init.turb_coal_switch)
+      {
+        assert(opts_init.SGS_mix_len_prof.size() == lambda.size() && "Sizes of opts_init.mix_len_prof and of lambda are not equal.");
+        thrust::copy(opts_init.SGS_mix_len_prof.begin(), opts_init.SGS_mix_len_prof.end(), lambda.begin());
+        assert(*thrust::min_element(lambda.begin(), lambda.end()) >= 0 && "Minimum of lambda < 0.");
+      }
+
+      debug::print(lambda);
     }
   };
 };

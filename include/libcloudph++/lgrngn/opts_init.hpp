@@ -10,7 +10,6 @@
 #include <libcloudph++/lgrngn/extincl.hpp>
 #include <libcloudph++/lgrngn/kernel.hpp>
 #include <libcloudph++/lgrngn/terminal_velocity.hpp>
-#include <libcloudph++/lgrngn/SGS_length_scale.hpp>
 #include <libcloudph++/lgrngn/advection_scheme.hpp>
 #include <libcloudph++/lgrngn/RH_formula.hpp>
 #include <libcloudph++/lgrngn/chem.hpp>
@@ -46,6 +45,8 @@ namespace libcloudphxx
       // Eulerian component parameters
       int nx, ny, nz;
       real_t dx, dy, dz, dt;
+
+      std::vector<real_t> dz_prof; // in case of vertical grid stretching: define a profile of dz. It should be the Eulerian domain, i.e. not limited by z0 and z1
 
       // no. of substeps 
       int sstp_cond, sstp_coal; 
@@ -89,7 +90,7 @@ namespace libcloudphxx
       vt_t::vt_t terminal_velocity;
 
       // SGS mixing length
-      SGS_length_scale_t::SGS_length_scale_t SGS_length_scale;
+      std::vector<real_t> SGS_mix_len_prof; // profile of the SGS mixing length, in meters. TODO: use boost::si
 
       // super-droplet advection scheme
       as_t::as_t adve_scheme;
@@ -156,7 +157,6 @@ namespace libcloudphxx
         chem_rho(0), // dry particle density  //TODO add checking if the user gave a different value (np w init)  (was 1.8e-3)
         rng_seed(44),
         terminal_velocity(vt_t::undefined),
-        SGS_length_scale(SGS_length_scale_t::geometric_mean),
         kernel(kernel_t::undefined),
         adve_scheme(as_t::implicit),
         RH_formula(RH_formula_t::pv_cc),
