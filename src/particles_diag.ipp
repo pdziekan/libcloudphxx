@@ -18,7 +18,7 @@ namespace libcloudphxx
       struct add_div
       {
         BOOST_GPU_ENABLED
-        real_t operator()(const real_t &div, const thrust::tuple<real_t, real_t> &tpl)
+        real_t operator()(const real_t &div, const thrust::tuple<real_t, real_t, real_t> &tpl)
         {
           return div + (thrust::get<1>(tpl) - thrust::get<0>(tpl)) / thrust::get<2>(tpl);
         }
