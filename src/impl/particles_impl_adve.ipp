@@ -27,17 +27,18 @@ namespace libcloudphxx
       template <typename real_t>
       struct adve_helper_impl
       {
-        const real_t dx;
+        const real_t dt;
 
-        adve_helper_impl(const real_t dx, bool apply) : dx(dx) {} 
+        adve_helper_impl(const real_t dt, bool apply) : dt(dt) {} 
 
         BOOST_GPU_ENABLED
-        real_t operator()(thrust::tuple<real_t, const thrust_size_t, const real_t, const real_t> tpl)
+        real_t operator()(thrust::tuple<real_t, const thrust_size_t, const real_t, const real_t, const real_t> tpl)
         {
           real_t x = thrust::get<0>(tpl);
           const thrust_size_t floor_x_over_dx = thrust::get<1>(tpl);
-          real_t C_l = thrust::get<2>(tpl);
-          real_t C_r = thrust::get<3>(tpl);
+          real_t V_l = thrust::get<2>(tpl);
+          real_t V_r = thrust::get<3>(tpl);
+          real_t dx = thrust::get<4>(tpl);
 
           // integrating using backward Euler scheme + interpolation/extrapolation
           // 
@@ -51,11 +52,12 @@ namespace libcloudphxx
           // 
           // x_new * (1 - C_r + C_l) = x_old + C_l * dx - dx * floor(x_old/dx) * (C_r - C_l)
           // x_new =  (x_old + C_l * dx - dx * floor(x_old/dx) * (C_r - C_l)) / (1 - C_r + C_l)
+          // x_new =  (x_old + V_l * dt - dt * floor(x_old/dx) * (V_r - V_l)) / (1 - dt / dx * ( V_r - V_l ))
 
           return (
-            x + dx * (C_l - floor_x_over_dx * (C_r - C_l))
+            x + dt * (V_l - floor_x_over_dx * (V_r - V_l))
           ) / (
-            1 - (C_r - C_l)
+            1 - dt / dx * (V_r - V_l)
           );
         }
       };
@@ -63,18 +65,19 @@ namespace libcloudphxx
       template <typename real_t>
       struct adve_helper_expl
       {
-        const real_t dx;
+        const real_t dt;
         bool apply;
 
-        adve_helper_expl(const real_t &dx, bool apply) : dx(dx), apply(apply) {} 
+        adve_helper_expl(const real_t &dt, bool apply) : dt(dt), apply(apply) {} 
 
         BOOST_GPU_ENABLED
-        real_t operator()(thrust::tuple<real_t, const thrust_size_t, const real_t, const real_t> tpl)
+        real_t operator()(thrust::tuple<real_t, const thrust_size_t, const real_t, const real_t, const real_t> tpl)
         {
           real_t x = thrust::get<0>(tpl);
           const thrust_size_t floor_x_over_dx = thrust::get<1>(tpl);
-          real_t C_l = thrust::get<2>(tpl);
-          real_t C_r = thrust::get<3>(tpl);
+          real_t V_l = thrust::get<2>(tpl);
+          real_t V_r = thrust::get<3>(tpl);
+          real_t dx = thrust::get<4>(tpl);
 
           // integrating using forward Euler scheme + interpolation/extrapolation
           // 
@@ -85,10 +88,11 @@ namespace libcloudphxx
           //
           // x_new = x_old + C_l * dx + w * dx * (C_r - C_l)
           //       = x_old + C_l * dx + x_old * (C_r - C_l) - dx * floor(x_old/dx) * (C_r - C_l)
-          //       = x_old + (C_r - C_l) * (x_old - dx * floor(x_old/dx)) + C_l * dx
+          //       = x_old + (C_r - C_l) *       (x_old - dx * floor(x_old/dx)) + C_l * dx
+          //       = x_old + dt * [(V_r - V_l) * (x_old / dx - floor(x_old/dx)) + V_l]
 
           // return new position or change in position
-          return apply * x + (C_r - C_l) * (x - dx * floor_x_over_dx) + dx * C_l; 
+          return apply * x + dt * ((V_r - V_l) * (x / dx - floor_x_over_dx) + V_l); 
         }
       };
     };
@@ -117,37 +121,37 @@ namespace libcloudphxx
           > pi_real_size;
 
           {
-            const pi_real_size C_lft(courant_x.begin(), pi_size_size(lft.begin(), thrust::make_transform_iterator(ijk.begin(), detail::add_val<thrust_size_t>(offset)))),
-                               C_rgt(courant_x.begin(), pi_size_size(rgt.begin(), thrust::make_transform_iterator(ijk.begin(), detail::add_val<thrust_size_t>(offset))));
+            const pi_real_size V_lft(velocity_x.begin(), pi_size_size(lft.begin(), thrust::make_transform_iterator(ijk.begin(), detail::add_val<thrust_size_t>(offset)))),
+                               V_rgt(velocity_x.begin(), pi_size_size(rgt.begin(), thrust::make_transform_iterator(ijk.begin(), detail::add_val<thrust_size_t>(offset))));
             thrust::transform(
-              thrust::make_zip_iterator(make_tuple(x.begin(), i.begin(), C_lft,        C_rgt       )), // input - begin
-              thrust::make_zip_iterator(make_tuple(x.end(),   i.end(),   C_lft+n_part, C_rgt+n_part)), // input - end
+              thrust::make_zip_iterator(make_tuple(x.begin(), i.begin(), V_lft,        V_rgt       , thrust::make_constant_iterator(opts_init.dx)       )), // input - begin
+              thrust::make_zip_iterator(make_tuple(x.end(),   i.end(),   V_lft+n_part, V_rgt+n_part, thrust::make_constant_iterator(opts_init.dx)+n_part)), // input - end
               x.begin(), // output
-              adve_t(opts_init.dx, apply)
+              adve_t(opts_init.dt, apply)
             );
           }
 
           if (n_dims > 2)
           {
-            const pi_real_size C_fre(courant_y.begin(), pi_size_size(fre.begin(), thrust::make_transform_iterator(ijk.begin(), detail::add_val<thrust_size_t>(offset)))),
-                               C_hnd(courant_y.begin(), pi_size_size(hnd.begin(), thrust::make_transform_iterator(ijk.begin(), detail::add_val<thrust_size_t>(offset))));
+            const pi_real_size V_fre(velocity_y.begin(), pi_size_size(fre.begin(), thrust::make_transform_iterator(ijk.begin(), detail::add_val<thrust_size_t>(offset)))),
+                               V_hnd(velocity_y.begin(), pi_size_size(hnd.begin(), thrust::make_transform_iterator(ijk.begin(), detail::add_val<thrust_size_t>(offset))));
             thrust::transform(
-              thrust::make_zip_iterator(make_tuple(y.begin(), j.begin(), C_fre,        C_hnd       )), // input - begin
-              thrust::make_zip_iterator(make_tuple(y.end(),   j.end(),   C_fre+n_part, C_hnd+n_part)), // input - end
+              thrust::make_zip_iterator(make_tuple(y.begin(), j.begin(), V_fre,        V_hnd       , thrust::make_constant_iterator(opts_init.dy)       )), // input - begin
+              thrust::make_zip_iterator(make_tuple(y.end(),   j.end(),   V_fre+n_part, V_hnd+n_part, thrust::make_constant_iterator(opts_init.dy)+n_part)), // input - end
               y.begin(), // output
-              adve_t(opts_init.dy, apply)
+              adve_t(opts_init.dt, apply)
             );
           }
 
           if (n_dims > 1) 
           {
-            const pi_real_size C_abv(courant_z.begin(), pi_size_size(abv.begin(), thrust::make_transform_iterator(ijk.begin(), detail::add_val<thrust_size_t>(offset)))),
-                               C_blw(courant_z.begin(), pi_size_size(blw.begin(), thrust::make_transform_iterator(ijk.begin(), detail::add_val<thrust_size_t>(offset))));
+            const pi_real_size V_abv(velocity_z.begin(), pi_size_size(abv.begin(), thrust::make_transform_iterator(ijk.begin(), detail::add_val<thrust_size_t>(offset)))),
+                               V_blw(velocity_z.begin(), pi_size_size(blw.begin(), thrust::make_transform_iterator(ijk.begin(), detail::add_val<thrust_size_t>(offset))));
             thrust::transform(
-              thrust::make_zip_iterator(make_tuple(z.begin(), k.begin(), C_blw,        C_abv       )), // input - begin
-              thrust::make_zip_iterator(make_tuple(z.end(),   k.end(),   C_blw+n_part, C_abv+n_part)), // input - end
+              thrust::make_zip_iterator(make_tuple(z.begin(), k.begin(), V_blw,        V_abv       , thrust::make_permutation_iterator(dz.begin(), k.begin())       )), // input - begin
+              thrust::make_zip_iterator(make_tuple(z.end(),   k.end(),   V_blw+n_part, V_abv+n_part, thrust::make_permutation_iterator(dz.begin(), k.begin())+n_part)), // input - end
               z.begin(), // output
-              adve_t(opts_init.dz, apply)
+              adve_t(opts_init.dt, apply)
             );
           }
 

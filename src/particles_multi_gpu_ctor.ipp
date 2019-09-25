@@ -31,15 +31,15 @@ namespace libcloudphxx
       const arrinfo_t<real_t> rv,
       const arrinfo_t<real_t> rhod,
       const arrinfo_t<real_t> p,
-      const arrinfo_t<real_t> courant_1,
-      const arrinfo_t<real_t> courant_2,
-      const arrinfo_t<real_t> courant_3,
+      const arrinfo_t<real_t> velocity_1,
+      const arrinfo_t<real_t> velocity_2,
+      const arrinfo_t<real_t> velocity_3,
       const std::map<enum chem_species_t, const arrinfo_t<real_t> > ambient_chem
     )
     {
       pimpl->mcuda_run(
         &particles_t<real_t, CUDA>::init,
-        th, rv, rhod, p, courant_1, courant_2, courant_3, ambient_chem
+        th, rv, rhod, p, velocity_1, velocity_2, velocity_3, ambient_chem
       );
     }
   };

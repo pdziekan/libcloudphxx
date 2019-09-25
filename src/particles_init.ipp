@@ -19,14 +19,14 @@ namespace libcloudphxx
       const arrinfo_t<real_t> rhod,
       const arrinfo_t<real_t> p,         // pressure profile [in Pascals], needed if pressure perturbations are neglected in condensation (e.g. anelastic model)
                                          // defaults to NULL-NULL pair (variable pressure)
-      const arrinfo_t<real_t> courant_x, // might be NULL
-      const arrinfo_t<real_t> courant_y, // might be NULL
-      const arrinfo_t<real_t> courant_z, // might be NULL
+      const arrinfo_t<real_t> velocity_x, // might be NULL
+      const arrinfo_t<real_t> velocity_y, // might be NULL
+      const arrinfo_t<real_t> velocity_z, // might be NULL
       const std::map<enum chem_species_t, const arrinfo_t<real_t> > ambient_chem
     )
     {
 
-      pimpl->init_sanity_check(th, rv, rhod, p, courant_x, courant_y, courant_z, ambient_chem);
+      pimpl->init_sanity_check(th, rv, rhod, p, velocity_x, velocity_y, velocity_z, ambient_chem);
 
       // is a constant pressure profile used?
       pimpl->const_p = !p.is_null();
@@ -42,9 +42,9 @@ namespace libcloudphxx
 #if !defined(__NVCC__)
       using std::max;
 #endif
-      if (!courant_x.is_null())  pimpl->init_e2l(courant_x, &pimpl->courant_x, 1, 0, 0, - pimpl->halo_x );
-      if (!courant_y.is_null())  pimpl->init_e2l(courant_y, &pimpl->courant_y, 0, 1, 0, pimpl->n_x_bfr * pimpl->opts_init.nz - pimpl->halo_y);
-      if (!courant_z.is_null())  pimpl->init_e2l(courant_z, &pimpl->courant_z, 0, 0, 1, pimpl->n_x_bfr * max(1, pimpl->opts_init.ny) - pimpl->halo_z);
+      if (!velocity_x.is_null())  pimpl->init_e2l(velocity_x, &pimpl->velocity_x, 1, 0, 0, - pimpl->halo_x );
+      if (!velocity_y.is_null())  pimpl->init_e2l(velocity_y, &pimpl->velocity_y, 0, 1, 0, pimpl->n_x_bfr * pimpl->opts_init.nz - pimpl->halo_y);
+      if (!velocity_z.is_null())  pimpl->init_e2l(velocity_z, &pimpl->velocity_z, 0, 0, 1, pimpl->n_x_bfr * max(1, pimpl->opts_init.ny) - pimpl->halo_z);
 
       if (pimpl->opts_init.chem_switch)
 	for (int i = 0; i < chem_gas_n; ++i)
@@ -56,9 +56,9 @@ namespace libcloudphxx
       pimpl->sync(rhod, pimpl->rhod);
       pimpl->sync(p,   pimpl->p);
 
-      if (!courant_x.is_null()) pimpl->sync(courant_x, pimpl->courant_x);
-      if (!courant_y.is_null()) pimpl->sync(courant_y, pimpl->courant_y);
-      if (!courant_z.is_null()) pimpl->sync(courant_z, pimpl->courant_z);
+      if (!velocity_x.is_null()) pimpl->sync(velocity_x, pimpl->velocity_x);
+      if (!velocity_y.is_null()) pimpl->sync(velocity_y, pimpl->velocity_y);
+      if (!velocity_z.is_null()) pimpl->sync(velocity_z, pimpl->velocity_z);
 
       if (pimpl->opts_init.chem_switch)
 	for (int i = 0; i < chem_gas_n; ++i)

@@ -16,9 +16,9 @@ namespace libcloudphxx
       const arrinfo_t<real_t> rv,
       const arrinfo_t<real_t> rhod,
       const arrinfo_t<real_t> p,
-      const arrinfo_t<real_t> courant_x,
-      const arrinfo_t<real_t> courant_y,
-      const arrinfo_t<real_t> courant_z,
+      const arrinfo_t<real_t> velocity_x,
+      const arrinfo_t<real_t> velocity_y,
+      const arrinfo_t<real_t> velocity_z,
       const std::map<enum chem_species_t, const arrinfo_t<real_t> > ambient_chem
     )
     {
@@ -33,19 +33,19 @@ namespace libcloudphxx
 
       // --------  init cell characteristics  --------
       // initialising Eulerian-Lagrandian coupling
-      if (!courant_x.is_null() || !courant_y.is_null() || !courant_z.is_null())
+      if (!velocity_x.is_null() || !velocity_y.is_null() || !velocity_z.is_null())
       {
         if (n_dims == 0)
-          throw std::runtime_error("Courant numbers passed in 0D setup");
+          throw std::runtime_error("velocitys passed in 0D setup");
 
-        if (n_dims == 1 && (courant_x.is_null() || !courant_y.is_null() || !courant_z.is_null()))
-          throw std::runtime_error("Only X Courant number allowed in 1D setup");
+        if (n_dims == 1 && (velocity_x.is_null() || !velocity_y.is_null() || !velocity_z.is_null()))
+          throw std::runtime_error("Only X velocity allowed in 1D setup");
 
-        if (n_dims == 2 && (courant_x.is_null() || !courant_y.is_null() || courant_z.is_null()))
-          throw std::runtime_error("Only X and Z Courant numbers allowed in 2D setup");
+        if (n_dims == 2 && (velocity_x.is_null() || !velocity_y.is_null() || velocity_z.is_null()))
+          throw std::runtime_error("Only X and Z velocitys allowed in 2D setup");
 
-        if (n_dims == 3 && (courant_x.is_null() || courant_y.is_null() || courant_z.is_null()))
-          throw std::runtime_error("All XYZ Courant number components required in 3D setup");
+        if (n_dims == 3 && (velocity_x.is_null() || velocity_y.is_null() || velocity_z.is_null()))
+          throw std::runtime_error("All XYZ velocity components required in 3D setup");
       }
 
       if (opts_init.chem_switch && ambient_chem.size() != chem_gas_n)
