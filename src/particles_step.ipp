@@ -122,14 +122,14 @@ namespace libcloudphxx
         {assert(*thrust::min_element(pimpl->diss_rate.begin(), pimpl->diss_rate.end()) >= 0);}
 
       // check if velocitys are greater than 2 since it would break the predictor-corrector (halo of size 2 in the x direction) 
-        if(!(pimpl->opts_init.adve_scheme != as_t::pred_corr || (velocity_x.is_null() || ((*(thrust::min_element(pimpl->velocity_x.begin(), pimpl->velocity_x.end()))) >= real_t(-2.) * pimpl->opts_init.dx / pimpl->opts_init.dt )) ))
+        if(!(pimpl->opts_init.adve_scheme != as_t::pred_corr || (velocity_x.is_null() || ((*(thrust::min_element(pimpl->velocity_x.begin(), pimpl->velocity_x.end()))) >= real_t(-2.) * opts_init.dx / opts_init.dt )) ))
         {
 #if !defined(NDEBUG)
           std::cerr << "Courant x less than -2 in pred_corr advection, minimum velocity x: " << *(thrust::min_element(pimpl->velocity_x.begin(), pimpl->velocity_x.end())) << " at " << (thrust::min_element(pimpl->velocity_x.begin(), pimpl->velocity_x.end())) - pimpl->velocity_x.begin() << " using first order advection in this step" << std::endl;
 #endif
           pimpl->adve_scheme = as_t::euler;
         }
-        if(!(pimpl->opts_init.adve_scheme != as_t::pred_corr || (velocity_x.is_null() || ((*(thrust::max_element(pimpl->velocity_x.begin(), pimpl->velocity_x.end()))) <= real_t(2.) * pimpl->opts_init.dx / pimpl->opts_init.dt )) ))
+        if(!(pimpl->opts_init.adve_scheme != as_t::pred_corr || (velocity_x.is_null() || ((*(thrust::max_element(pimpl->velocity_x.begin(), pimpl->velocity_x.end()))) <= real_t(2.) * opts_init.dx / opts_init.dt )) ))
         {
 #if !defined(NDEBUG)
           std::cerr << "Courant x more than 2 in pred_corr advection, maximum velocity x: " << *(thrust::max_element(pimpl->velocity_x.begin(), pimpl->velocity_x.end())) << " at " << (thrust::max_element(pimpl->velocity_x.begin(), pimpl->velocity_x.end())) - pimpl->velocity_x.begin() <<  " using first order advection in this step" << std::endl;
