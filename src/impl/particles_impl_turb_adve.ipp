@@ -21,7 +21,7 @@ namespace libcloudphxx
 
       namespace arg = thrust::placeholders;
 
-      for(int i=0; i<n_dims; ++i)
+      for(int i=0; i<n_dims-1; ++i)
       {
         thrust::transform(
           vel_pos[i]->begin(),
@@ -31,6 +31,19 @@ namespace libcloudphxx
           arg::_1 + arg::_2 * opts_init.dt
         );
       }
+      // stretching in z
+      thrust::transform(
+        vel_pos[n_dims-1]->begin(),
+        vel_pos[n_dims-1]->end(),
+        thrust::make_zip_iterator(   // input - 2nd arg
+          thrust::make_tuple(
+            vel_turbs_vctrs[n_dims-1]->begin(),
+            thrust::make_permutation_iterator(vert_stretch_prof.begin(), k.begin())
+          )
+        ),
+        vel_pos[n_dims-1]->begin(),
+        arg::_1 + thrust::get<0>(arg::_2) / thrust::get<1>(arg::_2) * opts_init.dt
+      );
     }
   };
 };
