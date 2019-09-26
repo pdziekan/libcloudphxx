@@ -52,9 +52,8 @@ namespace libcloudphxx
       detail::config<real_t> config;
       as_t::as_t adve_scheme;         // actual advection scheme used, might be different from opts_init.adve_scheme if courant>halo
 
-      thrust_device::vector<real_t> dz; // vertical profile of extent in z (not including z0 and z1)
-      thrust_device::vector<real_t> z_bot; // height of the bottom of the cell (not including z0 and z1)
-      thrust_device::vector<real_t> lambda; // vertical profile of the SGS mixing length
+      thrust_device::vector<real_t> vert_stretch_prof; // profile of vertical stretching, dz of i-th cell is opts_init.dz*vert_stretch_prof[i] 
+      thrust_device::vector<real_t> lambda_prof; // vertical profile of the SGS mixing length
 
       // pointer to collision kernel
       kernel_base<real_t, n_t> *p_kernel;

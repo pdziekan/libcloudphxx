@@ -31,7 +31,7 @@ namespace libcloudphxx
     {   
       thrust::transform(
         diss_rate.begin(), diss_rate.end(), 
-        thrust::make_permutation_iterator(lambda.begin(), k_cell.begin()),
+        thrust::make_permutation_iterator(lambda_prof.begin(), k_cell.begin()),
         diss_rate.begin(), 
         detail::common__turbulence__tke<real_t>()
       );

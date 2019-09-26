@@ -46,7 +46,7 @@ namespace libcloudphxx
       int nx, ny, nz;
       real_t dx, dy, dz, dt;
 
-      std::vector<real_t> dz_prof; // in case of vertical grid stretching: define a profile of dz. It should be the Eulerian domain, i.e. not limited by z0 and z1
+      std::vector<real_t> vert_stretch_prof; // height of i-th cell is dz*vert_stretch_prof[i]
 
       // no. of substeps 
       int sstp_cond, sstp_coal; 
@@ -55,7 +55,7 @@ namespace libcloudphxx
       int supstp_src;
 
       // Lagrangian domain extents
-      real_t x0, y0, z0, x1, y1, z1;
+      real_t x0, y0, z0, x1, y1, z1; // z0 and z1 should NOT take stretchig into account, i.e. as if each cell vertical extent was dz
 
       // no. of super-droplets per cell
       unsigned long long sd_conc; 

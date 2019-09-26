@@ -18,20 +18,19 @@ namespace libcloudphxx
         const int 
           nx, ny, nz;
         const real_t 
-          dx, dy,
+          dx, dy, dz,
           x0, y0, z0,
           x1, y1, z1;
 
         dv_eval(const opts_init_t<real_t> &o) : 
           nx(o.nx), ny(o.ny), nz(o.nz),
-          dx(o.dx), dy(o.dy),
+          dx(o.dx), dy(o.dy), dz(o.dz),
           x0(o.x0), y0(o.y0), z0(o.z0),
           x1(o.x1), y1(o.y1), z1(o.z1)
         {}
 
-        template<class tpl_t>
         BOOST_GPU_ENABLED
-        real_t operator()(const int &ijk, tpl_t tpl) // tpl: 0 - dz, 1 - z_bot
+        real_t operator()(const int &ijk, const real_t &stretching)
         {
 #if !defined(__NVCC__)
           using std::min;
@@ -48,8 +47,8 @@ namespace libcloudphxx
             max(real_t(0),
             (min((i + 1) * dx, x1) - max(i * dx, x0)) *
             (min((j + 1) * dy, y1) - max(j * dy, y0)) *
-            (min(thrust::get<0>(tpl) + thrust::get<1>(tpl), z1) - max(thrust::get<1>(tpl), z0))
-            );
+            (min((k + 1) * dz, z1) - max(k * dz, z0))
+            ) * stretching;
         }
       };
     };
@@ -150,25 +149,20 @@ namespace libcloudphxx
         default: assert(false && "TODO");
       }
 
-      // initialize dz, cell extent in z
+      // initialize vertical stretching profile
       // constant value
-      if(opts_init.dz > real_t(0))
-        thrust::fill(dz.begin(), dz.end(), opts_init.dz);
+      if(opts_init.vert_stretch_prof.empty())
+        thrust::fill(vert_stretch_prof.begin(), vert_stretch_prof.end(), real_t(1));
       // profile
       else
       {
-        assert(opts_init.dz_prof.size() == dz.size() && "Sizes of opts_init.dz_prof and of dz are not equal.");
-        thrust::copy(opts_init.dz_prof.begin(), opts_init.dz_prof.end(), dz.begin());
-        assert(*thrust::min_element(dz.begin(), dz.end()) >= 0 && "Minimum of dz < 0.");
+        assert(opts_init.vert_stretch_prof.size() == vert_stretch_prof.size() && "Sizes of opts_init.vert_stretch_prof and of vert_stretch_prof are not equal.");
+        thrust::copy(opts_init.vert_stretch_prof.begin(), opts_init.vert_stretch_prof.end(), vert_stretch_prof.begin());
+        assert(*thrust::min_element(vert_stretch_prof.begin(), vert_stretch_prof.end()) >= 0 && "Minimum of vert_stretch_prof < 0.");
       }
 
-      debug::print(dz);
+      debug::print(vert_stretch_prof);
 
-      // initialize z_bot
-      thrust::exclusive_scan(dz.begin(), dz.end(), z_bot.begin(), real_t(0));
-
-      debug::print(z_bot);
-      
       // init index k of a cell
 #if !defined(__NVCC__)
       using std::max;
@@ -188,10 +182,7 @@ namespace libcloudphxx
       // in parcel set-up hskpng_Tpr takes care of keeping dv up-to-date with rho (dealing with 1kg of dry air)
         thrust::transform(
           zero, zero + n_cell, // input - 1st arg
-          thrust::make_zip_iterator(thrust::make_tuple(
-            thrust::make_permutation_iterator(dz.begin(),    k_cell.begin()),
-            thrust::make_permutation_iterator(z_bot.begin(), k_cell.begin())
-          )),
+          thrust::make_permutation_iterator(vert_stretch_prof.begin(), k_cell.begin()),
           dv.begin(),          // output  
           detail::dv_eval<real_t>(opts_init)
         );
