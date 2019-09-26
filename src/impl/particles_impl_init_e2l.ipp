@@ -41,7 +41,7 @@ namespace libcloudphxx
 
       long int shift =    // index of element of arr copied to 0-th position in key
         + n_cell_bfr // cells in other memory
-        + offset;    // additional cells in other memory for arrays bigger than nx*ny*nz (like velocity numbers),
+        + offset;    // additional cells in other memory for arrays bigger than nx*ny*nz (like courant numbers),
                      // or halo
 
       switch (n_dims)

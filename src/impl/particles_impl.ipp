@@ -50,7 +50,7 @@ namespace libcloudphxx
                     n_part_to_init;    // number of SDs to be initialized by source
       detail::rng<real_t, device> rng;
       detail::config<real_t> config;
-      as_t::as_t adve_scheme;         // actual advection scheme used, might be different from opts_init.adve_scheme if velocity>halo
+      as_t::as_t adve_scheme;         // actual advection scheme used, might be different from opts_init.adve_scheme if courant>halo
 
       thrust_device::vector<real_t> dz; // vertical profile of extent in z (not including z0 and z1)
       thrust_device::vector<real_t> z_bot; // height of the bottom of the cell (not including z0 and z1)
@@ -142,9 +142,9 @@ namespace libcloudphxx
         sstp_tmp_chem_3, // ditto for trace gases
         sstp_tmp_chem_4, // ditto for trace gases
         sstp_tmp_chem_5, // ditto for trace gases
-        velocity_x, 
-        velocity_y, 
-        velocity_z;
+        courant_x, 
+        courant_y, 
+        courant_z;
 
       std::map<enum chem_species_t, thrust_device::vector<real_t> > ambient_chem;
 
@@ -238,9 +238,9 @@ namespace libcloudphxx
       thrust_size_t n_cell_bfr;
 
       const int halo_size = 2,
-                halo_x, // number of cells in the halo for velocity_x before first "real" cell, halo only in x
-                halo_y, // number of cells in the halo for velocity_y before first "real" cell, halo only in x
-                halo_z; // number of cells in the halo for velocity_z before first "real" cell, halo only in x
+                halo_x, // number of cells in the halo for courant_x before first "real" cell, halo only in x
+                halo_y, // number of cells in the halo for courant_y before first "real" cell, halo only in x
+                halo_z; // number of cells in the halo for courant_z before first "real" cell, halo only in x
 
 
       // in/out buffers for SDs copied from other GPUs

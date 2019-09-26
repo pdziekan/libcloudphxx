@@ -28,16 +28,16 @@ namespace libcloudphxx
       switch (n_dims)
       {
         case 3: 
-          velocity_x.resize((opts_init.nx + 2 * halo_size + 1) * opts_init.ny * opts_init.nz);
-          velocity_y.resize((opts_init.nx + 2 * halo_size) * (opts_init.ny + 1) * opts_init.nz);
-          velocity_z.resize((opts_init.nx + 2 * halo_size) * opts_init.ny * (opts_init.nz + 1));
+          courant_x.resize((opts_init.nx + 2 * halo_size + 1) * opts_init.ny * opts_init.nz);
+          courant_y.resize((opts_init.nx + 2 * halo_size) * (opts_init.ny + 1) * opts_init.nz);
+          courant_z.resize((opts_init.nx + 2 * halo_size) * opts_init.ny * (opts_init.nz + 1));
           break;
         case 2: 
-          velocity_x.resize((opts_init.nx + 2 * halo_size + 1) * opts_init.nz);
-          velocity_z.resize((opts_init.nx + 2 * halo_size) * (opts_init.nz + 1));
+          courant_x.resize((opts_init.nx + 2 * halo_size + 1) * opts_init.nz);
+          courant_z.resize((opts_init.nx + 2 * halo_size) * (opts_init.nz + 1));
           break;
         case 1:
-          velocity_x.resize(opts_init.nx + 2 * halo_size + 1);
+          courant_x.resize(opts_init.nx + 2 * halo_size + 1);
           break;
         case 0: break;
         default: assert(false); 

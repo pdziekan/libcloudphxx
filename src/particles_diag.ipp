@@ -17,10 +17,13 @@ namespace libcloudphxx
       template <typename real_t>
       struct add_div
       {
+        const real_t dx;
+        add_div(const real_t &dx) : dx(dx) {}
+
         BOOST_GPU_ENABLED
         real_t operator()(const real_t &div, const thrust::tuple<real_t, real_t> &tpl)
         {
-          return div + (thrust::get<1>(tpl) - thrust::get<0>(tpl)) / thrust::get<2>(tpl);
+          return div + (thrust::get<1>(tpl) - thrust::get<0>(tpl)) / dx;
         }
       };
 
@@ -314,36 +317,33 @@ namespace libcloudphxx
             pimpl->count_mom.begin(), //arg1
             pimpl->count_mom.begin() + pimpl->n_cell,
             thrust::make_zip_iterator(thrust::make_tuple(
-              thrust::make_permutation_iterator(pimpl->velocity_y.begin(), pi(pimpl->fre.begin(), thrust::make_counting_iterator<thrust_size_t>(pimpl->halo_x))),   // fre counts from the start of halo, but here we need only real cells
-              thrust::make_permutation_iterator(pimpl->velocity_y.begin(), pi(pimpl->hnd.begin(), thrust::make_counting_iterator<thrust_size_t>(pimpl->halo_x))),
-              thrust::make_constant_iterator(pimpl->opts_init.dy)
+              thrust::make_permutation_iterator(pimpl->courant_y.begin(), pi(pimpl->fre.begin(), thrust::make_counting_iterator<thrust_size_t>(pimpl->halo_x))),   // fre counts from the start of halo, but here we need only real cells
+              thrust::make_permutation_iterator(pimpl->courant_y.begin(), pi(pimpl->hnd.begin(), thrust::make_counting_iterator<thrust_size_t>(pimpl->halo_x)))
             )), // arg2
             pimpl->count_mom.begin(), //out
-            detail::add_div<real_t>()
+            detail::add_div<real_t>(pimpl->opts_init.dt)
           );
         case 2:
           thrust::transform(
             pimpl->count_mom.begin(), //arg1
             pimpl->count_mom.begin() + pimpl->n_cell,
             thrust::make_zip_iterator(thrust::make_tuple(
-              thrust::make_permutation_iterator(pimpl->velocity_z.begin(), pi(pimpl->blw.begin(), thrust::make_counting_iterator<thrust_size_t>(pimpl->halo_x))),
-              thrust::make_permutation_iterator(pimpl->velocity_z.begin(), pi(pimpl->abv.begin(), thrust::make_counting_iterator<thrust_size_t>(pimpl->halo_x))),
-              thrust::make_permutation_iterator(pimpl->dz.begin(), pimpl->k_cell.begin())
+              thrust::make_permutation_iterator(pimpl->courant_z.begin(), pi(pimpl->blw.begin(), thrust::make_counting_iterator<thrust_size_t>(pimpl->halo_x))),
+              thrust::make_permutation_iterator(pimpl->courant_z.begin(), pi(pimpl->abv.begin(), thrust::make_counting_iterator<thrust_size_t>(pimpl->halo_x)))
             )), // arg2
             pimpl->count_mom.begin(), //out
-            detail::add_div<real_t>()
+            detail::add_div<real_t>(pimpl->opts_init.dt)
           );
         case 1:
           thrust::transform(
             pimpl->count_mom.begin(), //arg1
             pimpl->count_mom.begin() + pimpl->n_cell,
             thrust::make_zip_iterator(thrust::make_tuple(
-              thrust::make_permutation_iterator(pimpl->velocity_x.begin(), pi(pimpl->lft.begin(), thrust::make_counting_iterator<thrust_size_t>(pimpl->halo_x))),
-              thrust::make_permutation_iterator(pimpl->velocity_x.begin(), pi(pimpl->rgt.begin(), thrust::make_counting_iterator<thrust_size_t>(pimpl->halo_x))),
-              thrust::make_constant_iterator(pimpl->opts_init.dx)
+              thrust::make_permutation_iterator(pimpl->courant_x.begin(), pi(pimpl->lft.begin(), thrust::make_counting_iterator<thrust_size_t>(pimpl->halo_x))),
+              thrust::make_permutation_iterator(pimpl->courant_x.begin(), pi(pimpl->rgt.begin(), thrust::make_counting_iterator<thrust_size_t>(pimpl->halo_x)))
             )), // arg2
             pimpl->count_mom.begin(), //out
-            detail::add_div<real_t>()
+            detail::add_div<real_t>(pimpl->opts_init.dt)
           );
       }
       // divergence defined in all cells

@@ -17,14 +17,14 @@ namespace libcloudphxx
       arrinfo_t<real_t> th,
       arrinfo_t<real_t> rv,
       const arrinfo_t<real_t> rhod,      // defaults to NULL-NULL pair (e.g. kinematic or boussinesq model)
-      const arrinfo_t<real_t> velocity_x, // defaults to NULL-NULL pair (e.g. kinematic model)
-      const arrinfo_t<real_t> velocity_y, // defaults to NULL-NULL pair (e.g. kinematic model)
-      const arrinfo_t<real_t> velocity_z, // defaults to NULL-NULL pair (e.g. kinematic model)
+      const arrinfo_t<real_t> courant_x, // defaults to NULL-NULL pair (e.g. kinematic model)
+      const arrinfo_t<real_t> courant_y, // defaults to NULL-NULL pair (e.g. kinematic model)
+      const arrinfo_t<real_t> courant_z, // defaults to NULL-NULL pair (e.g. kinematic model)
       const arrinfo_t<real_t> diss_rate, // defaults to NULL-NULL pair
       std::map<enum chem_species_t, arrinfo_t<real_t> > ambient_chem
     )
     {
-      sync_in(th, rv, rhod, velocity_x, velocity_y, velocity_z, diss_rate, ambient_chem);
+      sync_in(th, rv, rhod, courant_x, courant_y, courant_z, diss_rate, ambient_chem);
       step_cond(opts, th, rv, ambient_chem);
     }
 
@@ -33,9 +33,9 @@ namespace libcloudphxx
       arrinfo_t<real_t> th,
       arrinfo_t<real_t> rv,
       const arrinfo_t<real_t> rhod,      // defaults to NULL-NULL pair (e.g. kinematic or boussinesq model)
-      const arrinfo_t<real_t> velocity_x, // defaults to NULL-NULL pair (e.g. kinematic model)
-      const arrinfo_t<real_t> velocity_y, // defaults to NULL-NULL pair (e.g. kinematic model)
-      const arrinfo_t<real_t> velocity_z, // defaults to NULL-NULL pair (e.g. kinematic model)
+      const arrinfo_t<real_t> courant_x, // defaults to NULL-NULL pair (e.g. kinematic model)
+      const arrinfo_t<real_t> courant_y, // defaults to NULL-NULL pair (e.g. kinematic model)
+      const arrinfo_t<real_t> courant_z, // defaults to NULL-NULL pair (e.g. kinematic model)
       const arrinfo_t<real_t> diss_rate, // defaults to NULL-NULL pair
       std::map<enum chem_species_t, arrinfo_t<real_t> > ambient_chem
     )
@@ -50,19 +50,19 @@ namespace libcloudphxx
         throw std::runtime_error("passing th and rv is mandatory");
 
  // <TODO> - code duplicated from init() !
-      if (!velocity_x.is_null() || !velocity_y.is_null() || !velocity_z.is_null())
+      if (!courant_x.is_null() || !courant_y.is_null() || !courant_z.is_null())
       {
 	if (pimpl->n_dims == 0)
-	  throw std::runtime_error("Velocities passed in 0D setup");
+	  throw std::runtime_error("Courant numbers passed in 0D setup");
 
-	if (pimpl->n_dims == 1 && (velocity_x.is_null() || !velocity_y.is_null() || !velocity_z.is_null()))
-	  throw std::runtime_error("Only X velocity allowed in 1D setup");
+	if (pimpl->n_dims == 1 && (courant_x.is_null() || !courant_y.is_null() || !courant_z.is_null()))
+	  throw std::runtime_error("Only X Courant number allowed in 1D setup");
 
-	if (pimpl->n_dims == 2 && (velocity_x.is_null() || !velocity_y.is_null() || velocity_z.is_null()))
-	  throw std::runtime_error("Only X and Z velocitys allowed in 2D setup");
+	if (pimpl->n_dims == 2 && (courant_x.is_null() || !courant_y.is_null() || courant_z.is_null()))
+	  throw std::runtime_error("Only X and Z Courant numbers allowed in 2D setup");
 
-	if (pimpl->n_dims == 3 && (velocity_x.is_null() || velocity_y.is_null() || velocity_z.is_null()))
-	  throw std::runtime_error("All XYZ velocity components required in 3D setup");
+	if (pimpl->n_dims == 3 && (courant_x.is_null() || courant_y.is_null() || courant_z.is_null()))
+	  throw std::runtime_error("All XYZ Courant number components required in 3D setup");
       }
 
       if (pimpl->opts_init.chem_switch && ambient_chem.size() != chem_gas_n)
@@ -78,16 +78,16 @@ namespace libcloudphxx
         throw std::runtime_error("turbulent advection, coalescence and condesation are switched off and diss_rate is not empty");
 // </TODO>
 
-      if (pimpl->l2e[&pimpl->velocity_x].size() == 0) // TODO: y, z,...
+      if (pimpl->l2e[&pimpl->courant_x].size() == 0) // TODO: y, z,...
       {
         // TODO: many max or m1 used, unify it
 #if !defined(__NVCC__)
         using std::max;
 #endif
         // TODO: copy-pasted from init
-        if (!velocity_x.is_null()) pimpl->init_e2l(velocity_x, &pimpl->velocity_x, 1, 0, 0, - pimpl->halo_x);
-        if (!velocity_y.is_null()) pimpl->init_e2l(velocity_y, &pimpl->velocity_y, 0, 1, 0, pimpl->n_x_bfr * pimpl->opts_init.nz - pimpl->halo_y);
-        if (!velocity_z.is_null()) pimpl->init_e2l(velocity_z, &pimpl->velocity_z, 0, 0, 1, pimpl->n_x_bfr * max(1, pimpl->opts_init.ny) - pimpl->halo_z);
+        if (!courant_x.is_null()) pimpl->init_e2l(courant_x, &pimpl->courant_x, 1, 0, 0, - pimpl->halo_x);
+        if (!courant_y.is_null()) pimpl->init_e2l(courant_y, &pimpl->courant_y, 0, 1, 0, pimpl->n_x_bfr * pimpl->opts_init.nz - pimpl->halo_y);
+        if (!courant_z.is_null()) pimpl->init_e2l(courant_z, &pimpl->courant_z, 0, 0, 1, pimpl->n_x_bfr * max(1, pimpl->opts_init.ny) - pimpl->halo_z);
       }
 
       if (pimpl->l2e[&pimpl->diss_rate].size() == 0)
@@ -99,17 +99,17 @@ namespace libcloudphxx
       // syncing in Eulerian fields (if not null)
       pimpl->sync(th,             pimpl->th);
       pimpl->sync(rv,             pimpl->rv);
-      pimpl->sync(velocity_x,      pimpl->velocity_x);
-      pimpl->sync(velocity_y,      pimpl->velocity_y);
-      pimpl->sync(velocity_z,      pimpl->velocity_z);
+      pimpl->sync(courant_x,      pimpl->courant_x);
+      pimpl->sync(courant_y,      pimpl->courant_y);
+      pimpl->sync(courant_z,      pimpl->courant_z);
       pimpl->sync(diss_rate,      pimpl->diss_rate);
       pimpl->sync(rhod,           pimpl->rhod);
 
       nancheck(pimpl->th, " th after sync-in");
       nancheck(pimpl->rv, " rv after sync-in");
-      nancheck(pimpl->velocity_x, " velocity_x after sync-in");
-      nancheck(pimpl->velocity_y, " velocity_y after sync-in");
-      nancheck(pimpl->velocity_z, " velocity_z after sync-in");
+      nancheck(pimpl->courant_x, " courant_x after sync-in");
+      nancheck(pimpl->courant_y, " courant_y after sync-in");
+      nancheck(pimpl->courant_z, " courant_z after sync-in");
       nancheck(pimpl->diss_rate, " diss_rate after sync-in");
       nancheck(pimpl->rhod, " rhod after sync-in");
       if(pimpl->opts_init.turb_adve_switch || pimpl->opts_init.turb_cond_switch || pimpl->opts_init.turb_coal_switch)
@@ -121,18 +121,18 @@ namespace libcloudphxx
       if(pimpl->opts_init.turb_adve_switch || pimpl->opts_init.turb_cond_switch || pimpl->opts_init.turb_coal_switch)
         {assert(*thrust::min_element(pimpl->diss_rate.begin(), pimpl->diss_rate.end()) >= 0);}
 
-      // check if velocitys are greater than 2 since it would break the predictor-corrector (halo of size 2 in the x direction) 
-        if(!(pimpl->opts_init.adve_scheme != as_t::pred_corr || (velocity_x.is_null() || ((*(thrust::min_element(pimpl->velocity_x.begin(), pimpl->velocity_x.end()))) >= real_t(-2.) * opts_init.dx / opts_init.dt )) ))
+      // check if courants are greater than 2 since it would break the predictor-corrector (halo of size 2 in the x direction) 
+        if(!(pimpl->opts_init.adve_scheme != as_t::pred_corr || (courant_x.is_null() || ((*(thrust::min_element(pimpl->courant_x.begin(), pimpl->courant_x.end()))) >= real_t(-2.) )) ))
         {
 #if !defined(NDEBUG)
-          std::cerr << "Courant x less than -2 in pred_corr advection, minimum velocity x: " << *(thrust::min_element(pimpl->velocity_x.begin(), pimpl->velocity_x.end())) << " at " << (thrust::min_element(pimpl->velocity_x.begin(), pimpl->velocity_x.end())) - pimpl->velocity_x.begin() << " using first order advection in this step" << std::endl;
+          std::cerr << "Courant x less than -2 in pred_corr advection, minimum courant x: " << *(thrust::min_element(pimpl->courant_x.begin(), pimpl->courant_x.end())) << " at " << (thrust::min_element(pimpl->courant_x.begin(), pimpl->courant_x.end())) - pimpl->courant_x.begin() << " using first order advection in this step" << std::endl;
 #endif
           pimpl->adve_scheme = as_t::euler;
         }
-        if(!(pimpl->opts_init.adve_scheme != as_t::pred_corr || (velocity_x.is_null() || ((*(thrust::max_element(pimpl->velocity_x.begin(), pimpl->velocity_x.end()))) <= real_t(2.) * opts_init.dx / opts_init.dt )) ))
+        if(!(pimpl->opts_init.adve_scheme != as_t::pred_corr || (courant_x.is_null() || ((*(thrust::max_element(pimpl->courant_x.begin(), pimpl->courant_x.end()))) <= real_t(2.) )) ))
         {
 #if !defined(NDEBUG)
-          std::cerr << "Courant x more than 2 in pred_corr advection, maximum velocity x: " << *(thrust::max_element(pimpl->velocity_x.begin(), pimpl->velocity_x.end())) << " at " << (thrust::max_element(pimpl->velocity_x.begin(), pimpl->velocity_x.end())) - pimpl->velocity_x.begin() <<  " using first order advection in this step" << std::endl;
+          std::cerr << "Courant x more than 2 in pred_corr advection, maximum courant x: " << *(thrust::max_element(pimpl->courant_x.begin(), pimpl->courant_x.end())) << " at " << (thrust::max_element(pimpl->courant_x.begin(), pimpl->courant_x.end())) - pimpl->courant_x.begin() <<  " using first order advection in this step" << std::endl;
 #endif
           pimpl->adve_scheme = as_t::euler;
         }
