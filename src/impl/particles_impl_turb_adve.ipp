@@ -9,6 +9,22 @@ namespace libcloudphxx
 {
   namespace lgrngn
   {
+    namespace detail
+    {
+      template <class real_t>
+      struct adve_euler
+      {
+        const real_t dt;
+        adve_euler(const real_t &dt) : dt(dt) {}
+
+        BOOST_GPU_ENABLED
+        real_t operator()(const real_t &x, const thrust::tuple<const real_t, const real_t> tpl) // tpl: 0 - turb_vel 1 - stretch
+        {
+          return x + thrust::get<0>(tpl) / thrust::get<1>(tpl) * dt;
+        }
+      };
+    };
+
     // calc the SGS turbulent velocity component
     template <typename real_t, backend_t device>
     void particles_t<real_t, device>::impl::turb_adve()
@@ -42,7 +58,7 @@ namespace libcloudphxx
           )
         ),
         vel_pos[n_dims-1]->begin(),
-        arg::_1 + thrust::get<0>(arg::_2) / thrust::get<1>(arg::_2) * opts_init.dt
+        detail::adve_euler<real_t>(opts_init.dt)
       );
     }
   };

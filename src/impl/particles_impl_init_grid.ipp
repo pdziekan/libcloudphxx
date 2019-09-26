@@ -193,12 +193,12 @@ namespace libcloudphxx
       // initialize sgs mixing length
       if(opts_init.turb_cond_switch || opts_init.turb_adve_switch || opts_init.turb_coal_switch)
       {
-        assert(opts_init.SGS_mix_len_prof.size() == lambda.size() && "Sizes of opts_init.mix_len_prof and of lambda are not equal.");
-        thrust::copy(opts_init.SGS_mix_len_prof.begin(), opts_init.SGS_mix_len_prof.end(), lambda.begin());
-        assert(*thrust::min_element(lambda.begin(), lambda.end()) >= 0 && "Minimum of lambda < 0.");
+        assert(opts_init.SGS_mix_len_prof.size() == lambda_prof.size() && "Sizes of opts_init.mix_len_prof and of lambda_prof are not equal.");
+        thrust::copy(opts_init.SGS_mix_len_prof.begin(), opts_init.SGS_mix_len_prof.end(), lambda_prof.begin());
+        assert(*thrust::min_element(lambda_prof.begin(), lambda_prof.end()) >= 0 && "Minimum of lambda_prof < 0.");
       }
 
-      debug::print(lambda);
+      debug::print(lambda_prof);
     }
   };
 };

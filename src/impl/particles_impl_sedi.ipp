@@ -9,6 +9,22 @@ namespace libcloudphxx
 {
   namespace lgrngn
   {
+    namespace detail
+    {
+      template <class real_t>
+      struct adve_euler_with_subs
+      {
+        const real_t dt, div_LS, z0;
+        adve_euler_with_subs(const opts_init_t<real_t> &o) : dt(o.dt), div_LS(o.div_LS), z0(o.z0) {}
+
+        BOOST_GPU_ENABLED
+        real_t operator()(const real_t &z, const thrust::tuple<const real_t, const real_t> tpl) // tpl: 0 - vt 1 - stretch
+        {
+          return z - dt / thrust::get<1>(tpl) * ( thrust::get<0>(tpl) + div_LS * (z - z0));  // Euler scheme (assuming vt positive!) NOTE!: we interpret here z0 as ground level, which might not be true! 
+        }
+      };
+    };
+
     template <typename real_t, backend_t device>
     void particles_t<real_t, device>::impl::sedi()
     {   
@@ -24,7 +40,7 @@ namespace libcloudphxx
           )
         ),
         z.begin(),                         // output
-        arg::_1 - opts_init.dt * (thrust::get<0>(arg::_2) / thrust::get<1>(arg::_2) + opts_init.div_LS * (arg::_1 - opts_init.z0))   // Euler scheme (assuming vt positive!) NOTE!: we interpret here z0 as ground level, which might not be true! 
+        detail::adve_euler_with_subs<real_t>(opts_init)
       );
     }
   };  
