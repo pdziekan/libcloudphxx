@@ -32,7 +32,7 @@ namespace libcloudphxx
         adve_helper_impl(const real_t dx, bool apply) : dx(dx) {} 
 
         BOOST_GPU_ENABLED
-        real_t operator()(thrust::tuple<real_t, const thrust_size_t, const real_t, const real_t> tpl)
+        real_t operator()(thrust::tuple<real_t, const thrust_size_t, const real_t, const real_t> tpl, const real_t stretch=1)
         {
           real_t x = thrust::get<0>(tpl);
           const thrust_size_t floor_x_over_dx = thrust::get<1>(tpl);
@@ -41,21 +41,21 @@ namespace libcloudphxx
 
           // integrating using backward Euler scheme + interpolation/extrapolation
           // 
-          // x_new = x_old + v(x_new) * dt = x_old + C(x_new) * dx
+          // x_new = x_old + v(x_new) / stretch * dt = x_old + C(x_new) / stretch * dx
           //    
           //     C(x_new) = (1-w) * C_l + w * C_r 
           //     w = x_new/dx - floor(x_old/dx) 
           //
-          // x_new = x_old + C_l * dx + w * dx * (C_r - C_l)
-          //       = x_old + C_l * dx + x_new * (C_r - C_l) - dx * floor(x_old/dx) * (C_r - C_l)
+          // x_new = x_old + [C_l * dx + w * dx * (C_r - C_l)] / stretch
+          //       = x_old + [C_l * dx + x_new * (C_r - C_l) - dx * floor(x_old/dx) * (C_r - C_l)] / stretch
           // 
-          // x_new * (1 - C_r + C_l) = x_old + C_l * dx - dx * floor(x_old/dx) * (C_r - C_l)
-          // x_new =  (x_old + C_l * dx - dx * floor(x_old/dx) * (C_r - C_l)) / (1 - C_r + C_l)
+          // x_new * (1 - (C_r - C_l) / stretch) = x_old + [C_l * dx - dx * floor(x_old/dx) * (C_r - C_l)] / stretch
+          // x_new =  (x_old + [C_l * dx - dx * floor(x_old/dx) * (C_r - C_l)] / stretch) / (1 - (C_r - C_l) / stretch)
 
           return (
-            x + dx * (C_l - floor_x_over_dx * (C_r - C_l))
+            x + dx * (C_l - floor_x_over_dx * (C_r - C_l)) / stretch
           ) / (
-            1 - (C_r - C_l)
+            1 - (C_r - C_l) / stretch
           );
         }
       };
@@ -69,7 +69,7 @@ namespace libcloudphxx
         adve_helper_expl(const real_t &dx, bool apply) : dx(dx), apply(apply) {} 
 
         BOOST_GPU_ENABLED
-        real_t operator()(thrust::tuple<real_t, const thrust_size_t, const real_t, const real_t> tpl)
+        real_t operator()(thrust::tuple<real_t, const thrust_size_t, const real_t, const real_t> tpl, const real_t stretch=1)
         {
           real_t x = thrust::get<0>(tpl);
           const thrust_size_t floor_x_over_dx = thrust::get<1>(tpl);
@@ -78,17 +78,17 @@ namespace libcloudphxx
 
           // integrating using forward Euler scheme + interpolation/extrapolation
           // 
-          // x_new = x_old + v(x_old) * dt = x_old + C(x_old) * dx
+          // x_new = x_old + v(x_old) / stretch * dt = x_old + C(x_old) / stretch * dx
           //    
           //     C(x_old) = (1-w) * C_l + w * C_r 
           //     w = x_old/dx - floor(x_old/dx) 
           //
-          // x_new = x_old + C_l * dx + w * dx * (C_r - C_l)
-          //       = x_old + C_l * dx + x_old * (C_r - C_l) - dx * floor(x_old/dx) * (C_r - C_l)
-          //       = x_old + (C_r - C_l) * (x_old - dx * floor(x_old/dx)) + C_l * dx
+          // x_new = x_old + [C_l * dx + w * dx * (C_r - C_l)] / stretch
+          //       = x_old + [C_l * dx + x_old * (C_r - C_l) - dx * floor(x_old/dx) * (C_r - C_l)] / stretch
+          //       = x_old + [(C_r - C_l) * (x_old - dx * floor(x_old/dx)) + C_l * dx] / stretch
 
           // return new position or change in position
-          return apply * x + (C_r - C_l) * (x - dx * floor_x_over_dx) + dx * C_l; 
+          return apply * x + ((C_r - C_l) * (x - dx * floor_x_over_dx) + dx * C_l) / stretch; 
         }
       };
     };
@@ -146,6 +146,7 @@ namespace libcloudphxx
             thrust::transform(
               thrust::make_zip_iterator(make_tuple(z.begin(), k.begin(), C_blw,        C_abv       )), // input - begin
               thrust::make_zip_iterator(make_tuple(z.end(),   k.end(),   C_blw+n_part, C_abv+n_part)), // input - end
+              thrust::make_permutation_iterator(vert_stretch_prof.begin(), k.begin()),  // TODO: if stretching is not used, we could not pass anything (for performance)
               z.begin(), // output
               adve_t(opts_init.dz, apply)
             );
