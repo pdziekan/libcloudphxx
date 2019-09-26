@@ -17,7 +17,11 @@ namespace libcloudphxx
       // settling due to sedimentation + large-scale subsidence = - div_LS * z
       thrust::transform(
         z.begin(), z.end(),                // input - 1st arg
-        vt.begin(),                        // input - 2nd arg
+        thrust::make_transform_iterator(   // input - 2nd arg
+          vt.begin(),                    
+          thrust::make_permutation_iterator(vert_stretch_prof.begin(), k.begin()),
+          arg::_1 / arg::_2
+        ),
         z.begin(),                         // output
         arg::_1 - opts_init.dt * (arg::_2 + opts_init.div_LS * (arg::_1 - opts_init.z0))   // Euler scheme (assuming vt positive!) NOTE!: we interpret here z0 as ground level, which might not be true! 
       );
