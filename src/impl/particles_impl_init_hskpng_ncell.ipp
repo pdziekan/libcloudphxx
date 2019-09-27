@@ -33,6 +33,7 @@ namespace libcloudphxx
       // make space for vertical profiles of dz and lambda
       vert_stretch_prof.resize(m1(opts_init.nz));
       lambda_prof.resize(m1(opts_init.nz));
+      subs_vel_prof.resize(m1(opts_init.nz));
     }
   };
 };

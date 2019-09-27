@@ -163,6 +163,20 @@ namespace libcloudphxx
 
       debug::print(vert_stretch_prof);
 
+      // initialize subsidence velocity profile
+      // constant value
+      if(opts_init.subs_vel_prof.empty())
+        thrust::fill(subs_vel_prof.begin(), subs_vel_prof.end(), real_t(0));
+      // profile
+      else
+      {
+        assert(opts_init.subs_vel_prof.size() == subs_vel_prof.size() && "Sizes of opts_init.subs_vel_prof and of subs_vel_prof are not equal.");
+        thrust::copy(opts_init.subs_vel_prof.begin(), opts_init.subs_vel_prof.end(), subs_vel_prof.begin());
+        assert(*thrust::min_element(subs_vel_prof.begin(), subs_vel_prof.end()) >= 0 && "Minimum of subs_vel_prof < 0.");
+      }
+
+      debug::print(subs_vel_prof);
+
       // init index k of a cell
 #if !defined(__NVCC__)
       using std::max;

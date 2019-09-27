@@ -54,6 +54,7 @@ namespace libcloudphxx
 
       thrust_device::vector<real_t> vert_stretch_prof; // profile of vertical stretching, dz of i-th cell is opts_init.dz*vert_stretch_prof[i] 
       thrust_device::vector<real_t> lambda_prof; // vertical profile of the SGS mixing length
+      thrust_device::vector<real_t> subs_vel_prof; // vertical profile of subsidence velocity
 
       // pointer to collision kernel
       kernel_base<real_t, n_t> *p_kernel;

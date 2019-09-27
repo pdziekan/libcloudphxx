@@ -47,6 +47,7 @@ namespace libcloudphxx
       real_t dx, dy, dz, dt;
 
       std::vector<real_t> vert_stretch_prof; // height of i-th cell is dz*vert_stretch_prof[i]
+      std::vector<real_t> subs_vel_prof; // profile of the subsidence velocity, NOTE: not interpolated, same for all in a cell
 
       // no. of substeps 
       int sstp_cond, sstp_coal; 
@@ -127,9 +128,6 @@ namespace libcloudphxx
       // GPU number to use, only used in CUDA backend (and not in multi_CUDA)
       int dev_id;
 
-      // large-scale horizontal wind divergence [1/s], used to calculate subsidence rate as -div_LS*z
-      real_t div_LS;
-
       real_t rd_min; // minimal dry radius of droplets (works only for init from spectrum)
 
       // ctor with defaults (C++03 compliant) ...
@@ -165,7 +163,6 @@ namespace libcloudphxx
         n_sd_max(0),
         src_sd_conc(0),
         src_z1(0),
-        div_LS(0.),
         rd_min(0.)
       {}
 
