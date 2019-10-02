@@ -6,6 +6,8 @@
   * @brief initialisation routine for super droplets
   */
 
+#include <numeric>
+
 namespace libcloudphxx
 {
   namespace lgrngn
@@ -80,15 +82,15 @@ namespace libcloudphxx
             throw std::runtime_error("!(x0 >= 0 & x0 < min(1,nx)*dz)");
           if (!(opts_init.y0 >= 0 && opts_init.y0 < m1(opts_init.ny) * opts_init.dy))
             throw std::runtime_error("!(y0 >= 0 & y0 < min(1,ny)*dy)");
-          if (!(opts_init.z0 >= 0 && opts_init.z0 < m1(opts_init.nz) * opts_init.dz))
-            throw std::runtime_error("!(z0 >= 0 & z0 < min(1,nz)*dz)");
+          if (!(opts_init.z0 >= 0 && opts_init.z0 < std::accumulate(opts_init.vert_stretch_prof.begin(), opts_init.vert_stretch_prof.end(), real_t(0)) * opts_init.dz))
+            throw std::runtime_error("!(z0 >= 0 & z0 < std::accumulate(opts_init.vert_stretch_prof.begin(), opts_init.vert_stretch_prof.end(), 0) * opts_init.dz)");
           // check temporarily disabled since dewv_id is not passed anymore, TODO: fix it
 //        if (!(opts_init.x1 > opts_init.x0 && opts_init.x1 <= m1(opts_init.nx) * opts_init.dx) && dev_id == -1) // only for single device runs, since on multi_CUDA x1 is not yet adjusted to local domain
 //            throw std::runtime_error("!(x1 > x0 & x1 <= min(1,nx)*dx)");
           if (!(opts_init.y1 > opts_init.y0 && opts_init.y1 <= m1(opts_init.ny) * opts_init.dy))
             throw std::runtime_error("!(y1 > y0 & y1 <= min(1,ny)*dy)");
-          if (!(opts_init.z1 > opts_init.z0 && opts_init.z1 <= m1(opts_init.nz) * opts_init.dz))
-            throw std::runtime_error("!(z1 > z0 & z1 <= min(1,nz)*dz)");
+          if (!(opts_init.z1 > opts_init.z0 && opts_init.z1 <= std::accumulate(opts_init.vert_stretch_prof.begin(), opts_init.vert_stretch_prof.end(), real_t(0)) * opts_init.dz))
+            throw std::runtime_error("!(z1 > z0 & z1 <= std::accumulate(opts_init.vert_stretch_prof.begin(), opts_init.vert_stretch_prof.end(), 0) * opts_init.dz)");
         }
 
         if (opts_init.dt == 0) throw std::runtime_error("please specify opts_init.dt");
