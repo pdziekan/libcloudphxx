@@ -37,10 +37,26 @@ namespace libcloudphxx
       const std::map<enum chem_species_t, const arrinfo_t<real_t> > ambient_chem
     )
     {
+      for (int i = 0; i < pimpl->glob_opts_init.dev_count; ++i)
+      {
+        detail::set_device_and_run(
+          i, 
+          std::bind(
+            &particles_t<real_t, CUDA>::init,
+            &(*(pimpl->particles[i])),          
+            th, rv, rhod, p, courant_1, courant_2, courant_3, ambient_chem
+          )
+        );
+        gpuErrchk(cudaDeviceSynchronize());
+      }
+
+
+/*
       pimpl->mcuda_run(
         &particles_t<real_t, CUDA>::init,
         th, rv, rhod, p, courant_1, courant_2, courant_3, ambient_chem
       );
+*/
     }
   };
-};
+} 
