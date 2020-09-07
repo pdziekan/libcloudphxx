@@ -1,6 +1,11 @@
 #roughly test coalescence algorithm by comparing mass density function with analytic prediction of Golovin
 
-import sys 
+import sys
+#try:
+#  import boost.mpi
+#except:
+#  pass
+
 sys.path.insert(0, "../../bindings/python/")
 
 from libcloudphxx import lgrngn
@@ -56,12 +61,13 @@ def golovin(v,t,n0,v0,b):
 opts_init = lgrngn.opts_init_t()
 opts_init.dt = simulation_time
 opts_init.sstp_coal = simulation_time
+opts_init.sedi_switch = False
 
 rhod = 1. * np.ones((1,))
 th = 300. * np.ones((1,))
 rv = 0.01 * np.ones((1,))
 
-kappa = 0
+kappa = 1e-10
 
 opts_init.dry_distros = {kappa:expvolumelnr}
 
@@ -129,11 +135,11 @@ for i in range(0,2):
   rmsd = RMSD(results,golovin_results)
   
   if(i==0):
-    print 'sd_conc RMSD = ' + str(rmsd);
+    print('sd_conc RMSD = ' + str(rmsd));
     limit = 1e-5;
   else:
-    print 'const_multi RMSD = ' + str(rmsd);
-    limit = 2e-5; # constant multiplicity doesn't represent tails of the distribution so well and mass densty function depends on large tail?
+    print('const_multi RMSD = ' + str(rmsd));
+    limit = 3e-5; # constant multiplicity doesn't represent tails of the distribution so well and mass densty function depends on large tail?
 
   if(rmsd > limit):
     raise Exception("Simulation result does not agree with analytic prediction")
