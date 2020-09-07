@@ -47,10 +47,6 @@ if (NOT LIBCLOUDPHXX_DISABLE_CUDA)
   check_language(CUDA)
 endif()
 
-<<<<<<< HEAD
-############################################################################################
-# CUDA
-find_package(CUDA)
 if (NOT CMAKE_CUDA_COMPILER)
   message(STATUS "CUDA not found. 
 
