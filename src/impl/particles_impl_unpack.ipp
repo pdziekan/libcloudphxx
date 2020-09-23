@@ -22,12 +22,22 @@ namespace libcloudphxx
     template <typename real_t, backend_t device>
     void particles_t<real_t, device>::impl::unpack_real(const int &n_copied)
     {
+      if(n_copied==0)
+        return;
+
       auto it = distmem_real_vctrs.begin();
 
       while (it != distmem_real_vctrs.end())
       {
         (*it)->resize(n_part);
         auto distance = std::distance(distmem_real_vctrs.begin(), it);
+        std::cerr << "unpack_real it distance: " << distance << 
+          " n_copied: " << n_copied << 
+          " n_part: " << n_part <<
+          " n_part_old: " << n_part_old <<
+          " x.size(): " << x.size() <<
+          " in_real_bfr part: " << std::endl;
+        debug::print(in_real_bfr.begin() + distance * n_copied, in_real_bfr.begin() + (distance+1) * n_copied);
         thrust::copy( in_real_bfr.begin() + distance * n_copied, in_real_bfr.begin() + (distance+1) * n_copied, (*it)->begin() + n_part_old);
         it++;
       }
@@ -35,12 +45,16 @@ namespace libcloudphxx
       auto min_it = thrust::min_element(x.begin() + n_part_old, x.end());
       if(*min_it < opts_init.x0)
       {
+        std::cerr << "x from (begin() + n_part_old) to (end()): " << std::endl;
+        debug::print(x.begin() + n_part_old, x.end());
         std::cerr << "x (" << *min_it << ")  < opts_init.x0 (" << opts_init.x0 << ") after unpacking, potentially SD moved by more than one process/GPU domain size" << std::endl;
         assert(0);
       }
       auto max_it = thrust::max_element(x.begin() + n_part_old, x.end());
       if(*max_it >= opts_init.x1)
       {
+        std::cerr << "x from (begin() + n_part_old) to (end()): " << std::endl;
+        debug::print(x.begin() + n_part_old, x.end());
         std::cerr << "x (" << *max_it << ")  >= opts_init.x1 (" << opts_init.x1 << ") after unpacking, potentially SD moved by more than one process/GPU domain size" << std::endl;
         assert(0);
       }

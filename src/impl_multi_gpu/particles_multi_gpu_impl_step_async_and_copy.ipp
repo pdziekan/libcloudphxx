@@ -90,7 +90,20 @@ namespace libcloudphxx
         if(bcond.first == detail::distmem_cuda)
         {
           // adjust x of prtcls to be sent left to match new device's domain
+          if(dev_id == 0)
+          {
+            std::cerr << "dev_id: " << dev_id << " pre bcnd remote lft" << std::endl;
           particles[dev_id]->pimpl->bcnd_remote_lft(particles[dev_id]->opts_init->x0, particles[lft_dev]->opts_init->x1);
+            std::cerr << "dev_id: " << dev_id << " post bcnd remote lft" << std::endl;
+          }
+          barrier.wait();
+          if(dev_id == 1)
+          {
+            std::cerr << "dev_id: " << dev_id << " pre bcnd remote lft" << std::endl;
+          particles[dev_id]->pimpl->bcnd_remote_lft(particles[dev_id]->opts_init->x0, particles[lft_dev]->opts_init->x1);
+            std::cerr << "dev_id: " << dev_id << " post bcnd remote lft" << std::endl;
+          }
+          barrier.wait();
 
           // prepare the real_t buffer for copy left
           particles[dev_id]->pimpl->pack_real_lft();
@@ -125,13 +138,39 @@ namespace libcloudphxx
           particles[dev_id]->pimpl->pack_n_rgt();
 
           // adjust x of prtcls to be sent right to match new device's domain
+          if(dev_id == 0)
+          {
+            std::cerr << "dev_id: " << dev_id << " pre bcnd remote rgt" << std::endl;
           particles[dev_id]->pimpl->bcnd_remote_rgt(particles[dev_id]->opts_init->x1, particles[rgt_dev]->opts_init->x0);
+            std::cerr << "dev_id: " << dev_id << " post bcnd remote rgt" << std::endl;
+          }
+          barrier.wait();
+          if(dev_id == 1)
+          {
+            std::cerr << "dev_id: " << dev_id << " pre bcnd remote rgt" << std::endl;
+          particles[dev_id]->pimpl->bcnd_remote_rgt(particles[dev_id]->opts_init->x1, particles[rgt_dev]->opts_init->x0);
+            std::cerr << "dev_id: " << dev_id << " post bcnd remote rgt" << std::endl;
+          }
+          barrier.wait();
 
           // wait for the copy of real from right into current device to finish
           gpuErrchk(cudaEventSynchronize(events[rgt_dev]));
 
           // unpack the real buffer sent to this device from right
+          if(dev_id == 0)
+          {
+            std::cerr << "dev_id: " << dev_id << " pre unpack real from right" << std::endl;
           particles[dev_id]->pimpl->unpack_real(particles[rgt_dev]->pimpl->lft_count);
+            std::cerr << "dev_id: " << dev_id << " post unpack real from right" << std::endl;
+          }
+          barrier.wait();
+          if(dev_id == 1)
+          {
+            std::cerr << "dev_id: " << dev_id << " pre unpack real from right" << std::endl;
+          particles[dev_id]->pimpl->unpack_real(particles[rgt_dev]->pimpl->lft_count);
+            std::cerr << "dev_id: " << dev_id << " post unpack real from right" << std::endl;
+          }
+          barrier.wait();
 
           // sanitize x==x1 that could happen due to errors in copying?
           thrust::transform_if(x.begin() + n_part_old, x.begin() + n_part, x.begin() + n_part_old, detail::nextafter_fctr<real_t>(0.), arg::_1 == particles[dev_id]->opts_init->x1);
