@@ -9,6 +9,7 @@
 #pragma once
 
 #include <libcloudph++/blk_2m/extincl.hpp>
+#include <libcloudph++/blk_1m/formulae.hpp>
 
 namespace libcloudphxx
 {
@@ -68,28 +69,28 @@ namespace libcloudphxx
         {
           // terminal velocities at grid-cell edge (to assure precip mass conservation)
           quantity<multiply_typeof_helper<si::velocity, si::mass_density>::type, real_t> tmp_mom_m  = -real_t(.5) * ( // averaging + axis orientation
-            (*rhod_below * si::kilograms / si::cubic_metres) * formulae::v_term_m(
-              *rhod_below * si::kilograms / si::cubic_metres,
+            (*rhod_below * si::kilograms / si::cubic_metres) * libcloudphxx::blk_1m::formulae::v_term(
               *rr_below * si::kilograms / si::kilograms,
-              *nr_below / si::kilograms
+              *rhod_below * si::kilograms / si::cubic_metres,
+              *rhod_cont.begin() * si::kilograms / si::cubic_metres
             ) +
-            (*rhod * si::kilograms / si::cubic_metres) * formulae::v_term_m(
-              *rhod * si::kilograms / si::cubic_metres,
+            (*rhod * si::kilograms / si::cubic_metres) * libcloudphxx::blk_1m::formulae::v_term(
               *rr * si::kilograms / si::kilograms,
-              *nr / si::kilograms
+              *rhod * si::kilograms / si::cubic_metres,
+              *rhod_cont.begin() * si::kilograms / si::cubic_metres
             )
           );
 
           quantity<multiply_typeof_helper<si::velocity, si::mass_density>::type, real_t> tmp_mom_n  = -real_t(.5) * ( // averaging + axis orientation
-            (*rhod_below * si::kilograms / si::cubic_metres) * formulae::v_term_n(
-              *rhod_below * si::kilograms / si::cubic_metres,
+            (*rhod_below * si::kilograms / si::cubic_metres) * libcloudphxx::blk_1m::formulae::v_term(
               *rr_below * si::kilograms / si::kilograms,
-              *nr_below / si::kilograms
+              *rhod_below * si::kilograms / si::cubic_metres,
+              *rhod_cont.begin() * si::kilograms / si::cubic_metres
             ) +
-            (*rhod * si::kilograms / si::cubic_metres) * formulae::v_term_n(
-              *rhod * si::kilograms / si::cubic_metres,
+            (*rhod * si::kilograms / si::cubic_metres) * libcloudphxx::blk_1m::formulae::v_term(
               *rr * si::kilograms / si::kilograms,
-              *nr / si::kilograms
+              *rhod * si::kilograms / si::cubic_metres,
+              *rhod_cont.begin() * si::kilograms / si::cubic_metres
             )
           );
 
@@ -114,16 +115,16 @@ namespace libcloudphxx
 
       // the bottom grid cell (with mid-cell vterm approximation)
       quantity<multiply_typeof_helper<si::velocity, si::mass_density>::type, real_t>
-        tmp_mom_m = - (*rhod * si::kilograms / si::cubic_metres) * formulae::v_term_m(
-          *rhod * si::kilograms / si::cubic_metres,
+        tmp_mom_m = - (*rhod * si::kilograms / si::cubic_metres) * libcloudphxx::blk_1m::formulae::v_term(
           *rr * si::kilograms / si::kilograms,
-          *nr / si::kilograms
+          *rhod * si::kilograms / si::cubic_metres,
+          *rhod_cont.begin() * si::kilograms / si::cubic_metres
         );
       quantity<multiply_typeof_helper<si::velocity, si::mass_density>::type, real_t>
-        tmp_mom_n = - (*rhod * si::kilograms / si::cubic_metres) * formulae::v_term_n(
-          *rhod * si::kilograms / si::cubic_metres,
+        tmp_mom_n = - (*rhod * si::kilograms / si::cubic_metres) * libcloudphxx::blk_1m::formulae::v_term(
           *rr * si::kilograms / si::kilograms,
-          *nr / si::kilograms
+          *rhod * si::kilograms / si::cubic_metres,
+          *rhod_cont.begin() * si::kilograms / si::cubic_metres
         );
 
       // outflow from the domain
