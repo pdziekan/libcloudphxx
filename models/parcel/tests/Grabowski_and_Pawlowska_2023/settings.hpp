@@ -10,21 +10,27 @@ class settings_t {
         RH0 = .97,
         p0 = 90000; // [Pa]
 public:
-    const std::string aerosol;
+    const std::string aerosol, init;
     const real_t
         z_max = 1000, // [m]
         vertical_velocity,
         dt,
         kappa = 1.28;
-    const int n_sd = 64;
+//    const int n_sd = 64;
+    const int sd_const_multi, sd_conc, n_sd;
 
     std::shared_ptr<bimodal<real_t>> n_ln_rd_stp;
 
     settings_t(
         const real_t vertical_velocity,
         const std::string aerosol,
+        const std::string init,
         const real_t dt
-    ) : vertical_velocity(vertical_velocity), aerosol(aerosol), dt(dt) {
+    ) : vertical_velocity(vertical_velocity), aerosol(aerosol), init(init), dt(dt), 
+        sd_const_multi(init == "random" ? 1e6 : 0),
+        sd_conc(init == "bin" ? 64 : 0),
+        n_sd(init == "bin" ? sd_conc : aerosol == "pristine" ? 155 : 441)
+      {
         if (aerosol == "pristine") {
             n_ln_rd_stp = std::make_shared<bimodal<real_t>>(
                     lognormal<real_t>(11e-9, 1.2, 125e6), //pristine
@@ -39,6 +45,8 @@ public:
              // n(ln(rd)) @ STP
         }
         else assert(false);
+
+        if(init != "bin" && init != "random") assert(false);
     }
 
     auto n_steps() {

@@ -12,7 +12,7 @@
 
 #include <libcloudph++/lgrngn/factory.hpp>
 
-using real_t = float;
+using real_t = double;//float;
 const auto backend = libcloudphxx::lgrngn::serial;
 
 
@@ -22,6 +22,7 @@ int main(int arg_count, char** arg_values)
     settings_t<real_t> settings(
         vm["vertical_velocity"].as<real_t>(),
         vm["aerosol"].as<std::string>(),
+        vm["init"].as<std::string>(),
         vm["dt"].as<real_t>()
     );
 
@@ -29,12 +30,16 @@ int main(int arg_count, char** arg_values)
     libcloudphxx::lgrngn::opts_t<real_t> opts;
 
     real_t dv = 1; // [m3]
-    params.nx = params.ny = params.nz = 1;
-    params.dx = params.dy = params.dz = pow(dv, real_t(1./3));
+    params.nx = params.ny = params.nz = 0;
+//    params.dx = params.dy = params.dz = pow(dv, real_t(1./3));
     params.dt = settings.dt;
-    params.sd_conc = params.n_sd_max = settings.n_sd;
+    params.sd_conc = settings.sd_conc;
+    params.sd_const_multi = settings.sd_const_multi;
+    params.n_sd_max = settings.n_sd;
     params.dry_distros.emplace(settings.kappa, settings.n_ln_rd_stp);
-    params.sstp_cond = 10;
+    params.sstp_cond = 1; // sstp_cond > 1 messes with the order of RH/rw2/rd3 output
+//    params.exact_sstp_cond = true;
+//    params.aerosol_independent_of_rhod = true;
 
     params.coal_switch = opts.coal = false;
     params.sedi_switch = opts.sedi = false;
@@ -60,10 +65,14 @@ int main(int arg_count, char** arg_values)
         for (auto i: range_i) {
             if (i != 0) {
                 step_hydrostatic(settings.dt * settings.vertical_velocity, thd, rv, rhod);
-                prtcls->step_sync(opts, arrinfo(thd), arrinfo(rv), arrinfo(rhod));
+                //prtcls->step_sync(opts, arrinfo(thd), arrinfo(rv), arrinfo(rhod));
+                prtcls->sync_in(arrinfo(thd), arrinfo(rv), arrinfo(rhod));
+                output_step<backend>(i, *prtcls, *nc);
+                prtcls->step_cond(opts, arrinfo(thd), arrinfo(rv));
                 prtcls->step_async(opts);
             }
-            output_step<backend>(i, *prtcls, *nc);
+            else
+              output_step<backend>(i, *prtcls, *nc);
         }
     }
 }

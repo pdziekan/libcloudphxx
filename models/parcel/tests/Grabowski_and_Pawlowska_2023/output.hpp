@@ -21,17 +21,18 @@ auto output_init(
     nc->putAtt("dt (s)", netCDF::ncFloat, settings.dt);
     nc->putAtt("vertical velocity (m s-1)", netCDF::ncFloat, settings.vertical_velocity);
     nc->putAtt("aerosol", settings.aerosol);
+    nc->putAtt("init", settings.init);
 
     nc->addDim("step",n_t);
     nc->addDim("droplet_id",n_sd);
 
-    nc->addVar("RH", "float", "step").putAtt("unit", "1");
-    nc->addVar("T", "float", "step").putAtt("unit", "K");
+    nc->addVar("RH", "double", "step").putAtt("unit", "1");
+    nc->addVar("T", "double", "step").putAtt("unit", "K");
 
-    nc->addVar("wet radius squared", "float", std::vector<std::string>{"step", "droplet_id"}).putAtt("unit", "m^2");
-    nc->addVar("dry radius cubed", "float", std::vector<std::string>{"step", "droplet_id"}).putAtt("unit", "m^3");
-    nc->addVar("critical radius cubed", "float", std::vector<std::string>{"step", "droplet_id"}).putAtt("unit", "m^3");
-    nc->addVar("kappa", "float", std::vector<std::string>{"step", "droplet_id"}).putAtt("unit", "1");
+    nc->addVar("wet radius squared", "double", std::vector<std::string>{"step", "droplet_id"}).putAtt("unit", "m^2");
+    nc->addVar("dry radius cubed", "double", std::vector<std::string>{"step", "droplet_id"}).putAtt("unit", "m^3");
+    nc->addVar("critical radius cubed", "double", std::vector<std::string>{"step", "droplet_id"}).putAtt("unit", "m^3");
+    nc->addVar("kappa", "double", std::vector<std::string>{"step", "droplet_id"}).putAtt("unit", "1");
 
     return nc;
 }
