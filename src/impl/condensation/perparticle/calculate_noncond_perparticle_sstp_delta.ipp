@@ -22,7 +22,7 @@ namespace libcloudphxx
 
     for (int ix = 0; ix < (opts_init.const_p ? n : n-1); ++ix)
     {
-        const real_t sstp = sstp_cond;
+//        const real_t sstp = sstp_cond;
         thrust::transform(
           thrust::make_permutation_iterator(scl[ix]->begin(), ijk.begin()),
           thrust::make_permutation_iterator(scl[ix]->begin(), ijk.end()),

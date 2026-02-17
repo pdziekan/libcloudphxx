@@ -129,34 +129,34 @@ namespace libcloudphxx
 
             // check drw convergence for increasing number of substeps
             for(int sstp_cond_try = 1; sstp_cond_try <= sstp_cond_max; sstp_cond_try*=2)
+            //for(int sstp_cond_try = 1; sstp_cond_try <= 1; sstp_cond_try*=2)
             {
               delta_fraction_applied = sstp_cond_try == 1 ? 1 : -real_t(1) / sstp_cond_try;
               _apply_noncond_perparticle_sstp_delta(delta_fraction_applied);
               // _cond_perparticle_drw2(sstp_cond_try, sstp_cond_try == 1 ? drw2 : drw2_new); // also updates Tp!
 
-
-            _calc_Tp();              
-            _calc_sstp_tmp_p();
-            _calc_RH();
-            (sstp_cond_try == 1 ? drw2 : drw2_new) = 
-              detail::advance_rw2<real_t, false>(dt / sstp_cond_try, RH_max, eps_tolerance, cond_mlt, n_iter)(
-                rw2,
-                thrust::make_tuple(
+              _calc_Tp();              
+              _calc_sstp_tmp_p();
+              _calc_RH();
+              (sstp_cond_try == 1 ? drw2 : drw2_new) = 
+                detail::advance_rw2<real_t, false>(dt / sstp_cond_try, RH_max, eps_tolerance, cond_mlt, n_iter)(
+                  rw2,
                   thrust::make_tuple(
-                    sstp_tmp_rh,
-                    sstp_tmp_rv,
-                    Tp,
-                    detail::common__vterm__visc<real_t>()(Tp),
-                    rd3,
-                    kpa,
-                    vt,
-                    lambda_D,
-                    lambda_K
-                  ),
-                  sstp_tmp_p,
-                  RH                  
-                )
-              ); 
+                    thrust::make_tuple(
+                      sstp_tmp_rh,
+                      sstp_tmp_rv,
+                      Tp,
+                      detail::common__vterm__visc<real_t>()(Tp),
+                      rd3,
+                      kpa,
+                      vt,
+                      lambda_D,
+                      lambda_K
+                    ),
+                    sstp_tmp_p,
+                    RH                  
+                  )
+                ); 
 
               if(sstp_cond_try > 1) // check for convergence 
               {
@@ -178,8 +178,13 @@ namespace libcloudphxx
             {
               const real_t rc2 = thrust::get<2>(thrust::get<2>(tpl));
 
-              if ( ( rw2 < rc2 && (rw2 + sstp_cond * drw2) > rc2 ) || 
-                   ( rw2 > rc2 && (rw2 + sstp_cond * drw2) < rc2 ) )
+              // if(rw2 > 10. * rc2 && rw2 < 100. * rc2)
+                // printf("rw2=%e, rc2=%e, drw2=%e\n", rw2, rc2, drw2);
+
+              // if ( ( rw2 < 10. * rc2  && (rw2 + sstp_cond * drw2) * 10 > rc2 )  || 
+              //      ( rw2 > rc2 && (rw2 + sstp_cond * drw2) < rc2 ) )
+
+              if ( rw2 < real_t(144) * rc2 && rw2 > rc2 / real_t(4))
               {
                 sstp_cond = sstp_cond_act;
                 first_cond_step_done_in_adaptation = false;
@@ -187,7 +192,7 @@ namespace libcloudphxx
             }
             if(!first_cond_step_done_in_adaptation)
             {
-              _apply_noncond_perparticle_sstp_delta(delta_fraction_applied); // revert to state before adaptation loop (beacause sstp_cond == sstp_cond_max and sstp_cond_max may not be a power of 2)
+              _apply_noncond_perparticle_sstp_delta(sstp_cond_max == 1 ? -delta_fraction_applied : delta_fraction_applied); // revert to state before adaptation loop (beacause sstp_cond == sstp_cond_max and sstp_cond_max may not be a power of 2); If only one step was tried, whole change was applied; If more steps were tried, we are moving back from the entire step
             }
           }            
 

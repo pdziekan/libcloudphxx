@@ -205,7 +205,7 @@ namespace libcloudphxx
           }
 
           pimpl->acquire_arrays_for_perparticle_sstp(); // sstp_dlt_rv_gp, etc. ; as in sstp_percell_step_exact()
-          pimpl->calculate_noncond_perparticle_sstp_delta(); // sstp_dlt_rv_gp, etc. ; as in sstp_percell_step_exact(); returns change / sstp_count; make it just change and multiply afterwards?
+          pimpl->calculate_noncond_perparticle_sstp_delta(); // sstp_dlt_rv_gp, etc. ; as in sstp_percell_step_exact();
 
           // adaptive per-particle substepping
           if(pimpl->opts_init.adaptive_sstp_cond)
