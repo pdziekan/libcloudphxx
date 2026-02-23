@@ -516,7 +516,7 @@ namespace libcloudphxx
         if(allow_sstp_cond && opts_init.exact_sstp_cond && sstp_cond_exact_nomix_adaptive)
           tmp_drp_no = std::max(tmp_drp_no, 4); // why 5? not 4?
         if(allow_sstp_cond && opts_init.exact_sstp_cond && !sstp_cond_exact_nomix_adaptive)
-          tmp_drp_no = std::max(tmp_drp_no, 7); // why 8? not 7?
+          tmp_drp_no = std::max(tmp_drp_no, 8); // 8, because sstp_cond is not released, for diag_sstp_cond to work
         // if(allow_sstp_cond && opts_init.exact_sstp_cond && opts_init.const_p)
         //   tmp_drp_no = std::max(tmp_drp_no, 7);
         tmp_device_real_part.add_vectors(tmp_drp_no-1); // -1 because 1 is already created in the ctor
