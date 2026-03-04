@@ -24,7 +24,6 @@ namespace libcloudphxx
         {
           reset_guardp(ice_mass_gp, tmp_device_real_part);
           reset_guardp(d_ice_mass_gp, tmp_device_real_part);
-          reset_guardp(d_ice_mass_percell_gp, tmp_device_real_part);
         }
       }
 

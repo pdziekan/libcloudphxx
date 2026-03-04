@@ -25,7 +25,6 @@ namespace libcloudphxx
         {
           ice_mass_gp.reset();
           d_ice_mass_gp.reset();
-          d_ice_mass_percell_gp.reset();
         }
       }
 
