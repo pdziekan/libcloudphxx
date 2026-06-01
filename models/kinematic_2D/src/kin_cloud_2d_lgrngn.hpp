@@ -79,32 +79,6 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
         }
         rng_num++;
       }
-      // ice_a
-      int rng_num = 0;
-      for (auto &rng_moms : params.out_ice)
-      {
-        auto &rng(rng_moms.first);
-        prtcls->diag_ice_a_rng(rng.first / si::metres, rng.second / si::metres);
-        for (auto &mom : rng_moms.second)
-        {
-          prtcls->diag_ice_a_mom(mom);
-          this->record_aux(aux_name("ice_a", rng_num, mom), prtcls->outbuf());
-        }
-        rng_num++;
-      }
-      // ice_c
-      int rng_num = 0;
-      for (auto &rng_moms : params.out_ice)
-      {
-        auto &rng(rng_moms.first);
-        prtcls->diag_ice_c_rng(rng.first / si::metres, rng.second / si::metres);
-        for (auto &mom : rng_moms.second)
-        {
-          prtcls->diag_ice_c_mom(mom);
-          this->record_aux(aux_name("ice_c", rng_num, mom), prtcls->outbuf());
-        }
-        rng_num++;
-      }
     }
     {
       // rw3(rd)
@@ -116,6 +90,41 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
         prtcls->diag_wet_mom(3);
         this->record_aux(aux_name("rw3ofrd", rng_num, 3), prtcls->outbuf());
         rng_num++;
+      }
+    }
+    if (params.cloudph_opts_init.ice_switch)
+    {
+      prtcls->diag_ice_mix_ratio();
+      this->record_aux("ice_mix_ratio", prtcls->outbuf());
+      {
+        // ice_a
+        int rng_num = 0;
+        for (auto &rng_moms : params.out_ice)
+        {
+          auto &rng(rng_moms.first);
+          prtcls->diag_ice_a_rng(rng.first / si::metres, rng.second / si::metres);
+          for (auto &mom : rng_moms.second)
+          {
+            prtcls->diag_ice_a_mom(mom);
+            this->record_aux(aux_name("ice_a", rng_num, mom), prtcls->outbuf());
+          }
+          rng_num++;
+        }
+      }
+      {
+        // ice_c
+        int rng_num = 0;
+        for (auto &rng_moms : params.out_ice)
+        {
+          auto &rng(rng_moms.first);
+          prtcls->diag_ice_c_rng(rng.first / si::metres, rng.second / si::metres);
+          for (auto &mom : rng_moms.second)
+          {
+            prtcls->diag_ice_c_mom(mom);
+            this->record_aux(aux_name("ice_c", rng_num, mom), prtcls->outbuf());
+          }
+          rng_num++;
+        }
       }
     }
   } 
@@ -181,7 +190,11 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
       this->record_aux_const("n1_stp",   this->setup.n1_stp * si::cubic_metres);
       this->record_aux_const("n2_stp",   this->setup.n2_stp * si::cubic_metres);
       this->record_aux_const("kappa",    this->setup.kappa);
-      this->record_aux_const("rd_insol",    this->setup.rd_insol / si::metres);
+      this->record_aux_const("rd_insol", this->setup.rd_insol / si::metres);
+      this->record_aux_const("ice_switch", ice_switch);
+      this->record_aux_const("ice_nucl", ice_nucl);
+      this->record_aux_const("time_dep_ice_nucl", time_dep_ice_nucl);
+      this->record_aux_const("depo", depo);
 
       assert(params.backend != -1);
       assert(params.dt != 0); 
