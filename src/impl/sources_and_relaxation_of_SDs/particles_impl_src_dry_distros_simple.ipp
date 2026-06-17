@@ -54,6 +54,12 @@ namespace libcloudphxx
       init_ijk();
       init_dry_sd_conc(); 
 
+      init_n_sd_conc(
+        *get<0>(p_sdd->second)
+      ); 
+
+      add_insol_to_dry(p_sdd->first.rd_insol);
+
       // init other properties of SDs that didnt have a match
       init_kappa(
         p_sdd->first.kappa,
@@ -71,10 +77,6 @@ namespace libcloudphxx
 
       if(opts_init.diag_incloud_time)
         init_incloud_time();
-
-      init_n_sd_conc(
-        *get<0>(p_sdd->second)
-      ); 
 
       // init rw
       init_wet();
