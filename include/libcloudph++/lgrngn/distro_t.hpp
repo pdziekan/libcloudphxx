@@ -55,5 +55,16 @@ namespace libcloudphxx
         std::tuple<real_t, int, int>   // STP_concentration [1/m^3] created per second, number of SD that represent this radius kappa and concentration, supstp
       >
     >;
+
+    // uses shared_ptr to make opts_init copyable
+    // TODO: allow rd_insol (currently, its assumed to be 0)
+    typedef std::unordered_map<
+      real_t,                // kappa
+      std::tuple<
+        std::shared_ptr<unary_function<real_t>>, // n(ln(rd)) @ STP; alternatively it's n(ln(rd)) independent of rhod if aerosol_independent_of_rhod=true
+        std::pair<real_t, real_t>, // kappa range of CCN considered to belong to this distribution, ranges of different members of the map need to be exclusive (TODO: add a check of this)
+        std::pair<real_t, real_t>  // range of altitudes at which this relaxation acts
+      >
+    > rlx_dry_distros_t;
   };
 };
