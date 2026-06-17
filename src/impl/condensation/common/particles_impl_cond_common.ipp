@@ -93,14 +93,13 @@ namespace libcloudphxx
         const quantity<si::dimensionless,     real_t> RH_max;
         const quantity<si::length,            real_t> lambda_D;
         const quantity<si::length,            real_t> lambda_K;
-        const quantity<si::volume,            real_t> rd3_insol;
 
         // ctor
         BOOST_GPU_ENABLED
         advance_rw2_minfun(
           const real_t &dt,
           const real_t &rw2,
-          const thrust::tuple<thrust::tuple<real_t, real_t, real_t, real_t, real_t, real_t, real_t, real_t, real_t, real_t>, real_t, real_t> &tpl,
+          const thrust::tuple<thrust::tuple<real_t, real_t, real_t, real_t, real_t, real_t, real_t, real_t, real_t>, real_t, real_t> &tpl,
           const real_t &RH_max
         ) : 
           dt(dt * si::seconds), 
@@ -116,7 +115,6 @@ namespace libcloudphxx
           RH(      thrust::get<2>(tpl)),
           lambda_D(thrust::get<7>(thrust::get<0>(tpl)) * si::metres),
           lambda_K(thrust::get<8>(thrust::get<0>(tpl)) * si::metres),
-          rd3_insol(thrust::get<9>(thrust::get<0>(tpl)) * si::cubic_metres),
           RH_max(RH_max)
         {}
 
@@ -159,7 +157,7 @@ namespace libcloudphxx
             T,
             p,
             RH > RH_max ? RH_max : RH,
-            a_w(rw3, rd3, rd3_insol, kpa),
+            a_w(rw3, rd3, kpa),
             klvntrm(rw, T)
           );
         }
@@ -188,7 +186,7 @@ namespace libcloudphxx
         BOOST_GPU_ENABLED
         real_t operator()(
           const real_t &rw2_old, 
-          const thrust::tuple<thrust::tuple<real_t, real_t, real_t, real_t, real_t, real_t, real_t, real_t, real_t, real_t>, real_t, real_t> &tpl
+          const thrust::tuple<thrust::tuple<real_t, real_t, real_t, real_t, real_t, real_t, real_t, real_t, real_t>, real_t, real_t> &tpl
         ) const {
 #if !defined(__NVCC__)
           using std::min;
@@ -223,8 +221,7 @@ namespace libcloudphxx
               "kpa: %g  "
               "vt: %g  "
               "lambda_D: %g  "
-              "lambda_K: %g\n"
-              "rd3_insol: %g  ",
+              "lambda_K: %g\n",
                drw2, rw2_old, dt, RH_max,
                thrust::get<0>(tpl_in), // rhod
                thrust::get<1>(tpl_in), // rv
@@ -236,8 +233,7 @@ namespace libcloudphxx
                thrust::get<5>(tpl_in), // kpa
                thrust::get<6>(tpl_in), // vt
                thrust::get<7>(tpl_in), // lambda_D
-               thrust::get<8>(tpl_in),  // lambda_K
-               thrust::get<9>(tpl_in)  // rd3_insol
+               thrust::get<8>(tpl_in)  // lambda_K
             );
             assert(0);
           }
@@ -286,11 +282,10 @@ namespace libcloudphxx
               "eta: %g  "
               "rd3: %g  "
               "kpa: %g  "
-              "vt: %g\n"
-              "rd3_insol: %g  ",
+              "vt: %g\n",
                a, b, drw2, rw2_old, rd2, dt, RH_max, thrust::get<0>(tpl_in),thrust::get<1>(tpl_in),
                thrust::get<2>(tpl_in),thrust::get<1>(tpl),thrust::get<2>(tpl),thrust::get<3>(tpl_in),
-               thrust::get<4>(tpl_in),thrust::get<5>(tpl_in),thrust::get<6>(tpl_in), thrust::get<9>(tpl_in)
+               thrust::get<4>(tpl_in),thrust::get<5>(tpl_in),thrust::get<6>(tpl_in)
             );
             assert(0);
           }
