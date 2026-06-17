@@ -12,11 +12,20 @@ namespace libcloudphxx
   {
     template <typename real_t, backend_t device>
     void particles_t<real_t, device>::impl::init_kappa(
-      const real_t &kappa
+      const real_t kappa,     // kappa of the soluble part
+      const real_t rd_insol  // size of the insoluble part
     )
     {
-      // filling kappas
-      thrust::fill(kpa.begin() + n_part_old, kpa.end(), kappa);
+      // assuming that rd3 = rd3_sol + rd3_insol is already filled
+
+      const real_t rd3_insol = rd_insol * rd_insol * rd_insol;
+      
+      thrust::transform(
+        rd3.begin() + n_part_old, rd3.end(),
+        kappa.begin(),
+        (arg::_1 - rd3_insol) / arg::_1 * kappa
+        // assuming that soluble and insoluble densities are the same (hence using volume fraction mixing, not mass fraction as should (?) be done)
+        
     }
   };
 };

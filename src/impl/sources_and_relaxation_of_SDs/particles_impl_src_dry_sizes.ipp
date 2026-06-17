@@ -49,7 +49,7 @@ namespace libcloudphxx
           init_dry_dry_sizes(sni->first);
 
           // init kappa and rd_insol
-          init_kappa(kappa);
+          init_kappa(kappa, rd_insol);
 
           if (opts_init.ice_switch)
           {

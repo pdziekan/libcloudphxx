@@ -61,7 +61,7 @@ namespace libcloudphxx
       init_count_num_src(get<1>(p_sdd->second));
 
 
-      // -------- TODO: match not only sizes of old particles, but also kappas and chemical composition... --------
+      // -------- TODO: match not only sizes of old particles, but also kappas, rd_insol, chemical composition... --------
 
       // --- sort already existing SDs; primary key ijk, secondary rd ---
       // TODO: do all of this only on SDs in cells below src_z1?
@@ -221,7 +221,8 @@ namespace libcloudphxx
 
           // init other properties of SDs that didnt have a match
           init_kappa(
-            p_sdd->first.kappa
+            p_sdd->first.kappa,
+            p_sdd->first.rd_insol
           );
           if (opts_init.ice_switch)
           {

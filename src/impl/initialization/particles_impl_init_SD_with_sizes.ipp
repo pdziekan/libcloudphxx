@@ -43,14 +43,15 @@ namespace libcloudphxx
           init_ijk();
   
           // initialising dry radii (needs ijk)
-          init_dry_dry_sizes(sni->first);
+          init_dry_dry_sizes(sni->first + rd_insol); // soluble + insoluble
 
-          // init kappa and rd_insol
-          init_kappa(kappa);
+          // init kappa
+          init_kappa(kappa, rd_insol);
 
           if (opts_init.ice_switch)
           {
             init_insol_dry_sizes(rd_insol);
+
             init_a_c_rho_ice();
             if (! opts_init.time_dep_ice_nucl)
             {

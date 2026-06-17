@@ -67,6 +67,7 @@
 #include "impl/initialization/particles_impl_init_dry_sd_conc.ipp"
 #include "impl/initialization/particles_impl_init_dry_const_multi.ipp"
 #include "impl/initialization/particles_impl_init_dry_dry_sizes.ipp"
+#include "impl/initialization/particles_impl_add_insol_to_dry.ipp"
 #include "impl/initialization/particles_impl_init_kappa.ipp"
 #include "impl/initialization/particles_impl_init_incloud_time.ipp"
 #include "impl/initialization/particles_impl_init_n.ipp"

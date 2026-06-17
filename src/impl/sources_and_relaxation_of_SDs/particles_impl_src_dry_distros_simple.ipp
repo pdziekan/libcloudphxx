@@ -56,7 +56,8 @@ namespace libcloudphxx
 
       // init other properties of SDs that didnt have a match
       init_kappa(
-        p_sdd->first.kappa
+        p_sdd->first.kappa,
+        p_sdd->first.rd_insol
       );
       if (opts_init.ice_switch)
       {

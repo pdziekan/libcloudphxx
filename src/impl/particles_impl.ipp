@@ -580,8 +580,9 @@ namespace libcloudphxx
       void reserve_hskpng_npart();
       void init_ijk();
       void init_xyz();
-      void init_kappa(const real_t &);
+      void init_kappa(const real_t, const real_t);
       void init_insol_dry_sizes(real_t);
+      void add_insol_to_dry(real_t);
       void init_T_freeze();
       void init_a_c_rho_ice();
       void init_incloud_time();

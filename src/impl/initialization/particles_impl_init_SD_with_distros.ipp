@@ -52,12 +52,16 @@ namespace libcloudphxx
     template <typename real_t, backend_t device>
     void particles_t<real_t, device>::impl::init_SD_with_distros_finalize(const kappa_rd_insol_t<real_t> &kpa_rd_insol, const bool unravel_ijk_switch)
     {
-      // init kappa
-      init_kappa(kpa_rd_insol.kappa);
+      // rd3 = rd3_sol + rd3_insol
+      add_insol_to_dry(kpa_rd_insol.rd_insol);
+
+      // init kappa, needs to be done after adding insol
+      init_kappa(kpa_rd_insol.kappa, kpa_rd_insol.rd_insol);
 
       if (opts_init.ice_switch)
       {
         init_insol_dry_sizes(kpa_rd_insol.rd_insol);
+
         init_a_c_rho_ice();
         if (! opts_init.time_dep_ice_nucl)
         {
