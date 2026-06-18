@@ -17,14 +17,17 @@ namespace libcloudphxx
     )
     {
       // assuming that rd3 = rd3_sol + rd3_insol is already filled
-
       const real_t rd3_insol = rd_insol * rd_insol * rd_insol;
       
+      namespace arg = thrust::placeholders;
       thrust::transform(
         rd3.begin() + n_part_old, rd3.end(),
-        kappa.begin(),
+        kpa.begin() + n_part_old,
         (arg::_1 - rd3_insol) / arg::_1 * kappa
         // assuming that soluble and insoluble densities are the same (hence using volume fraction mixing, not mass fraction as should (?) be done)
+      );
+
+      debug::print(kpa);
         
     }
   };

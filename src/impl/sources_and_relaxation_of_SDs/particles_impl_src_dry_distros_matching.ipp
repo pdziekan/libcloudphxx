@@ -50,8 +50,8 @@ namespace libcloudphxx
     template <typename real_t, backend_t device>
     void particles_t<real_t, device>::impl::src_dry_distros_matching(const src_dry_distros_t<real_t> &sdd)
     {   
-      assert(p_sdd->first.rd_insol == 0); // rd insol in matching source not implemented yet 
       auto p_sdd = sdd.cbegin();
+      assert(p_sdd->first.rd_insol == 0); // rd insol in matching source not implemented yet 
 
       // add the source only once every number of steps
       assert(get<2>(p_sdd->second) > 0);

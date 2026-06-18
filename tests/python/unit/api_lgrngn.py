@@ -133,7 +133,7 @@ except:
   pass
 prtcls.step_async(opts)
 prtcls.step_sync(opts, th, rv)
-prtcls.diag_dry_rng(0.,1.)
+prtcls.diag_dry_rng(0. + rd_insol,1. + rd_insol)
 prtcls.diag_wet_rng(0.,1.)
 prtcls.diag_kappa_rng(0.,2.)
 prtcls.diag_kappa_rng_cons(.5,1.5)
@@ -172,7 +172,7 @@ prtcls.sync_in(th, rv, rhod)
 prtcls.step_cond(opts, th, rv)
 prtcls.step_async(opts)
 prtcls.step_sync(opts, th, rv)
-prtcls.diag_dry_rng(0.,1.)
+prtcls.diag_dry_rng(0. + rd_insol,1. + rd_insol)
 prtcls.diag_wet_rng(0.,1.)
 prtcls.diag_dry_mom(1)
 prtcls.diag_wet_mom(1)
@@ -264,41 +264,18 @@ print(frombuffer(prtcls.outbuf()))
 assert (prtcls_tot == 75.) # 25 SDs have multiplicity = 2 and 25 have multiplicity = 1
 assert (sd_tot == 50.) 
 
-prtcls.diag_dry_rng(1e-6, 1.1e-6);
-prtcls.diag_wet_mom(0)
-n = frombuffer(prtcls.outbuf()).copy()
-prtcls.diag_kappa_mom(1)
-k = frombuffer(prtcls.outbuf())
-print(n, k)
-assert (n == 30 ).all()
-assert isclose(k, n * kappa1, rtol=1e-20)
+for rd_sol, kappa, n_stp in [(1e-6, kappa1, 30), (15.e-6, kappa1, 10), (1.2e-6, kappa2, 20), (12.e-6, kappa2, 15)]:
+    print("testig rd_sol: ", rd_sol, " kappa: ", kappa, " n_stp: ", n_stp)
+    prtcls.diag_dry_rng(rd_sol + rd_insol - 1e-9, rd_sol + rd_insol + 1e-9)
+    prtcls.diag_wet_mom(0)
+    n = frombuffer(prtcls.outbuf()).copy()
+    prtcls.diag_kappa_mom(1)
+    k_mean = frombuffer(prtcls.outbuf()) / n
+    kpa_effective = ((rd_sol + rd_insol)**3 - rd_insol**3) / (rd_sol + rd_insol)**3 * kappa 
+    print(n, k_mean, kpa_effective)
+    assert (n == n_stp ).all()
+    assert isclose(k_mean, kpa_effective, rtol=1e-10)
 
-prtcls.diag_dry_rng(1.2e-6, 1.3e-6);
-prtcls.diag_wet_mom(0)
-n = frombuffer(prtcls.outbuf()).copy()
-prtcls.diag_kappa_mom(1)
-k = frombuffer(prtcls.outbuf())
-print(n, k)
-assert (n == 20 ).all()
-assert isclose(k, n * kappa2, rtol=1e-20)
-
-prtcls.diag_dry_rng(12e-6, 13e-6);
-prtcls.diag_wet_mom(0)
-n = frombuffer(prtcls.outbuf()).copy()
-prtcls.diag_kappa_mom(1)
-k = frombuffer(prtcls.outbuf())
-print(n, k)
-assert (n == 15 ).all()
-assert isclose(k, n * kappa2, rtol=1e-20)
-
-prtcls.diag_dry_rng(15e-6, 15.1e-6);
-prtcls.diag_wet_mom(0)
-n = frombuffer(prtcls.outbuf()).copy()
-prtcls.diag_kappa_mom(1)
-k = frombuffer(prtcls.outbuf())
-print(n, k)
-assert (n == 10 ).all()
-assert isclose(k, n * kappa1, rtol=1e-20)
 
 # go back to distros init
 opts_init.sd_conc = sd_conc_old
@@ -659,12 +636,12 @@ prtcls_tot = frombuffer(prtcls.outbuf()).sum()
 print(frombuffer(prtcls.outbuf()))
 assert ((prtcls_tot / sd_tot) * cell_vol  == 1)
 
-prtcls.diag_dry_rng(1e-6, 1.1e-6);
+prtcls.diag_dry_rng(1e-6 + rd_insol, 1.1e-6 + rd_insol);
 prtcls.diag_wet_mom(0)
 print(frombuffer(prtcls.outbuf()))
 assert (frombuffer(prtcls.outbuf()) == 30 / cell_vol).all()
 
-prtcls.diag_dry_rng(15e-6, 15.1e-6);
+prtcls.diag_dry_rng(15e-6 + rd_insol, 15.1e-6 + rd_insol);
 prtcls.diag_wet_mom(0)
 print(frombuffer(prtcls.outbuf()))
 assert (frombuffer(prtcls.outbuf()) == 10 / cell_vol).all()
@@ -674,6 +651,7 @@ assert (frombuffer(prtcls.outbuf()) == 10 / cell_vol).all()
 # ----------
 # 3D dry_sizes + sd_conc init
 print("3D dry_sizes + sd_conc")
+rd_insol = 0.e-6 # no insoluble aerosol from now on
 opts_init.dry_distros = {(kappa1, rd_insol):lognormal, (kappa2, rd_insol):lognormal}
 opts_init.dry_sizes = {(kappa1, rd_insol) : {1.e-6 : [30./ cell_vol * rho_stp, 15], 15.e-6 : [10. / cell_vol * rho_stp,  5]}}
 opts_init.sd_conc = sd_conc_old

@@ -16,12 +16,16 @@ namespace libcloudphxx
       real_t rd_insol
     )
     {
+      // namespace arg = thrust::placeholders;
+
       // add the insoluble aerosol
       const real_t rd3_insol = rd_insol * rd_insol * rd_insol;
       thrust::transform(
         rd3.begin()+n_part_old,
         rd3.end(),
         thrust::make_constant_iterator<real_t>(rd3_insol),
+        rd3.begin()+n_part_old,
+        // arg::_1 + arg::_2
         thrust::plus<real_t>()
       );
     }

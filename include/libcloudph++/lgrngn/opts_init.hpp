@@ -161,7 +161,7 @@ namespace libcloudphxx
       // initial dry sizes of aerosol
       // defined with a distribution
 
-      rlx_dry_distros_t rlx_dry_distros;
+      rlx_dry_distros_t<real_t> rlx_dry_distros;
 
       // number of bins into which the relaxation distro is divided
       unsigned long long rlx_bins;

@@ -99,7 +99,7 @@ namespace libcloudphxx
 
       // calc sum of ln(rd) ranges of all relax distributions
       real_t tot_lnrd_rng = 0.;
-      for (typename opts_init_t<real_t>::rlx_dry_distros_t::const_iterator ddi = opts_init.rlx_dry_distros.begin(); ddi != opts_init.rlx_dry_distros.end(); ++ddi)
+      for (auto ddi = opts_init.rlx_dry_distros.begin(); ddi != opts_init.rlx_dry_distros.end(); ++ddi)
       {
         init_dist_analysis_sd_conc(
           *(std::get<0>(ddi->second)),
@@ -111,7 +111,7 @@ namespace libcloudphxx
       const auto n_part_pre_relax = n_part;
 
       // initialize SDs of each kappa-type
-      for (typename opts_init_t<real_t>::rlx_dry_distros_t::const_iterator ddi = opts_init.rlx_dry_distros.begin(); ddi != opts_init.rlx_dry_distros.end(); ++ddi)
+      for (auto ddi = opts_init.rlx_dry_distros.begin(); ddi != opts_init.rlx_dry_distros.end(); ++ddi)
       {
         const auto &kappa(ddi->first);
         assert(kappa >= 0);
