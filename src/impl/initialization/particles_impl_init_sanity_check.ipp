@@ -69,6 +69,14 @@ namespace libcloudphxx
       if(opts_init.dry_distros.size() == 0 && opts_init.dry_sizes.size() == 0)
         throw std::runtime_error("libcloudph++: Both dry_distros and dry_sizes are undefined");
 
+      for(auto &dist : opts_init.dry_distros)
+        if(dist.first.soluble_fraction < 0 || dist.first.soluble_fraction > 1)
+          throw std::runtime_error("libcloudph++: soluble_fraction in dry_distros must be in [0, 1]");
+
+      for(auto &size : opts_init.dry_sizes)
+        if(size.first.soluble_fraction < 0 || size.first.soluble_fraction > 1)
+          throw std::runtime_error("libcloudph++: soluble_fraction in dry_sizes must be in [0, 1]");
+
       if(opts_init.sd_conc_large_tail && opts_init.sd_conc == 0)
         throw std::runtime_error("libcloudph++: Sd_conc_large_tail make sense only with sd_conc init (i.e. sd_conc>0)");
 

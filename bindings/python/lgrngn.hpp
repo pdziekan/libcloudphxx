@@ -247,7 +247,7 @@ namespace libcloudphxx
           const real_t kappa = bp::extract<real_t>(key[0]);
           const real_t soluble_fraction = bp::extract<real_t>(key[1]);
           arg->dry_distros.emplace(
-            libcloudphxx::lgrngn::kappa_rd_insol_t<real_t>{kappa, soluble_fraction},
+            libcloudphxx::lgrngn::kappa_soluble_fraction_t<real_t>{kappa, soluble_fraction},
             std::make_shared<detail::pyunary<real_t>>(kappa_func.values()[i])
           );
         }
@@ -270,7 +270,7 @@ namespace libcloudphxx
           const int sd_conc   = bp::extract<int>(val[1]);
           const int supstp    = bp::extract<int>(val[2]);
           arg->src_dry_distros.emplace(
-            libcloudphxx::lgrngn::kappa_rd_insol_t<real_t>{kappa, soluble_fraction},
+            libcloudphxx::lgrngn::kappa_soluble_fraction_t<real_t>{kappa, soluble_fraction},
             std::make_tuple(std::static_pointer_cast<libcloudphxx::common::unary_function<real_t>>(
           std::make_shared<detail::pyunary<real_t>>(val[0])),
               sd_conc, supstp)
@@ -311,7 +311,7 @@ namespace libcloudphxx
             const int count   = bp::extract<int>   (conc_count_list[1]);
             size_conc_map[bp::extract<real_t>(size_conc.keys()[i])] = std::make_pair(conc, count); 
           }
-          arg->dry_sizes[libcloudphxx::lgrngn::kappa_rd_insol_t<real_t>{kappa, soluble_fraction}] = size_conc_map;
+          arg->dry_sizes[libcloudphxx::lgrngn::kappa_soluble_fraction_t<real_t>{kappa, soluble_fraction}] = size_conc_map;
         }
       }
 
@@ -348,7 +348,7 @@ namespace libcloudphxx
             const int supstp  = bp::extract<int>   (conc_count_list[2]);
             size_conc_map[bp::extract<real_t>(size_conc.keys()[i])] = std::make_tuple(conc, count, supstp);
           }
-          arg->src_dry_sizes[libcloudphxx::lgrngn::kappa_rd_insol_t<real_t>{kappa, soluble_fraction}] = size_conc_map;
+          arg->src_dry_sizes[libcloudphxx::lgrngn::kappa_soluble_fraction_t<real_t>{kappa, soluble_fraction}] = size_conc_map;
         }
       }
 
