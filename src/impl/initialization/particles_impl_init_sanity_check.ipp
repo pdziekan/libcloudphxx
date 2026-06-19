@@ -145,11 +145,11 @@ namespace libcloudphxx
       if(opts_init.chem_switch)
       {
         for(auto &dist : opts_init.dry_distros)
-          if(dist.first.rd_insol > 0)
+          if(dist.first.soluble_fraction < 1)
             throw std::runtime_error("libcloudph++: insoluble aerosol (defined in opts_init.dry_distros) does not work with chemistry");
 
         for(auto &size : opts_init.dry_sizes)
-          if(size.first.rd_insol > 0)
+          if(size.first.soluble_fraction < 1)
             throw std::runtime_error("libcloudph++: insoluble aerosol (defined in opts_init.dry_sizes) does not work with chemistry");
       }
 

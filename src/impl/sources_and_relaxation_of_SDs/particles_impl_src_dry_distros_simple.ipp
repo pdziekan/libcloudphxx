@@ -58,16 +58,14 @@ namespace libcloudphxx
         *get<0>(p_sdd->second)
       ); 
 
-      add_insol_to_dry(p_sdd->first.rd_insol);
-
-      // init other properties of SDs that didnt have a match
+      // init other properties of SDs
       init_kappa(
         p_sdd->first.kappa,
-        p_sdd->first.rd_insol
+        p_sdd->first.soluble_fraction
       );
       if (opts_init.ice_switch)
       {
-        init_insol_dry_sizes(p_sdd->first.rd_insol);
+        init_insol_dry_sizes(p_sdd->first.soluble_fraction);
         init_a_c_rho_ice();
         if (! opts_init.time_dep_ice_nucl)
         {

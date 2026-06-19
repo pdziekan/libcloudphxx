@@ -13,11 +13,19 @@ namespace libcloudphxx
   {
     template <typename real_t, backend_t device>
     void particles_t<real_t, device>::impl::init_insol_dry_sizes(
-      real_t radius
+      real_t soluble_fraction // volume fraction of the soluble part
     )
     {
-      real_t rad2 = radius * radius;
-      thrust::fill(rd2_insol.begin() + n_part_old, rd2_insol.end(), rad2);
+      // rd2_insol[i] = ((1 - soluble_fraction) * rd3[i])^(2/3)
+      namespace arg = thrust::placeholders;
+      thrust::transform(
+        rd3.begin() + n_part_old,
+        rd3.end(),
+        rd2_insol.begin() + n_part_old,
+        [soluble_fraction] BOOST_GPU_ENABLED (real_t rd3_val) {
+          return std::pow((real_t(1) - soluble_fraction) * rd3_val, real_t(2) / real_t(3));
+        }
+      );
     }
   };
 };

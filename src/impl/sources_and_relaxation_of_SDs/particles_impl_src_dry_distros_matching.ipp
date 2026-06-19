@@ -51,7 +51,7 @@ namespace libcloudphxx
     void particles_t<real_t, device>::impl::src_dry_distros_matching(const src_dry_distros_t<real_t> &sdd)
     {   
       auto p_sdd = sdd.cbegin();
-      assert(p_sdd->first.rd_insol == 0); // rd insol in matching source not implemented yet 
+      assert(p_sdd->first.soluble_fraction == 1); // partial solubility in matching source not implemented yet 
 
       // add the source only once every number of steps
       assert(get<2>(p_sdd->second) > 0);
@@ -222,11 +222,11 @@ namespace libcloudphxx
           // init other properties of SDs that didnt have a match
           init_kappa(
             p_sdd->first.kappa,
-            p_sdd->first.rd_insol
+            p_sdd->first.soluble_fraction
           );
           if (opts_init.ice_switch)
           {
-            init_insol_dry_sizes(p_sdd->first.rd_insol);
+            init_insol_dry_sizes(p_sdd->first.soluble_fraction);
             init_a_c_rho_ice();
             if (! opts_init.time_dep_ice_nucl)
             {
