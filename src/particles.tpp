@@ -67,7 +67,6 @@
 #include "impl/initialization/particles_impl_init_dry_sd_conc.ipp"
 #include "impl/initialization/particles_impl_init_dry_const_multi.ipp"
 #include "impl/initialization/particles_impl_init_dry_dry_sizes.ipp"
-#include "impl/initialization/particles_impl_add_insol_to_dry.ipp"
 #include "impl/initialization/particles_impl_init_kappa.ipp"
 #include "impl/initialization/particles_impl_init_incloud_time.ipp"
 #include "impl/initialization/particles_impl_init_n.ipp"
@@ -83,7 +82,7 @@
 #include "impl/initialization/particles_impl_init_kernel.ipp"
 #include "impl/initialization/particles_impl_init_vterm.ipp"
 #include "impl/initialization/particles_impl_init_sanity_check.ipp"
-#include "impl/initialization/particles_impl_init_insol_dry_sizes.ipp"
+#include "impl/initialization/particles_impl_init_insol.ipp"
 #include "impl/initialization/particles_impl_init_T_freeze.ipp"
 #include "impl/initialization/particles_impl_init_a_c_rho_ice.ipp"
 

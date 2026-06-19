@@ -12,7 +12,7 @@ namespace libcloudphxx
   namespace lgrngn
   {
     template <typename real_t, backend_t device>
-    void particles_t<real_t, device>::impl::init_insol_dry_sizes(
+    void particles_t<real_t, device>::impl::init_insol(
       real_t soluble_fraction // volume fraction of the soluble part
     )
     {

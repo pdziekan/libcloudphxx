@@ -65,7 +65,7 @@ namespace libcloudphxx
       );
       if (opts_init.ice_switch)
       {
-        init_insol_dry_sizes(p_sdd->first.soluble_fraction);
+        init_insol(p_sdd->first.soluble_fraction);
         init_a_c_rho_ice();
         if (! opts_init.time_dep_ice_nucl)
         {
