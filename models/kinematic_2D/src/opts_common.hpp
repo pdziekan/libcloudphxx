@@ -60,7 +60,7 @@ void setopts_common(
     ("n1_stp",   po::value<real_t>()->default_value(60e6),     "n1_stp")
     ("n2_stp",   po::value<real_t>()->default_value(40e6),     "n2_stp")
     ("kappa",    po::value<real_t>()->default_value(.61),      "kappa")
-    ("rd_insol", po::value<real_t>()->default_value(0),        "rd_insol")
+    ("soluble_fraction", po::value<real_t>()->default_value(1),"soluble_fraction")
     ("chem_b",   po::value<real_t>()->default_value(.55),      "chem_b")
     ("chem_rho", po::value<real_t>()->default_value(1.8e3),    "chem_rho")
     ("tau_rlx",  po::value<real_t>()->default_value(300),      "tau_rlx")
@@ -92,7 +92,7 @@ void setopts_common(
   setup.n1_stp   = vm["n1_stp"].as<real_t>() / si::cubic_metres;
   setup.n2_stp   = vm["n2_stp"].as<real_t>() / si::cubic_metres;
   setup.kappa    = vm["kappa"].as<real_t>();
-  setup.rd_insol = vm["rd_insol"].as<real_t>() * si::metres;
+  setup.soluble_fraction = vm["soluble_fraction"].as<real_t>();
   setup.chem_b   = vm["chem_b"].as<real_t>();
   setup.chem_rho = vm["chem_rho"].as<real_t>() * si::kilograms / si::cubic_metres;
   setup.tau_rlx  = vm["tau_rlx"].as<real_t>() * si::seconds;

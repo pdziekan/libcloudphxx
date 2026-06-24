@@ -190,7 +190,7 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
       this->record_aux_const("n1_stp",   this->setup.n1_stp * si::cubic_metres);
       this->record_aux_const("n2_stp",   this->setup.n2_stp * si::cubic_metres);
       this->record_aux_const("kappa",    this->setup.kappa);
-      this->record_aux_const("rd_insol", this->setup.rd_insol / si::metres);
+      this->record_aux_const("soluble_fraction", this->setup.soluble_fraction);
       this->record_aux_const("ice_switch", ice_switch);
       this->record_aux_const("ice_nucl", ice_nucl);
       this->record_aux_const("time_dep_ice_nucl", time_dep_ice_nucl);
