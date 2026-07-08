@@ -49,6 +49,10 @@ namespace libcloudphxx
           tpl_t tpl
         ) //noexcept
         {
+          #if !defined(__NVCC__)
+            using std::abs;
+          #endif
+
           // copy values into local variables
           // variables that are not modified
           const real_t sstp_dlt_rv = thrust::get<5>(thrust::get<0>(tpl));
@@ -62,6 +66,7 @@ namespace libcloudphxx
           const real_t rd3 = thrust::get<6>(thrust::get<1>(tpl));
           const real_t kpa = thrust::get<0>(thrust::get<2>(tpl));
           const real_t vt = thrust::get<1>(thrust::get<2>(tpl));
+          const real_t rd3_insol = thrust::get<3>(thrust::get<2>(tpl));
           const real_t dot_ssp = turb_cond ? thrust::get<0>(thrust::get<1>(tpl)) : 0;
 
           // variables that are modified, we make local copies regardless and copy back at the end
@@ -180,7 +185,8 @@ namespace libcloudphxx
                           kpa,
                           vt,
                           lambda_D,
-                          lambda_K
+                          lambda_K,
+                          rd3_insol
                         ),
                         sstp_tmp_p,
                         RH                  
@@ -200,7 +206,8 @@ namespace libcloudphxx
                         kpa,
                         vt,
                         lambda_D,
-                        lambda_K
+                        lambda_K,
+                        rd3_insol
                       ),
                       sstp_tmp_p,
                       RH                  
@@ -212,9 +219,9 @@ namespace libcloudphxx
                 // TODO: get rid of _max and of actviation adaptation?
                 if(!ice)
                 {
-                  if((cuda::std::abs(drw2_new * 2 - drw2) <= sstp_cond_adapt_drw2_eps * rw2) // drw2 relative to rw2 converged
-                      && cuda::std::abs(drw2 < sstp_cond_adapt_drw2_max * rw2)) // otherwise for small droplets (near activation?) drw2_new == 2*drw already for 2 substeps, but we ativate too many droplets
-                  // if(cuda::std::abs(drw2_new * 2 - drw2) <= tol * drw2) // drw2 converged
+                  if((abs(drw2_new * 2 - drw2) <= sstp_cond_adapt_drw2_eps * rw2) // drw2 relative to rw2 converged
+                      && abs(drw2 < sstp_cond_adapt_drw2_max * rw2)) // otherwise for small droplets (near activation?) drw2_new == 2*drw already for 2 substeps, but we ativate too many droplets
+                  // if(abs(drw2_new * 2 - drw2) <= tol * drw2) // drw2 converged
                   {
                     sstp_cond = sstp_cond_try / 2;
                     _apply_noncond_perparticle_sstp_delta(-delta_fraction_applied); // revert last addition to get to a state after one step of converged number            
@@ -225,8 +232,8 @@ namespace libcloudphxx
                 }
                 else // ice
                 {
-                  const real_t da_dt_rel = cuda::std::abs(thrust::get<0>(dice_ac_new) * 2 - thrust::get<0>(dice_ac)) / (thrust::get<0>(dice_ac) + 1e-20);
-                  const real_t dc_dt_rel = cuda::std::abs(thrust::get<1>(dice_ac_new) * 2 - thrust::get<1>(dice_ac)) / (thrust::get<1>(dice_ac) + 1e-20);
+                  const real_t da_dt_rel = abs(thrust::get<0>(dice_ac_new) * 2 - thrust::get<0>(dice_ac)) / (thrust::get<0>(dice_ac) + 1e-20);
+                  const real_t dc_dt_rel = abs(thrust::get<1>(dice_ac_new) * 2 - thrust::get<1>(dice_ac)) / (thrust::get<1>(dice_ac) + 1e-20);
                   if(da_dt_rel <= sstp_cond_adapt_drw2_eps && da_dt_rel <= sstp_cond_adapt_drw2_eps
                       && da_dt_rel <= sstp_cond_adapt_drw2_max && dc_dt_rel <= sstp_cond_adapt_drw2_max)
                   {
@@ -296,7 +303,8 @@ namespace libcloudphxx
                       kpa,
                       vt,
                       lambda_D,
-                      lambda_K
+                      lambda_K,
+                      rd3_insol
                     ),
                     sstp_tmp_p,
                     RH                  
@@ -364,7 +372,8 @@ namespace libcloudphxx
                       kpa,
                       vt,
                       lambda_D,
-                      lambda_K
+                      lambda_K,
+                      rd3_insol
                     ),
                     sstp_tmp_p,
                     RH                  
@@ -461,7 +470,8 @@ namespace libcloudphxx
           thrust::make_zip_iterator(thrust::make_tuple(
             kpa.begin(),
             vt.begin(),
-            rc2.begin()
+            rc2.begin(),
+            rd3_insol.begin(),
           ))
         ));
 
