@@ -61,7 +61,6 @@ namespace libcloudphxx
           const real_t lambda_D = thrust::get<4>(thrust::get<1>(tpl));
           const real_t lambda_K = thrust::get<5>(thrust::get<1>(tpl));
           const real_t rd3 = thrust::get<6>(thrust::get<1>(tpl));
-          const real_t rd3_insol = thrust::get<7>(thrust::get<1>(tpl));
           const real_t kpa = thrust::get<0>(thrust::get<2>(tpl));
           const real_t vt = thrust::get<1>(thrust::get<2>(tpl));
           const real_t dot_ssp = turb_cond ? thrust::get<0>(thrust::get<1>(tpl)) : 0;
@@ -156,8 +155,7 @@ namespace libcloudphxx
                     kpa,
                     vt,
                     lambda_D,
-                    lambda_K,
-                    rd3_insol
+                    lambda_K
                   ),
                   sstp_tmp_p,
                   RH                  
@@ -232,8 +230,7 @@ namespace libcloudphxx
                     kpa,
                     vt,
                     lambda_D,
-                    lambda_K,
-                    rd3_insol
+                    lambda_K
                   ),
                   sstp_tmp_p,
                   RH                  
@@ -317,8 +314,7 @@ namespace libcloudphxx
             thrust::make_permutation_iterator(dv.begin(), ijk.begin()),
             thrust::make_permutation_iterator(lambda_D.begin(), ijk.begin()),
             thrust::make_permutation_iterator(lambda_K.begin(), ijk.begin()),
-            rd3.begin(),
-            rd3_insol.begin()
+            rd3.begin()
           )),
           thrust::make_zip_iterator(thrust::make_tuple(
             kpa.begin(),
