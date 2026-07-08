@@ -31,8 +31,6 @@ namespace libcloudphxx
         const quantity<si::pressure,          real_t> p;
         const quantity<si::dimensionless,     real_t> RH_i;
         const quantity<si::dynamic_viscosity, real_t> eta;
-        const quantity<si::volume,            real_t> rd3;
-        const quantity<si::dimensionless,     real_t> kpa;
         const quantity<si::velocity,          real_t> vt;
         const quantity<si::dimensionless,     real_t> RH_max;
         const quantity<si::length,            real_t> lambda_D;
@@ -43,7 +41,7 @@ namespace libcloudphxx
         advance_rw2_minfun_ice(
           const real_t &dt,
           const real_t &rw2,
-          const thrust::tuple<thrust::tuple<real_t, real_t, real_t, real_t, real_t, real_t, real_t, real_t, real_t>, real_t, real_t> &tpl,
+          const thrust::tuple<thrust::tuple<real_t, real_t, real_t, real_t, real_t, real_t, real_t>, real_t, real_t> &tpl,
           const real_t &RH_max
         ) :
           dt(dt * si::seconds),
@@ -52,13 +50,11 @@ namespace libcloudphxx
           rv(      thrust::get<1>(thrust::get<0>(tpl))),
           T(       thrust::get<2>(thrust::get<0>(tpl)) * si::kelvins),
           eta(     thrust::get<3>(thrust::get<0>(tpl)) * si::pascals * si::seconds),
-          rd3(     thrust::get<4>(thrust::get<0>(tpl)) * si::cubic_metres),
-          kpa(     thrust::get<5>(thrust::get<0>(tpl))),
-          vt(      thrust::get<6>(thrust::get<0>(tpl)) * si::metres_per_second),
+          vt(      thrust::get<4>(thrust::get<0>(tpl)) * si::metres_per_second),
           p(       thrust::get<1>(tpl) * si::pascals),
           RH_i(      thrust::get<2>(tpl)),
-          lambda_D(thrust::get<7>(thrust::get<0>(tpl)) * si::metres),
-          lambda_K(thrust::get<8>(thrust::get<0>(tpl)) * si::metres),
+          lambda_D(thrust::get<5>(thrust::get<0>(tpl)) * si::metres),
+          lambda_K(thrust::get<6>(thrust::get<0>(tpl)) * si::metres),
           RH_max(RH_max)
         {}
 
@@ -123,7 +119,7 @@ namespace libcloudphxx
         thrust::tuple<real_t, real_t> operator()(
             const thrust::tuple<real_t, real_t> &ac_old,
             const thrust::tuple<
-                thrust::tuple<real_t, real_t, real_t, real_t, real_t, real_t, real_t, real_t, real_t>,
+                thrust::tuple<real_t, real_t, real_t, real_t, real_t, real_t, real_t>,
                 real_t, real_t> &tpl
         ) const
         {
