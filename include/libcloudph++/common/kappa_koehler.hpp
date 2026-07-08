@@ -49,7 +49,6 @@ namespace libcloudphxx
         quantity<si::dimensionless, real_t> kappa
       )
       {
-        assert(rw3 > rd3); // there has to be water
         return (rw3 - rd3) / (rw3 - rd3 * (real_t(1) - kappa));
       }
 
