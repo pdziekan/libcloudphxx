@@ -15,23 +15,23 @@ namespace libcloudphxx
 
       namespace arg = thrust::placeholders;
 
-      auto hlpr_zip_iter = thrust::make_zip_iterator(thrust::make_tuple(
-        sstp_tmp_rh.begin(),
-        sstp_tmp_rv.begin(),
-        Tp.begin(),
-        thrust::make_transform_iterator(
-          Tp.begin(),
-          detail::common__vterm__visc<real_t>()
-        ),
-        rd3.begin(),
-        kpa.begin(),
-        vt.begin(),
-        thrust::make_permutation_iterator(lambda_D.begin(), ijk.begin()),
-        thrust::make_permutation_iterator(lambda_K.begin(), ijk.begin())
-      ));
-
       if constexpr(!ice)
       {
+        auto hlpr_zip_iter = thrust::make_zip_iterator(thrust::make_tuple(
+          sstp_tmp_rh.begin(),
+          sstp_tmp_rv.begin(),
+          Tp.begin(),
+          thrust::make_transform_iterator(
+            Tp.begin(),
+            detail::common__vterm__visc<real_t>()
+          ),
+          rd3.begin(),
+          kpa.begin(),
+          vt.begin(),
+          thrust::make_permutation_iterator(lambda_D.begin(), ijk.begin()),
+          thrust::make_permutation_iterator(lambda_K.begin(), ijk.begin())
+        ));
+
         thrust::transform(
           rw2.begin(), rw2.end(),
           thrust::make_zip_iterator(thrust::make_tuple(
@@ -45,6 +45,19 @@ namespace libcloudphxx
       }
       else // ice
       {
+        auto hlpr_zip_iter = thrust::make_zip_iterator(thrust::make_tuple(
+          sstp_tmp_rh.begin(),
+          sstp_tmp_rv.begin(),
+          Tp.begin(),
+          thrust::make_transform_iterator(
+            Tp.begin(),
+            detail::common__vterm__visc<real_t>()
+          ),
+          vt.begin(),
+          thrust::make_permutation_iterator(lambda_D.begin(), ijk.begin()),
+          thrust::make_permutation_iterator(lambda_K.begin(), ijk.begin())
+        ));
+
         auto hlpr_zip_iter_ice = thrust::make_zip_iterator(thrust::make_tuple(
           ice_a.begin(),
           ice_c.begin()
