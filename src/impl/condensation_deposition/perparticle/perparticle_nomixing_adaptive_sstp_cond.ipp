@@ -79,7 +79,9 @@ namespace libcloudphxx
           thrust::tuple<real_t, real_t> ice_ac; // = thrust::make_tuple(0, 0); // only used if ice_switch is true, but we need to define it here to be able to use it in lambdas
           real_t ice_rho; 
 
-          if(rw2 > 0 && !cond) return; // skip liquid droplets if condensation is turned off
+          const bool ice = rw2<=0; // flag to indicate if the particle is ice or liquid;
+
+          if(!ice && !cond) return; // skip liquid droplets if condensation is turned off
 
           if(ice_switch)
           {
@@ -90,7 +92,6 @@ namespace libcloudphxx
             ice_rho = thrust::get<9>(thrust::get<1>(tpl));
           }
 
-          const bool ice = rw2<=0; // flag to indicate if the particle is ice or liquid;
 
           real_t drw2, Tp, RH;
           thrust::tuple<real_t, real_t> dice_ac;
@@ -215,7 +216,7 @@ namespace libcloudphxx
                 if(!ice)
                 {
                   if((abs(drw2_new * 2 - drw2) <= sstp_cond_adapt_drw2_eps * rw2) // drw2 relative to rw2 converged
-                      && abs(drw2 < sstp_cond_adapt_drw2_max * rw2)) // otherwise for small droplets (near activation?) drw2_new == 2*drw already for 2 substeps, but we ativate too many droplets
+                      && abs(drw2) < sstp_cond_adapt_drw2_max * rw2) // otherwise for small droplets (near activation?) drw2_new == 2*drw already for 2 substeps, but we ativate too many droplets
                   // if(abs(drw2_new * 2 - drw2) <= tol * drw2) // drw2 converged
                   {
                     sstp_cond = sstp_cond_try / 2;
@@ -229,7 +230,7 @@ namespace libcloudphxx
                 {
                   const real_t da_dt_rel = abs(thrust::get<0>(dice_ac_new) * 2 - thrust::get<0>(dice_ac)) / (thrust::get<0>(dice_ac) + 1e-20);
                   const real_t dc_dt_rel = abs(thrust::get<1>(dice_ac_new) * 2 - thrust::get<1>(dice_ac)) / (thrust::get<1>(dice_ac) + 1e-20);
-                  if(da_dt_rel <= sstp_cond_adapt_drw2_eps && da_dt_rel <= sstp_cond_adapt_drw2_eps
+                  if(da_dt_rel <= sstp_cond_adapt_drw2_eps && dc_dt_rel <= sstp_cond_adapt_drw2_eps
                       && da_dt_rel <= sstp_cond_adapt_drw2_max && dc_dt_rel <= sstp_cond_adapt_drw2_max)
                   {
                     sstp_cond = sstp_cond_try / 2;
@@ -243,7 +244,7 @@ namespace libcloudphxx
             }
 
             // override number of substeps for SDs that de/activate in this timestep;
-            if(sstp_cond_act > 1)
+            if(cond && sstp_cond_act > 1)
             {
               const real_t rc2 = thrust::get<2>(thrust::get<2>(tpl));
 
