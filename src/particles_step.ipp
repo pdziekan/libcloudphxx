@@ -172,6 +172,9 @@ namespace libcloudphxx
       if(opts.turb_cond && !pimpl->opts_init.turb_cond_switch) 
         throw std::runtime_error("libcloudph++: turb_cond_swtich=False, but turb_cond==True");
 
+      if(opts.ice_nucl && !pimpl->opts_init.ice_switch) 
+        throw std::runtime_error("libcloudph++: opts.ice_nucl==true, but opts_init.ice_switch=False");
+
       if(opts.depo && !pimpl->opts_init.ice_switch) 
         throw std::runtime_error("libcloudph++: opts.depo==true, but opts_init.ice_switch=False");
 
@@ -184,7 +187,7 @@ namespace libcloudphxx
         pimpl->update_incloud_time(pimpl->dt);
 
       // ice nucleation/melting
-      if (pimpl->opts_init.ice_switch && opts.ice_nucl)
+      if (opts.ice_nucl)
         pimpl->ice_nucl_melt(pimpl->dt);
 
       // condensation/evaporation 
