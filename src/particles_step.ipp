@@ -256,6 +256,7 @@ namespace libcloudphxx
         }
         else // apply per-cell sstp logic, always with mixing
         {
+          std::cerr << "opts depo: " << opts.depo << std::endl;
           for (int step = 0; step < pimpl->sstp_cond; ++step) 
           {
             pimpl->sstp_percell_step(step);
