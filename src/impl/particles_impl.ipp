@@ -496,13 +496,13 @@ namespace libcloudphxx
         distmem_n_vctrs.insert(&n);
 
         // number of required temporary real vectors of size npart
-        int tmp_drp_no = 1;
-        if(n_dims == 2) 
-          tmp_drp_no = std::max(tmp_drp_no, 2);
-        if(allow_sstp_cond) 
-          tmp_drp_no = std::max(tmp_drp_no, 2);
-        if(opts_init.ice_switch && opts_init.time_dep_ice_nucl)
-          tmp_drp_no = std::max(tmp_drp_no, 2); 
+        int tmp_drp_no = 2;
+        //if(n_dims == 2) 
+        //  tmp_drp_no = std::max(tmp_drp_no, 2);
+        //if(allow_sstp_cond) 
+        //  tmp_drp_no = std::max(tmp_drp_no, 2);
+        //if(opts_init.ice_switch && opts_init.time_dep_ice_nucl)
+        //  tmp_drp_no = std::max(tmp_drp_no, 2); 
         if(opts_init.chem_switch) 
           tmp_drp_no = std::max(tmp_drp_no, 3);
         if(n_dims == 3)
