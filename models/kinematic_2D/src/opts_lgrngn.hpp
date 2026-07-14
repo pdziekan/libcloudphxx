@@ -252,7 +252,7 @@ void setopts_micro(
     ("ice_switch", po::value<bool>()->default_value(rt_params.cloudph_opts_init.ice_switch) , "enable ice (1=on, 0=off)")
     ("ice_nucl", po::value<bool>()->default_value(rt_params.cloudph_opts.ice_nucl) , "ice nucleation (1=on, 0=off)")
     ("time_dep_ice_nucl", po::value<bool>()->default_value(rt_params.cloudph_opts_init.time_dep_ice_nucl) , "time dependent ice nucleation (1=on, 0=off)")
-    //("depo", po::value<bool>()->default_value(rt_params.cloudph_opts.depo) , "ice depositional growth (1=on, 0=off)")
+    ("depo", po::value<bool>()->default_value(rt_params.cloudph_opts.depo) , "ice depositional growth (1=on, 0=off)")
     // free parameters
     ("sstp_cond", po::value<int>()->default_value(rt_params.cloudph_opts_init.sstp_cond), "no. of substeps for condensation")
     ("sstp_coal", po::value<int>()->default_value(rt_params.cloudph_opts_init.sstp_coal), "no. of substeps for coalescence")
@@ -318,7 +318,7 @@ void setopts_micro(
   rt_params.cloudph_opts_init.ice_switch = vm["ice_switch"].as<bool>();
   rt_params.cloudph_opts.ice_nucl = vm["ice_nucl"].as<bool>();
   rt_params.cloudph_opts_init.time_dep_ice_nucl = vm["time_dep_ice_nucl"].as<bool>();
-  //rt_params.cloudph_opts.depo = vm["depo"].as<bool>();
+  rt_params.cloudph_opts.depo = vm["depo"].as<bool>();
 
   rt_params.cloudph_opts.rcyc = vm["rcyc"].as<bool>();
   rt_params.cloudph_opts.chem_dsl = vm["chem_dsl"].as<bool>();

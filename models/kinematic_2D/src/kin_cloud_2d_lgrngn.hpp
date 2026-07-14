@@ -27,7 +27,7 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
   // member fields
   std::unique_ptr<libcloudphxx::lgrngn::particles_proto_t<real_t>> prtcls;
 
-  bool coal, sedi, ice_switch, ice_nucl, time_dep_ice_nucl; //, depo;
+  bool coal, sedi, ice_switch, ice_nucl, time_dep_ice_nucl, depo;
 
   // helper methods
   void diag()
@@ -167,7 +167,7 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
     ice_switch = params.cloudph_opts_init.ice_switch;
     ice_nucl = params.cloudph_opts.ice_nucl;
     time_dep_ice_nucl = params.cloudph_opts_init.time_dep_ice_nucl;
-    //depo = params.cloudph_opts.depo;
+    depo = params.cloudph_opts.depo;
 
     parent_t::hook_ante_loop(nt); 
 
@@ -194,7 +194,7 @@ class kin_cloud_2d_lgrngn : public kin_cloud_2d_common<ct_params_t>
       this->record_aux_const("ice_switch", ice_switch);
       this->record_aux_const("ice_nucl", ice_nucl);
       this->record_aux_const("time_dep_ice_nucl", time_dep_ice_nucl);
-      //this->record_aux_const("depo", depo);
+      this->record_aux_const("depo", depo);
 
       assert(params.backend != -1);
       assert(params.dt != 0); 
