@@ -103,4 +103,7 @@ void setopts_common(
   setup.CO2_g_0  = vm["CO2_g_0"].as<real_t>();
   setup.HNO3_g_0 = vm["HNO3_g_0"].as<real_t>();
   setup.NH3_g_0  = vm["NH3_g_0"].as<real_t>();
+
+  if (setup.soluble_fraction < real_t(0) || setup.soluble_fraction > real_t(1))
+    throw std::runtime_error("Soluble fraction must be between [0,1]");
 }

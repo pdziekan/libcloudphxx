@@ -77,7 +77,8 @@ void parse_moms(
   outmom_t<config::real_t> &moms =
     opt == "out_dry" ? rt_params.out_dry :
       opt == "out_wet" ? rt_params.out_wet :
-        rt_params.out_ice;
+        opt == "out_ice" ? rt_params.out_ice :
+          throw std::runtime_error("parse_moms(): unknown opt \"" + opt + "\"");
 
   const bool result = qi::phrase_parse(first, last, 
     *(
@@ -319,6 +320,22 @@ void setopts_micro(
   rt_params.cloudph_opts.ice_nucl = vm["ice_nucl"].as<bool>();
   rt_params.cloudph_opts_init.time_dep_ice_nucl = vm["time_dep_ice_nucl"].as<bool>();
   rt_params.cloudph_opts.depo = vm["depo"].as<bool>();
+
+  if (rt_params.cloudph_opts_init.ice_switch && rt_params.cloudph_opts_init.coal_switch)
+    throw std::runtime_error(
+      "Invalid options: ice_switch and coal_switch cannot be enabled at the same time"
+    );
+  if (!rt_params.cloudph_opts_init.ice_switch)
+  {
+    if (rt_params.cloudph_opts.ice_nucl)
+      throw std::runtime_error(
+        "Invalid options: ice nucleation requires ice_switch=1"
+      );
+    if (rt_params.cloudph_opts.depo)
+      throw std::runtime_error(
+        "Invalid options: deposition requires ice_switch=1"
+      );
+  }
 
   rt_params.cloudph_opts.rcyc = vm["rcyc"].as<bool>();
   rt_params.cloudph_opts.chem_dsl = vm["chem_dsl"].as<bool>();
