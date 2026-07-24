@@ -60,6 +60,7 @@ void setopts_common(
     ("n1_stp",   po::value<real_t>()->default_value(60e6),     "n1_stp")
     ("n2_stp",   po::value<real_t>()->default_value(40e6),     "n2_stp")
     ("kappa",    po::value<real_t>()->default_value(.61),      "kappa")
+    ("soluble_fraction", po::value<real_t>()->default_value(1),"soluble_fraction")
     ("chem_b",   po::value<real_t>()->default_value(.55),      "chem_b")
     ("chem_rho", po::value<real_t>()->default_value(1.8e3),    "chem_rho")
     ("tau_rlx",  po::value<real_t>()->default_value(300),      "tau_rlx")
@@ -91,6 +92,7 @@ void setopts_common(
   setup.n1_stp   = vm["n1_stp"].as<real_t>() / si::cubic_metres;
   setup.n2_stp   = vm["n2_stp"].as<real_t>() / si::cubic_metres;
   setup.kappa    = vm["kappa"].as<real_t>();
+  setup.soluble_fraction = vm["soluble_fraction"].as<real_t>();
   setup.chem_b   = vm["chem_b"].as<real_t>();
   setup.chem_rho = vm["chem_rho"].as<real_t>() * si::kilograms / si::cubic_metres;
   setup.tau_rlx  = vm["tau_rlx"].as<real_t>() * si::seconds;
@@ -101,4 +103,7 @@ void setopts_common(
   setup.CO2_g_0  = vm["CO2_g_0"].as<real_t>();
   setup.HNO3_g_0 = vm["HNO3_g_0"].as<real_t>();
   setup.NH3_g_0  = vm["NH3_g_0"].as<real_t>();
+
+  if (setup.soluble_fraction < real_t(0) || setup.soluble_fraction > real_t(1))
+    throw std::runtime_error("Soluble fraction must be between [0,1]");
 }
