@@ -172,6 +172,9 @@ namespace libcloudphxx
       if(opts.turb_cond && !pimpl->opts_init.turb_cond_switch) 
         throw std::runtime_error("libcloudph++: turb_cond_swtich=False, but turb_cond==True");
 
+      if(opts.ice_nucl && !pimpl->opts_init.ice_switch) 
+        throw std::runtime_error("libcloudph++: opts.ice_nucl==true, but opts_init.ice_switch=False");
+
       if(opts.depo && !pimpl->opts_init.ice_switch) 
         throw std::runtime_error("libcloudph++: opts.depo==true, but opts_init.ice_switch=False");
 
@@ -184,7 +187,7 @@ namespace libcloudphxx
         pimpl->update_incloud_time(pimpl->dt);
 
       // ice nucleation/melting
-      if (pimpl->opts_init.ice_switch && opts.ice_nucl)
+      if (opts.ice_nucl)
         pimpl->ice_nucl_melt(pimpl->dt);
 
       // condensation/evaporation 
@@ -203,12 +206,12 @@ namespace libcloudphxx
         {            
           if(!pimpl->opts_init.sstp_cond_mix)
           {
-            pimpl->save_liq_ice_content_before_change(); // in drw_mom3_gp and d_ice_mass_percell_gp
+            pimpl->save_liq_ice_content_before_change(opts.cond, opts.depo); // in drw_mom3_gp and d_ice_mass_percell_gp
             pimpl->n_filtered_gp.reset(); // n_filtered, acquired and filled in rw_mom3_ante_change, not needed anymore
           }
 
           pimpl->acquire_arrays_for_perparticle_sstp(opts.cond, opts.depo); // sstp_dlt_rv_gp, etc. ; as in sstp_percell_step_exact()
-          pimpl->calculate_noncond_perparticle_sstp_delta(); // sstp_dlt_rv_gp, etc. ; as in sstp_percell_step_exact(); 
+          pimpl->calculate_noncond_perparticle_sstp_delta(); // sstp_dlt_rv_gp, etc. ; as in sstp_percell_step_exact(); returns change / sstp_count; make it just change and multiply afterwards?
 
           // adaptive per-particle substepping
           if(pimpl->opts_init.adaptive_sstp_cond)
@@ -248,7 +251,7 @@ namespace libcloudphxx
             }
           }
           pimpl->release_arrays_for_perparticle_sstp(opts.cond, opts.depo);
-          pimpl->apply_perparticle_cond_change_to_percell_rv_and_th();
+          pimpl->apply_perparticle_cond_change_to_percell_rv_and_th(opts.cond, opts.depo);
           pimpl->n_filtered_gp.reset(); // used in apply_perparticle_cond_change_to_percell_rv_and_th, not needed anymore
         }
         else // apply per-cell sstp logic, always with mixing
@@ -260,15 +263,11 @@ namespace libcloudphxx
               pimpl->apply_perparticle_sgs_supersat();
             pimpl->hskpng_Tpr(); 
             if(step == 0)
-              pimpl->save_liq_ice_content_before_change(); // in drw_mom3_gp and d_ice_mass_percell_gp
-            pimpl->cond(pimpl->dt, opts.RH_max, opts.turb_cond, step);
+              pimpl->save_liq_ice_content_before_change(opts.cond, opts.depo); // in drw_mom3_gp and d_ice_mass_percell_gp
+            if (opts.cond) pimpl->cond(pimpl->dt, opts.RH_max, opts.turb_cond,step);
             // pimpl->cond(pimpl->dt / pimpl->sstp_cond, opts.RH_max, opts.turb_cond, step);
-            if (opts.depo) //pimpl->opts_init.ice_switch)
-            {
-              // pimpl->ice_dep(pimpl->dt / pimpl->sstp_cond, opts.RH_max,  step);
-              pimpl->ice_dep(pimpl->dt, opts.RH_max, opts.turb_cond, step);
-            }
-            pimpl->update_th_rv();
+            if (opts.depo) pimpl->ice_dep(pimpl->dt, opts.RH_max, opts.turb_cond, step);
+            pimpl->update_th_rv(opts.cond, opts.depo);
           }
         }
 
