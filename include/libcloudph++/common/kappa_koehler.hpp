@@ -155,7 +155,8 @@ namespace libcloudphxx
         quantity<si::temperature, real_t> T
       )   
       {   
-        assert(kappa > 0);
+        assert(kappa >= 0);
+        if(kappa == 0) return real_t(44) * si::cubic_metres; // return infinity (or close) - nonhygroscopic particles do not activate, and rw3_cr is used for diagnostics only
 
         quantity<si::volume, double> rd3_dbl = static_cast<quantity<si::volume, double> >(rd3);
         quantity<si::temperature, double> T_dbl = static_cast<quantity<si::temperature, double> >(T);
@@ -176,7 +177,9 @@ namespace libcloudphxx
         quantity<si::temperature, real_t> T
       )
       {
-        assert(kappa > 0);
+        assert(kappa >= 0);
+        if(kappa == 0) return 44; // return infinity (or close) - nonhygroscopic particles do not activate, S_cr is used for diagnostics only
+
 #if !defined(__NVCC__)
         using std::pow;
         using std::cbrt;
