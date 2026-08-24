@@ -41,7 +41,7 @@ namespace libcloudphxx
     {
       const std::set<std::string> attr_names = {"rw2", "rd3", "kappa", "rd2_insol", "T_freeze", "ice_a", "ice_c", "ice_rho", "x", "y", "z"}; // TODO implement "n" - it is n_t type and others are real_t
       if (std::find(std::begin(attr_names), std::end(attr_names), name) == std::end(attr_names))
-        throw std::runtime_error("Unknown attribute name passed to get_attr.");
+        throw std::runtime_error("Unknown attribute name '" + name + "' passed to get_attr.");
 
       if (!opts_init.ice_switch &&
           (name == "ice_a" || name == "ice_c" || name == "ice_rho" || name == "rd2_insol" || name == "T_freeze"))
