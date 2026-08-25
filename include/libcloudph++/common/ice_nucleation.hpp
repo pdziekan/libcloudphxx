@@ -2,6 +2,7 @@
 
 #include "units.hpp"
 #include "const_cp.hpp"
+#include <algorithm>
 #include <thrust/tuple.h>
 
 #if defined(__NVCC__)
@@ -27,14 +28,14 @@ namespace libcloudphxx
         real_t A = real_t(4)
         #if !defined(__NVCC__)
             * pi<real_t>()
-        #else
+        #else 
             * CUDART_PI
         #endif
         * rd2_insol; // surface area of the insoluble particle
 
         if (INP_type == INP_t::mineral && A > real_t(1e-20))
         {
-          return real_t(real_t(273.15) + (real_t(8.934) - log(- log(real_t(1.) - rand) / A) ) / real_t(0.517)) * si::kelvin;
+          return std::max(real_t(235.15), real_t(real_t(273.15) + (real_t(8.934) - log(- log(real_t(1.) - rand) / A) ) / real_t(0.517))) * si::kelvin;
         }
         else
         {
