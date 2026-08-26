@@ -57,9 +57,10 @@ namespace libcloudphxx
             break;
           }
           case INP_t::AgI: {
-            // Omanovic et al. 2024 for AgI: frozen_fraction = b [ 1 - 1 / (1 + exp(-k(T-T0)))]; b=0.97, k=0.88, T0=263.95K ; applicable for rd_insol>20nm
+            // Omanovic et al. 2024 for AgI: frozen_fraction = b [ 1 - 1 / (1 + exp(-k(T-T0)))]; b=0.97, k=0.88, T0=263.95K 
             // leads to T_f = T0 - 1/k ln((1-R)/(b-1+R)) , where R is uniformly distributed [0,1]; as T->0 FF=b, so if R>b, set Tf=0?
-            if(rand > Omanovic_b) return T_homo;
+            assert(rd2_insol > 4e-16); // this size-agnostic parameterisation is applicable for rd_insol>20nm
+            if(rand > Omanovic_b || rd2_insol <= 4e-16) return T_homo; // in non-debug runs, ignore small AgI INPs
             const real_t Omanovic_T_freeze = real_t(Omanovic_T0/ si::kelvin) - (real_t(1.) / Omanovic_k) * log((real_t(1.) - rand) / (Omanovic_b - real_t(1.) + rand));
             return std::max(real_t(T_homo / si::kelvin), Omanovic_T_freeze) * si::kelvin;
             break;
