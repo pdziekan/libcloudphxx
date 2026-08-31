@@ -70,7 +70,7 @@ namespace libcloudphxx
       //       however, if output was done concurrently, values in the diagnosed vector might change after the call to fill_attr_outbuf.
       std::vector<real_t> out(n_part);
       thrust::copy(
-        dv.begin(), dv.end(),
+        dv.begin(), dv.begin() + n_part,
         out.begin()
       );
       return out;
